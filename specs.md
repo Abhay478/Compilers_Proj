@@ -12,7 +12,9 @@ We have devised a rich and flexible type system to aid in expressing complex alg
 **INSERT DEFINITION OF GROUP**
 
 Members:
+
 - 32/64 bit signed/unsigned integers: Our language does not treat integers and reals as primitive data types.
+- `char`: Character 
 - Boolean
 - Add some more. Cyclic groups, maybe enums?
 
@@ -21,7 +23,8 @@ Members:
 **INSERT DEFINITION OF RING**
 
 Members:
-- BigInt
+
+- `BigInt`: Unbounded integer type, similar to integers in Python.
 - Matrices
   - A matrix is treated as a generic over any type, but the methods it provides wil depend on the Archtrait of that type. Some types, such as files (see below) clearly cannot be added or subtracted, and so the matrix of files reduces to a buffer.
 - Polynomials
@@ -33,6 +36,7 @@ Members:
 **INSERT DEFINITION OF FIELD**
 
 Members:
+
 - reals
 - complex numbers
 - BigRationals
@@ -44,8 +48,9 @@ Members:
 Vector space
 
 Members:
-- string
-- array
+
+- `string`: Characters
+- `vec`:
 - Any more?
 
 ## System

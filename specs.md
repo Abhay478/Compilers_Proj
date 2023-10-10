@@ -114,31 +114,38 @@ fn <name>  (arg: type, ...) : <return type> {
 
 Functions calls are identical to C: `name(args)`. Functions can be returned from using the `return` keyword, which is again identical to C.
 
-
-
 ## Builtins
 
-- 'Functions' like `print` are offered directly by the language, much like in Python.
-    
+'Functions' like `print` are offered directly by the language, much like in Python.
 ```
 print(2);
 ```
 prints 2.
-- Builtins such as `real()` and `u32()` are used to convert between types. They are used as follows:
+
+## Forges
+
+Similar to Builtins, they are functions offered by the language, used to create new types.     
+
+- Forges such as `real()` and `u32()` are used to cast between types. They are used as follows:
 ```
 let a: u32 = 1;
 let b: real = real(a);
 ```
-- Builtins like `permute` and `matrix` are used for more complex type conversion. They are used as follows:
+- Forges like `permute` and `matrix` are used for more complex type conversion. They are used as follows:
 ```
 let a: Permutation<u32> = permute([1, 2, 3]); // ([1, 2, 3], [2, 3, 1], [3, 1, 2], [1, 3, 2], [2, 1, 3], [3, 2, 1])
 let b: Matrix<u32> = matrix([1, 2, 3], [4, 5, 6]); // 2x3 matrix
 ```
+- Forges accept multiple kinds of arguments.
 
+```
+let b: Buf<u32> = [1, 2, 3]; // Buffer of u32s
+let m = matrix(b, b); // 2x3 matrix of u32s
+```
 
 # Type system
 
-We have devised a rich and flexible type system to aid in expressing complex algebraic concepts. They work with the diverse builtins to allow the programmer to express their ideas in a concise and elegant manner.
+We have devised a rich and flexible type system to aid in expressing complex algebraic concepts. They work with the diverse Forges to allow the programmer to express their ideas in a concise and elegant manner.
 
 ## Structs
 
@@ -256,6 +263,24 @@ Members:
 
 The `real` type represents an infinite precision floating point number, i.e. a real number.
 
+#### Complex numbers
+
+The `complex` type represents a complex number, and unlike some implementations, is not generic. The syntax is as follows:
+
+```
+let a: Complex = complex(1, 2); // 1 + 2i
+```
+
+where both arguments are assumed to be reals.
+
+#### Polynomials
+
+The `Polynomial` type is generic over any type that claims `Field` or `Ring`. The syntax is as follows:
+
+```
+let a: Polynomial<u32> = polynomial([1, 2, 3]); // 1 + 2x + 3x^2
+```
+
 ### Space
 
 The only member is the `Vec` - for vector. It is generic over types that claim `Field` and `Ring`. In literature, a 'vector space' over a ring is known as a module, but we implement that functionality within `Vec` itself.
@@ -358,6 +383,8 @@ let a: str = "Hello, World!";
 let b: u8 = a[0];
 ```
 
+They can be interconverted using 
+
 Strings can have views (aka slices) using the `..` operator. The syntax is as follows:
 
 ```
@@ -425,22 +452,27 @@ Note, this is not inheritance, as the programmer cannot write `claim cat is anim
 
 ## Builtins
 
-- `permute`
-- `matrix`
 - `print`
 
-## Data types
+## Data types and their Forges
 
-- `real`
-- `u8`
-- `u16`
-- `u32`
-- `u64`
-- `BigInt`
-- `BigRational`
-- `Vec`
-- `Buf`
-- `str`
+| Type | Forge |
+| --- | --- |
+| `Real` | `real()` |
+| `u8` | `u8()` |
+| `u16` | `u16()` |
+| `u32` | `u32()` |
+| `u64` | `u64()` |
+| `BigInt` | `int()` |
+| `Matrix` | `matrix()` |
+| `BigRational` | `rational()` |
+| `Vec` | `vec()` |
+| `Buf` | `buf()` |
+| `Str` | `str()` |
+| `Complex` | `complex()` |
+| `Polynomial` | `polynomial()` |
+| `Permutation` | `permute()` |
+
 
 ## Operators
 

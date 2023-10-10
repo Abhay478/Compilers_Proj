@@ -4,7 +4,7 @@ title: "Archetype: Domain specific language for the representation of Abstract A
 
 # INTRODUCTION
 
-We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetypes. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation without being dense or hard to learn.
+We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetypes. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
 
 # Syntax
 
@@ -12,12 +12,20 @@ We seek to make a language which can be used to represent and manipulate algebra
 
 - The language is case sensitive.
 - All statements end with a semicolon.
-- Statements which declare/initialise new variables must begin with a let. The type of the variable must be specified also. (Rust syntax)
+<!-- - Statements which declare/initialise new variables must begin with a let. The type of the variable must be specified also. (Rust syntax) -->
 ```
 let a: u32 ; // declaration  
 a = 1; // assignment
 a = func(2); // function call
 ```
+
+### Types of statements:
+
+- Declaration: `let a: u32;`
+- Assignment: `a = 1;`
+- Function//Method call: `a = func(2);` or `a = q.func(3);`
+- Initialisation: `let a: u32 = 1;`
+- Return: `return a;`
 
 ## Comments
 
@@ -93,7 +101,7 @@ fn <name>  (arg: type, ...) : <return type> {
 }
 ```
 
-Functions calls are identical to C: `name(args)`.
+Functions calls are identical to C: `name(args)`. Functions can be returned from using the `return` keyword, which is identical to C.
 
 
 
@@ -133,7 +141,7 @@ u = name::variant; // assignment
 
 ## Archetypes
 
-Each type is assigned one or more of the {five}(change to four?) Archetypes, which are as follows
+Each type, except for the System types, is assigned one or more of the {four}(five if we adding Collection) Archetypes, which are as follows
 
 ### Group
 
@@ -160,7 +168,7 @@ Members:
 
 ### Ring
 
-**INSERT DEFINITION OF RING**
+<!-- **INSERT DEFINITION OF RING** -->
 
 A ring is an abelian group with another operation, $*$. Using the same notation as before, the additional properties of a ring are:
 
@@ -195,28 +203,67 @@ Members:
 
 - reals
 - complex numbers
-- BigRationals
+- BigRational
 - Non-Singular matrix (multiple Archetypes)
 - Polynomials over a field (multiple multiple Archetypes)
 
-### Vector
+### Space
+
+The only member is the `vec` - for vector. It is generic over types that claim `Field` and `Ring`{, although providing different operations for each.
+}(do they really?).
+
 
 - Similar to vectors in C++ and Java. 
 - They are generic over any type, and the operations they provide will depend on the Archetype of that type.
+- They provide basic array functionalities such as indexing, appending, etc., but also algebraic vector operations such as adding two arrays together, and scalar multiplication.
+
+```
+let a: Vec<u64> = {1, 2, 3}; // initialisation
+let b: Vec<u64> = a * 2; // Scalar Multiplication
+let c = a + b; // Vector Addition
+let c: u64 = a[0]; // Indexing
+```
+- #### Inner products
+    This is automatically implemented. 
+    ```
+    let a: Vec<u64> = {1, 2, 3};
+    let b: Vec<u64> = {4, 5, 6};
+    let c: u64 = a @ b; // Inner product
+    ```
+
+    If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
 
 ## System type
 
 - These are the data types/objects offered by the system, and while they may be represented using algebraic constructs (aka Archetypes), those structures are relatively more complex and esoteric. Naturally, the programmer may use these types to build more complex structures.
 - Wrapping a `System` type within a `struct` allows the programmer to claim an Archetype for these types, and thus use them in algebraic operations.
 
-- Pointers
-- Boolean
-- Strings
+### Pointers
+
+Pointers are used to refer to objects in memory, in a very similar fashion to C and C++. The syntax is as follows:
+
+```
+let a: u32 = 1;
+let b: &u32 = &a; // b is a pointer to a
+let c: u32 = *b; // c is the value pointed to by b
+```
+
+
+### Boolean
+
+Booleans are implemented as `System` types eve though they technically satisfy the definition of a group. This is because they are used in the control flow of the program, and thus are not used in algebraic operations. The associated keywords are `true` and `false`.
+
+```
+let a: bool;
+a = true;
+a = !false;
+```
+
+Logical (&&, ||, !) operators work on booleans as expected.
+
+
+- {Strings}(Consider making Collection Archetype with more than just strings. Maybe other data structures? Might be useful to have arrays without algebraic operations.)
 - {Tuples}(? Or is the cartesian product of two Archetypes also an Archetype?)
-
-
-Within the body, the programmer must specify the operations on the new type, viz. addition, multiplication.
-
 
 
 ### The claim keyword
@@ -240,7 +287,13 @@ if (name is Archetype) {
 
 ```
 
-where name is the name of a type that has already been declared (struct). The new type may directly implement the operations, or define mappings (morphisms) to some other type which implements the operations. 
+where name is the name of a type that has already been declared (struct). The new type may directly implement the operations, or define mappings (morphisms) to some other type which implements the operations, like so:
+
+```
+morph (self to other) {
+    Function accepting self and returning other
+};
+```
 
 #### Kinds of morphisms?
 

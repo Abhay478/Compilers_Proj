@@ -2,9 +2,9 @@
 title: "Archetype: Domain specific language for the representation of Abstract Algebra"
 ---
 
-# INTRODUCTION
+# Introduction
 
-We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetypes. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
+We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetype. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
 
 # Syntax
 
@@ -21,11 +21,21 @@ a = func(2); // function call
 
 ### Types of statements:
 
-- Declaration: `let a: u32;`
-- Assignment: `a = 1;`
-- Function//Method call: `a = func(2);` or `a = q.func(3);`
-- Initialisation: `let a: u32 = 1;`
-- Return: `return a;`
+- Declaration: Must begin with the `let` keyword. The type of the variable must be specified after the variable name as in
+  ```
+  let a: u32;
+  ```
+- Assignment: Assigning a value to a variable requires no keyword.
+
+```
+a = 1;
+```
+
+- Builtin call: Statements like `print(2);`. 
+- Initialisation: A statement like `let a: u32 = 1;`, which does both declaration and assignment, requires a `let` keyword.
+- Return: `return a;`, which can only be used within a function.
+
+An assignment or initialisation statement can also include function calls, as in `let a: u32 = func(2);`. 
 
 ## Comments
 
@@ -36,27 +46,30 @@ a = func(2); // function call
 
 ## Operators
 
-- Relational: >, <, ==
-- Logical: &&, ||, !
-- Arithmetic: +, *, -, /
-- Shifts, etc.
+- Relational: `(>, <, ==)` These operators are imlemented for the integer types, the rational type BigRational, and reals only.
+- Logical: `(&&, ||, !)` These operators are implemented for booleans(i.e. predicates) only. 
+- Arithmetic: `(+, *, -, /)` These operators are implemented through archetypes, and thus can be used as the Archetype specifies. The exception is for integer types, where division is integer division.
+- The dot `(.)` operator: This operator is used to access fields of structs, and to access other Archetype/System operations as 'methods'.
+- The view operator `(..)`: This operator is used to create views (aka slices) of buffers and strings.
+- The `@` operator: This operator is used to compute the inner product of two vectors.
+
 
 All the operators have the same meaning as in C, with enhanced functionality for non-C types (matrices, for example).
 
 ## Conditionals
 
-- The keywords `if` and `else` are used as in standard languages. Any members of a group, ring or field may be compared using relational operators (again, the standard $>$, $<$ and $==$) as part of the predicate. Booleans are already a group.
+- The keywords `if` and `else` are used as in standard languages. Not all types may be compared using relational operators. However, they may appear as part of the predicate. 
 - The body of statements is enclosed in curly braces.
 - The syntax:
 ```
-if <pred> {
-    <body>
+if (pred) {
+    body
 } 
-else if <pred> {
-    <body>
+else if (pred) {
+    body
 }
 else {
-    <body>
+    body
 }
 ```
 
@@ -70,7 +83,7 @@ for (declaration; predicate; operation) {
     .
 }
 ```
-- Using the `for` and `in` keywords, we can iterate over the members of a vector.
+- Using the `for` and `in` keywords, we can iterate over the members of a `vec` (see `Space`).
 
 ```
 for (member in list) {
@@ -79,8 +92,6 @@ for (member in list) {
     .
 }
 ```
-
-Where list is a vector over type `T`, and thus the type of `member` is also `T`.
 
 
 - The `while` keyword can be used with a predicate as usual. 
@@ -101,13 +112,33 @@ fn <name>  (arg: type, ...) : <return type> {
 }
 ```
 
-Functions calls are identical to C: `name(args)`. Functions can be returned from using the `return` keyword, which is identical to C.
+Functions calls are identical to C: `name(args)`. Functions can be returned from using the `return` keyword, which is again identical to C.
 
+
+
+## Builtins
+
+- 'Functions' like `print` are offered directly by the language, much like in Python.
+    
+```
+print(2);
+```
+prints 2.
+- Builtins such as `real()` and `u32()` are used to convert between types. They are used as follows:
+```
+let a: u32 = 1;
+let b: real = real(a);
+```
+- Builtins like `permute` and `matrix` are used for more complex type conversion. They are used as follows:
+```
+let a: Permutation<u32> = permute([1, 2, 3]); // ([1, 2, 3], [2, 3, 1], [3, 1, 2], [1, 3, 2], [2, 1, 3], [3, 2, 1])
+let b: Matrix<u32> = matrix([1, 2, 3], [4, 5, 6]); // 2x3 matrix
+```
 
 
 # Type system
 
-We have devised a rich and flexible type system to aid in expressing complex algebraic concepts.
+We have devised a rich and flexible type system to aid in expressing complex algebraic concepts. They work with the diverse builtins to allow the programmer to express their ideas in a concise and elegant manner.
 
 ## Structs
 
@@ -125,11 +156,21 @@ let u: name; // declaration
 u.field = 1; // assignment
 ```
 
+The same operator can be used to access fields, even from pointers to structs. 
+
+```
+let u: name; // declaration
+let v: &name = &u; // pointer to u
+v.field = 1; // assignment
+```
+
 ## Enums
 
 ```
 enum name {
-    members
+    .
+    .
+    .
 }
 ```
 
@@ -145,9 +186,6 @@ Each type, except for the System types, is assigned one or more of the {four}(fi
 
 ### Group
 
-<!-- **INSERT DEFINITION OF GROUP**
- -->
-
 A group may be defined as an amalgamation of a set and an operation. The operation must satisfy certain bounds. With a set $S$ and an operation $f(a, b) = a.b$:
 
 - Closure: $∀ a, b ∈ S, a.b ∈ S$.
@@ -160,15 +198,23 @@ Thus, a Group may be `claim`'d in our language (see below) by specifying an oper
 
 #### Abelian Group
 
-- A group is abelian if it's operator is commutative, i.e., $a.b = b.a ∀ a, b ∈ S$.
+A group is abelian if it's operator is commutative, i.e., $a.b = b.a ∀ a, b ∈ S$.
 
-Members:
-?
+#### Permutation groups
+
+The groups $S_{n}$ represent the permutations of n objects. They are generic over any type that claims an Archetype, as all the other Archetypes are subtypes of the Group Archetype. The syntax is as follows:
+
+```
+let a: Permutation<u32> = permute([1, 2, 3]); 
+let b: Permutation<real> = permute([1.1, 2.2, 3.3]); 
+```
+
+#### Polygon symmetries
+
+The groups $D_{2n}$ represent the symmetries of an n-gon with reflections. 
 
 
 ### Ring
-
-<!-- **INSERT DEFINITION OF RING** -->
 
 A ring is an abelian group with another operation, $*$. Using the same notation as before, the additional properties of a ring are:
 
@@ -194,8 +240,6 @@ Members:
 
 ### Field
 
-<!-- **INSERT DEFINITION OF FIELD** -->
-
 A field is a commutative ring with the additional property that every non-zero element has an inverse in the second operation. 
 Using prior notation, $∀ a ∈ S, a ≠ i ⇒ ∃ a^{-1} ∈ S | a.a^{-1} = e$.
 
@@ -207,31 +251,58 @@ Members:
 - Non-Singular matrix (multiple Archetypes)
 - Polynomials over a field (multiple multiple Archetypes)
 
+
+#### Reals
+
+The `real` type represents an infinite precision floating point number, i.e. a real number.
+
 ### Space
 
-The only member is the `vec` - for vector. It is generic over types that claim `Field` and `Ring`{, although providing different operations for each.
-}(do they really?).
+The only member is the `Vec` - for vector. It is generic over types that claim `Field` and `Ring`. In literature, a 'vector space' over a ring is known as a module, but we implement that functionality within `Vec` itself.
 
 
-- Similar to vectors in C++ and Java. 
-- They are generic over any type, and the operations they provide will depend on the Archetype of that type.
+- Similar to vectors in C++. 
 - They provide basic array functionalities such as indexing, appending, etc., but also algebraic vector operations such as adding two arrays together, and scalar multiplication.
+- The underlying type need not have commutative multiplication. For example, a `Vec` of `Matrix`es (which claim `Ring`) is a valid type, and the multiplication operation is defined as matrix multiplication.
 
 ```
-let a: Vec<u64> = {1, 2, 3}; // initialisation
+let a: Vec<u64> = [1, 2, 3]; // initialisation
 let b: Vec<u64> = a * 2; // Scalar Multiplication
 let c = a + b; // Vector Addition
 let c: u64 = a[0]; // Indexing
 ```
+
+However, the following code is invalid.
+```
+let a: Vec<u64> = [1, 2, 3];
+let b = 0.5 * a; // Scalar multiplication not closed for reals and integers
+```
+Corrected, the code becomes 
+```
+let a: Vec<real> = [1, 2, 3];
+let b = 0.5 * a; // Works
+```
+
+In general the type of the scalar is checked for compatibility with the type of the vector before multiplication.
+
 - #### Inner products
     This is automatically implemented. 
     ```
-    let a: Vec<u64> = {1, 2, 3};
-    let b: Vec<u64> = {4, 5, 6};
+    let a: Vec<u64> = [1, 2, 3];
+    let b: Vec<u64> = [4, 5, 6];
     let c: u64 = a @ b; // Inner product
     ```
 
     If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
+
+### Cartesian Products
+
+The cartesian product of two Archetypes is also an Archetype. This fact is used to implement tuples, with the syntax for the cartesian product of two Archetypes being `(Archetype, Archetype)`. 
+
+```
+let a: (u32, u32) = (1, 2);
+let b: u32 = a.0;
+```
 
 ## System type
 
@@ -261,9 +332,41 @@ a = !false;
 
 Logical (&&, ||, !) operators work on booleans as expected.
 
+### Buffers
 
-- {Strings}(Consider making Collection Archetype with more than just strings. Maybe other data structures? Might be useful to have arrays without algebraic operations.)
-- {Tuples}(? Or is the cartesian product of two Archetypes also an Archetype?)
+Buffers are used to store data in memory. They are similar to arrays in C, and do not allow scalar multiplication or element-wise addition. The syntax is as follows:
+
+```
+let a: Buf<u32> = [1, 2, 3];
+let b: u32 = a[0];
+```
+
+Buffers can have views (aka slices) using the `..` operator. The syntax is as follows:
+
+```
+let a: Buf<u32> = [1, 2, 3, 4, 5];
+let b: Buf<u32> = a[0..2];
+print(b) // [1, 2]
+```
+
+### Strings
+
+A `str` is equivalent to a buffer over `u8` (bytes), and enclosed with double quotes. The syntax is as follows:
+
+``` 
+let a: str = "Hello, World!";
+let b: u8 = a[0];
+```
+
+Strings can have views (aka slices) using the `..` operator. The syntax is as follows:
+
+```
+let a: str = "Hello, World!";
+let b: str = a[0..5];
+print(b); // Hello
+```
+
+There are no tuples for `System` types. For grouping, use `struct`s and claim an Archetype.
 
 
 ### The claim keyword
@@ -295,13 +398,17 @@ morph (self to other) {
 };
 ```
 
-#### Kinds of morphisms?
+#### Morphisms
+
+TODO: Define morphisms.
 
 Note, this is not inheritance, as the programmer cannot write `claim cat is animal {...}`. 
+
 
 # Tokens
 
 ## Reserved words
+
 - `let`
 - `if`
 - `else`
@@ -311,19 +418,58 @@ Note, this is not inheritance, as the programmer cannot write `claim cat is anim
 - `claim`
 - `is`
 - `struct`
-- `enum`
+- `enum`    
 - `true`
 - `false`
+- `return`
+
+## Builtins
+
+- `permute`
+- `matrix`
+- `print`
 
 ## Data types
 
-- `BigInt`
-- `Matrix`
-- `Polynomial`
+- `real`
 - `u8`
 - `u16`
 - `u32`
 - `u64`
-- `real`
-- 
+- `BigInt`
+- `BigRational`
+- `Vec`
+- `Buf`
+- `str`
 
+## Operators
+
+- `@`
+- `..`
+- `::`
+- `*`
+- `+`
+- `-`
+- `/`
+- `==`
+- `!=`
+- `>`
+- `<`
+- `&&`
+- `||`
+- `!`
+- `;`
+- `,`
+- `:`
+- `=`
+- `.`
+
+## Special characters
+
+- `(`, `)`
+- `[`, `]`
+- `{`, `}`
+
+### Comment characters
+- `/*`, `*/`
+- `//`

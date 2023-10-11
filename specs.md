@@ -1,5 +1,5 @@
 ---
-title: "Archetype: Domain specific language for the representation of Abstract Algebra"
+title: "Archetype: Domain specific language for the representation of Abstract Algebra structures - Compilers Group 2"
 author:
 - "Abhay Shankar K: cs21btech11001"
 - "Kartheek Tammana: cs21btech11028"
@@ -18,7 +18,6 @@ We seek to make a language which can be used to represent and manipulate algebra
 
 - The language is case sensitive.
 - All statements end with a semicolon.
-<!-- - Statements which declare/initialise new variables must begin with a let. The type of the variable must be specified also. (Rust syntax) -->
 - Examples:
   ```
   let a: u32 ; // declaration  
@@ -152,6 +151,8 @@ Functions provided by the language to convert between types (similar to Python's
   let c1: u32 = u32(a);
   let c2: u32 = u32(b);
   ```
+  
+See the sample code for examples on how to define your own forges.
 
 # Type system
 
@@ -437,29 +438,36 @@ let b: (u32, u32) = (3, 4);
 let c: (u32, u32) = a + b; // + is automatically implemented because (u32, u32) is a Cartesian Product of Groups
 ```
 
-------------------------------------------------------------------------
-
-# INCOMPLETE FROM HERE
-
 ## System type
 
-- These are the data types/objects offered by the system, and while they may be represented using algebraic constructs (aka Archetypes), those structures are relatively more complex and esoteric. Naturally, the programmer may use these types to build more complex structures.
-- Wrapping a `System` type within a `struct` allows the programmer to claim an Archetype for these types, and thus use them in algebraic operations.
+- These are the data types offered by the system, and while they may be represented using algebraic
+  constructs (aka Archetypes), those structures are relatively more complex and esoteric.
+  Naturally, the programmer may use these types to build more complex structures.
+- Wrapping a `System` type within a `struct` allows the programmer to claim an Archetype for these
+  types, and thus use them in algebraic operations.
 
-### Pointers
+### Integers
 
-Pointers are used to refer to objects in memory, in a very similar fashion to C and C++. The syntax is as follows:
+The integer types are:
+
+- `u8`, `u16`, `u32`, `u64` - unsigned 8-bit integer, etc.
+- `i8`, `i16`, `i32`, `i64` - signed 8-bit integer, etc.
+
+### References
+
+These work very similarly to C++:
 
 ```
 let a: u32 = 1;
-let b: &u32 = &a; // b is a pointer to a
-let c: u32 = *b; // c is the value pointed to by b
+let b: &u32 = &a; // b is a refernce to a
+let c: u32 = *b; // c is the value pointed to by b (i.e. a)
 ```
-
 
 ### Boolean
 
-Booleans are implemented as `System` types eve though they technically satisfy the definition of a group. This is because they are used in the control flow of the program, and thus are not used in algebraic operations. The associated keywords are `true` and `false`.
+Booleans are implemented as `System` types even though they technically satisfy the definition of a
+group. This is because they are used in the control flow of the program, and thus are not used in
+algebraic operations. The associated keywords are `true` and `false`.
 
 ```
 let a: bool;
@@ -471,19 +479,21 @@ Logical (&&, ||, !) operators work on booleans as expected.
 
 ### Buffers
 
-Buffers are used to store data in memory. They are similar to arrays in C, and do not allow scalar multiplication or element-wise addition. The syntax is as follows:
+Buffers are used to store data in memory. They are similar to arrays in C, and do not allow scalar
+multiplication or element-wise addition. The syntax is as follows:
+
+Note that the array initialization syntax returns a `Buf` type, and not a `Vec`.
 
 ```
 let a: Buf<u32> = [1, 2, 3];
 let b: u32 = a[0];
 ```
 
-Buffers can have views (aka slices) using the `..` operator. The syntax is as follows:
+Buffers can be sliced using the `..` operator (similar to `:` in Python). The syntax is as follows:
 
 ```
 let a: Buf<u32> = [1, 2, 3, 4, 5];
-let b: Buf<u32> = a[0..2];
-print(b) // [1, 2]
+let b: Buf<u32> = a[0..2]; // b is [1, 2]
 ```
 
 ### Strings
@@ -494,8 +504,6 @@ A `str` is equivalent to a buffer over `u8` (bytes), and enclosed with double qu
 let a: str = "Hello, World!";
 let b: u8 = a[0];
 ```
-
-They can be interconverted using 
 
 Strings can have views (aka slices) using the `..` operator. The syntax is as follows:
 
@@ -508,92 +516,102 @@ print(b); // Hello
 There are no tuples for `System` types. For grouping, use `struct`s and claim an Archetype.
 
 
-#### Morphisms
+## Isomorphisms and Homomorphisms
 
-TODO
+Homomorphisms/Isomorphisms are functions which map between algebraic structures. They are defined using the `morph` keyword, followed by the function name, the arguments within parentheses, and then the return type. 
+```
+ring morph foo(a: A) -> B {
+  let b: B = /* some operation on a */;
+  return b;
+}
+group morph foo(a: A) == B {
+  let b: B = /* some operation on a */;
+  return b;
+}
+```
 
-- Homomorphisms/Isomorphisms are functions which map between algebraic structures. They are defined using the `morph` keyword, followed by the function name, the arguments within parentheses, and then the return type. 
-  ```
-  ring morph foo(a: A) -> B {
-    let b: B = /* some operation on a */;
-    return b;
-  }
-  group morph foo(a: A) == B {
-    let b: B = /* some operation on a */;
-    return b;
-  }
-  ```
+# Sample Code
 
-# Tokens
+Note that Archetype code uses the `.arc` extension.
 
-## Reserved words
+Noting the verbosity of the below code, we are highly inclined to implement switch-case as well.
 
-- `let`
-- `if`
-- `else`
-- `for`
-- `while`
-- `fn`
-- `claim`
-- `is`
-- `struct`
-- `enum`    
-- `true`
-- `false`
-- `return`
+```
+enum Bar {
+    Zero,
+    One,
+    Two,
+}
 
-## Builtins
+forge Cyclic<3>(a: Bar) {
+    if(a == Zero) {
+        return 0;
+    }
+    if(a == One) {
+        return 1;
+    }
+    else {
+        return 2;
+    }
+}
 
-- `print`
+forge Bar(a: Cyclic<3>) {
+    if(a == 0) {
+        return Zero;
+    }
+    if(a == 1) {
+        return One;
+    }
+    else {
+        return Two;
+    }
+}
 
-## Data types and their Forges
+claim Bar is Group {
+    (x + y) => {
+        return Bar(Cyclic<3>(x) + Cyclic<3>(y))
+    }
+    0 => {
+        return Zero;
+    }
 
-| Type | Forge |
-| --- | --- |
-| `Real` | `real()` |
-| `u8` | `u8()` |
-| `u16` | `u16()` |
-| `u32` | `u32()` |
-| `u64` | `u64()` |
-| `BigInt` | `int()` |
-| `Matrix` | `matrix()` |
-| `BigRational` | `rational()` |
-| `Vec` | `vec()` |
-| `Buf` | `buf()` |
-| `Str` | `str()` |
-| `Complex` | `complex()` |
-| `Polynomial` | `polynomial()` |
-| `Permutation` | `permute()` |
+    -x => {
+        return Bar(-Cyclic<3>(x));
+    }
+}
 
+struct Foo {
+    a: u8,
+    var: Bar
+}
 
-## Operators
+forge Foo(a: u8, var: Bar) {
+    let out: Foo;
+    out.a = a;
+    out.var = var;
+    return out;
+}
 
-- `@`
-- `..`
-- `::`
-- `*`
-- `+`
-- `-`
-- `/`
-- `==`
-- `!=`
-- `>`
-- `<`
-- `&&`
-- `||`
-- `!`
-- `;`
-- `,`
-- `:`
-- `=`
-- `.`
+claim Foo is Group {
+    (x + y) => {
+        let out: Foo;
+        out.a = x.a + y.a;
+        out.var = x.var + y.var;
+        return out;
+    }
 
-## Special characters
+    (0) => {
+        return Foo(0, Zero)
+    }
+}
 
-- `(`, `)`
-- `[`, `]`
-- `{`, `}`
+fn main() {
+    print("Hello world.\n");
+    let q: Foo = Foo(0);
+    let qq: Foo = Foo(1);
 
-### Comment characters
-- `/*`, `*/`
-- `//`
+    let qqq: Foo = q + qq;
+
+    print(qqq);
+}
+```

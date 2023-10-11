@@ -1,5 +1,10 @@
 ---
 title: "Archetype: Domain specific language for the representation of Abstract Algebra"
+author:
+- "Abhay Shankar K: cs21btech11001"
+- "Kartheek Tammana: cs21btech11028"
+- "Prasham Walvekar: cs21btech11047"
+- "Sumedh Kashikar: es21btech11033"
 geometry: margin=2cm
 ---
 

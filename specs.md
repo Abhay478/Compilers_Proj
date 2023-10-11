@@ -205,13 +205,13 @@ Archetype has exactly 4 Archetypes (`Group`, `Ring`, `Field`, `Space`).
 
 ## `claim`ing Archetypes
 
-Each Archetype has a set of methods that must be implemented. These methods are discussed in the
-below sections for each Archetype.
+Each Archetype has a set of operations that must be implemented. These operations are discussed in
+the below sections for each Archetype.
 
 To claim that a type satisfies an Archetype, one uses the `claim` keyword. This is similar to Rust's
 `impl Trait` syntax.
 
-For example, to claim that a type `Foo` satisfies the `Group` Archetype, one uses
+For example, to claim that a type `Foo` satisfies the `Group` Archetype:
 
 ```
 struct Foo {
@@ -221,19 +221,19 @@ struct Foo {
 
 // Claim that Foo is a Group (Z2 x Z2)
 claim Foo is Group {
-  fn add(a: Foo, b: Foo): Foo {
+  (a+b) => {
     let foo: Foo;
     foo.z1 = a.z1 != b.z1;
     foo.z2 = a.z2 != b.z2;
   }
   
-  fn zero(): Foo {
+  0 => {
     let foo: Foo;
     foo.z1 = false;
     foo.z2 = false;
   }
   
-  fn neg(a: Foo): Foo {
+  (-a) => {
     let foo: Foo;
     foo.z1 = a.z1;
     foo.z2 = a.z2;
@@ -269,17 +269,27 @@ Some examples of `Group`s are:
 | $D_{2n}$    | `Dihedral<n>`                | Dihedral group                                    |
 | $GL_{n}[F]$ | `InvMat<n, F: claims Field>` | Invertible $n \times n$ matrices over a field $F$ |
 
-#### Required methods to `claim`
+Note that `claims` is not a keyword. It simply used within this document to indicate that the type
+`F` must be `claim`ed to be a `Field`.
 
-(Note that `Self` is the type that is `claim`ing the `Group` Archetype)
+#### To `claim`
 
 ```
-fn add(a: Self, b: Self): Self;
-fn zero(): Self;
-fn neg(a: Self): Self;
-```
+(a+b) => {
+  ...
+  return foo;
+}
 
-The `add` method overrides the `+` operator, and `neg` overrides the unary `-` operator.
+0 => {
+  ...
+  return foo;
+}
+
+(-a) => {
+  ...
+  return foo;
+}
+```
 
 ## Ring
 
@@ -304,112 +314,127 @@ Some examples of `Ring`s are:
 
 Note that the System Types `u8`, `u16`, `u32`, `u64` also `claim` the `Ring` Archetype.
 
-#### Required methods to `claim`
+#### To `claim`
 
 To `claim` the `Ring` Archetype, a type must first `claim` the `Group` Archetype. Then, the
-following methods must be implemented:
+following operations must be implemented:
 
 ```
-fn one(): Self;
-fn mul(a: Self, b: Self): Self;
-fn inv(a: Self): Self;
+(a*b) => {
+  ...
+  return foo;
+}
+
+1 => {
+  ...
+  return foo;
+}
 ```
-
-The `mul` method overrides the `*` operator, and `/` is overriden using the `inv` method.
-
------------------------------------------------------------------------------------------------
-
-# INCOMPLETE FROM HERE
 
 ## Field
 
-A field is a commutative ring with the additional property that every non-zero element has an inverse in the second operation. 
-Using prior notation, $∀ a ∈ S, a ≠ i ⇒ ∃ a^{-1} ∈ S | a.a^{-1} = e$.
+A field is a ring with the following additional properties:
 
-Members:
+- The operation $*$ is commutative: $a*b = b*a$
+- Multiplicative inverse: $∀ a ∈ S, a ≠ 0 ⇒ ∃ a^{-1} ∈ S | a*a^{-1} = 1$
 
-- reals
-- complex numbers
-- BigRational
-- Non-Singular matrix (multiple Archetypes)
-- Polynomials over a field (multiple multiple Archetypes)
+Some examples of `Field`s are:
 
-Some examples of `Ring`s are:
+| Field | Provided Type    | Description                    |
+| ---   | ---              | ---                            |
+| $Z_p$ | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime |
+| $Q$   | `BigRational`    | Rational numbers               |
+| $C$   | `Complex`        | Complex numbers                |
 
-| Ring       | Provided Type    | Description                          |
-| ---        | ---              | ---                                  |
-| $Z_p$      | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime       |
+Note that the `Complex` type is over `BigRational`s, and not Reals. Archetype does not provide a
+`Real` type, as it is not possible to represent a real number in a computer.
 
+#### To `claim`
 
-#### Reals
-
-The `real` type represents an infinite precision floating point number, i.e. a real number.
-
-#### Complex numbers
-
-The `complex` type represents a complex number, and unlike some implementations, is not generic. The syntax is as follows:
+To `claim` the `Field` Archetype, a type must first `claim` the `Ring` Archetype. Then, the
+following operations must be implemented:
 
 ```
-let a: Complex = complex(1, 2); // 1 + 2i
+(1/a) => {
+  ...
+  return foo;
+}
 ```
 
-where both arguments are assumed to be reals.
+## Space
 
-#### Polynomials
+Refer to the [Wikipedia article](https://en.wikipedia.org/wiki/Vector_space) for a formal
+definition.
 
-The `Polynomial` type is generic over any type that claims `Field` or `Ring`. The syntax is as follows:
+The only provided member is the `Vec<F: claims Field>`. It is generic over types that claim `Field`.
 
-```
-let a: Polynomial<u32> = polynomial([1, 2, 3]); // 1 + 2x + 3x^2
-```
-
-### Space
-
-The only member is the `Vec` - for vector. It is generic over types that claim `Field` and `Ring`. In literature, a 'vector space' over a ring is known as a module, but we implement that functionality within `Vec` itself.
-
-
-- Similar to vectors in C++. 
-- They provide basic array functionalities such as indexing, appending, etc., but also algebraic vector operations such as adding two arrays together, and scalar multiplication.
-- The underlying type need not have commutative multiplication. For example, a `Vec` of `Matrix`es (which claim `Ring`) is a valid type, and the multiplication operation is defined as matrix multiplication.
+- Similar to vectors in other languages
+- It provides basic array functionalities such as indexing, appending, etc., but also algebraic
+  vector operations - adding two arrays together, and scalar multiplication.
 
 ```
-let a: Vec<u64> = [1, 2, 3]; // initialisation
-let b: Vec<u64> = a * 2; // Scalar Multiplication
-let c = a + b; // Vector Addition
-let c: u64 = a[0]; // Indexing
+let a: Vec<u64> = Vec([1, 2, 3]);
+let b: Vec<u64> = a * 2;
+let c = a + b;
+let d: u64 = a[0];
 ```
 
-However, the following code is invalid.
 ```
-let a: Vec<u64> = [1, 2, 3];
-let b = 0.5 * a; // Scalar multiplication not closed for reals and integers
-```
-Corrected, the code becomes 
-```
-let a: Vec<real> = [1, 2, 3];
-let b = 0.5 * a; // Works
+let a: Vec<BigRational> = Vec([BigRational(1, 2), BigRational(1, 2), BigRational(1, 2)]);
+let b = BigRational(0.5) * a; // Works
 ```
 
 In general the type of the scalar is checked for compatibility with the type of the vector before multiplication.
 
-#### Inner products
-    This is automatically implemented. 
-    ```
-    let a: Vec<u64> = [1, 2, 3];
-    let b: Vec<u64> = [4, 5, 6];
-    let c: u64 = a @ b; // Inner product
-    ```
+#### To `claim`
 
-    If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
+```
+
+claim Space for Foo {
+  Field = (insert field F here);
+  
+  // Here u and v are Foo, a is Field
+  // 0 is the additive identity of Foo, not Field
+
+  (u + v) => {}
+
+  (-u) => {}
+
+  0 => {}
+
+  (a * u) => {}
+  
+  // Inner product (optional) (not finalized)
+  (u @ v) => {}
+}
+```
+
+### Inner products
+
+This is automatically implemented for `Vec<F: claims Field>` as the `@` operator, using the dot
+product.
+
+```
+let a: Vec<u64> = [1, 2, 3];
+let b: Vec<u64> = [4, 5, 6];
+let c: u64 = a @ b; // Inner product
+```
+
+If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
 
 ### Cartesian Products
 
-The cartesian product of two Archetypes is also an Archetype. This fact is used to implement tuples, with the syntax for the cartesian product of two Archetypes being `(Archetype, Archetype)`. 
+The cartesian product of two Archetypes is also an Archetype. This fact is used to implement Archetypes for tuples, with the syntax for the cartesian product being `(Archetype, Archetype)`. 
 
 ```
 let a: (u32, u32) = (1, 2);
-let b: u32 = a.0;
+let b: (u32, u32) = (3, 4);
+let c: (u32, u32) = a + b; // + is automatically implemented because (u32, u32) is a Cartesian Product of Groups
 ```
+
+------------------------------------------------------------------------
+
+# INCOMPLETE FROM HERE
 
 ## System type
 

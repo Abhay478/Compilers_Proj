@@ -227,20 +227,17 @@ struct Foo {
 
 // Claim that Foo is a Group (Z2 x Z2)
 claim Foo is Group {
-  (a+b) => {
-    let foo: Foo;
+  (foo = a + b) => {
     foo.z1 = a.z1 != b.z1;
     foo.z2 = a.z2 != b.z2;
   }
   
-  0 => {
-    let foo: Foo;
+  (foo = 0) => {
     foo.z1 = false;
     foo.z2 = false;
   }
   
-  (-a) => {
-    let foo: Foo;
+  (foo = -a) => {
     foo.z1 = a.z1;
     foo.z2 = a.z2;
   }
@@ -281,19 +278,16 @@ Note that `claims` is not a keyword. It simply used within this document to indi
 #### To `claim`
 
 ```
-(a+b) => {
+(c = a + b) => {
   ...
-  return foo;
 }
 
-0 => {
+(c = 0) => {
   ...
-  return foo;
 }
 
-(-a) => {
+(c = -a) => {
   ...
-  return foo;
 }
 ```
 
@@ -326,14 +320,12 @@ To `claim` the `Ring` Archetype, a type must first `claim` the `Group` Archetype
 following operations must be implemented:
 
 ```
-(a*b) => {
+(c = a * b) => {
   ...
-  return foo;
 }
 
-1 => {
+(c = 1) => {
   ...
-  return foo;
 }
 ```
 
@@ -361,9 +353,8 @@ To `claim` the `Field` Archetype, a type must first `claim` the `Ring` Archetype
 following operations must be implemented:
 
 ```
-(1/a) => {
+(c = ~a) => {
   ...
-  return foo;
 }
 ```
 
@@ -396,22 +387,22 @@ In general the type of the scalar is checked for compatibility with the type of 
 
 ```
 
-claim Space for Foo {
+claim Foo is Space {
   Field = (insert field F here);
   
   // Here u and v are Foo, a is Field
   // 0 is the additive identity of Foo, not Field
 
-  (u + v) => {}
+  (w = u + v) => {}
 
-  (-u) => {}
+  (w = -u) => {}
 
-  0 => {}
+  (w = 0) => {}
 
-  (a * u) => {}
+  (w = a * u) => {}
   
   // Inner product (optional) (not finalized)
-  (u @ v) => {}
+  (c = u @ v) => {}
 }
 ```
 

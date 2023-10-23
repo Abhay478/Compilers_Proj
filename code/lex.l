@@ -3,8 +3,8 @@
     #include "y.tab.h"
 %}
 dig [0-9]
-num (-?dig+)
-real (-?dig+)(\.dig+)?
+num (-?{dig}+)
+real (-?{dig}+)(\.{dig}+)?
 id [[:alpha:]_][[:alnum:]_]*
 str_c \"([^"]|(\\\"))*\"
 char_c \'\\?([^']|(\\'))\'
@@ -21,27 +21,29 @@ misc_ops (@|"=>"|=|&|"|")
 uint (u8|u16|u32|u64)
 sint (i8|i16|i32|i64)
 
+pdt ({uint}|{sint}|float|bool|char)
+
 %%
 
-if {return IF;}
-else {return ELSE;}
-for {return FOR;}
-while {return WHILE;}
-fn {return FN;}
-let {return LET;}
-return {return RETURN;}
-claim {return CLAIM;}
-"ring morph" {return RMORPH;}
-"group morph" {return GMORPH;}
-forge {return FORGE;}
-is {return IS;}
-struct {return STRUCT;}
-enum {return ENUM;}
-true {return TRUE;}
-false {return FALSE;}
-void {return VOID;}
+if {return KW_IF;}
+else {return KW_ELSE;}
+for {return KW_FOR;}
+while {return KW_WHILE;}
+fn {return KW_FN;}
+let {return KW_LET;}
+return {return KW_RETURN;}
+claim {return KW_CLAIM;}
+ring {return KW_RING;}
+group {return KW_GROUP;}
+morph {return KW_MORPH;}
+forge {return KW_FORGE;}
+is {return KW_IS;}
+struct {return KW_STRUCT;}
+enum {return KW_ENUM;}
+true {return KW_TRUE;}
+false {return KW_FALSE;}
 
-id {return ID;} // we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly.
+{id} {return IDENT;} // we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly.
 
 {acc_op} {return yytext;} // Access operators
 {rel_op} {return yytext;} // relational operators
@@ -54,12 +56,12 @@ id {return ID;} // we need to change YYSTYPE to return ID.name. This after makin
 {punct} {return yytext;} // punctuation
 
 
-{char_c} {return char_c;}
-{str_c} {return str_c;}
-{num} {return num;}
+{char_c} {return LIT_CHAR;}
+{str_c} {return LIT_STR;}
+{num} {return LIT_INT;}
+{real} {return LIT_FL;}
 
-{uint} {return uint;}
-{sint} {return sint;}
+{pdt} {return PRIMITIVE_DTYPE;} 
 Group {return GROUP;}
 Ring {return RING;}
 Field {return FIELD;}

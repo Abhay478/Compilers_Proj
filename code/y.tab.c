@@ -65,7 +65,7 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 1 "yacc.y"
+#line 1 "code/yacc.y"
 
     #include "project.h"
 
@@ -90,7 +90,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 5 "yacc.y"
+#line 5 "code/yacc.y"
 {
     struct ID id;
     enum type typ;
@@ -100,7 +100,7 @@ typedef union YYSTYPE
     float fl;
 }
 /* Line 193 of yacc.c.  */
-#line 104 "yacc.tab.c"
+#line 104 "code/y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -113,7 +113,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 117 "yacc.tab.c"
+#line 117 "code/y.tab.c"
 
 #ifdef short
 # undef short
@@ -1291,7 +1291,7 @@ yyreduce:
     {
       
 /* Line 1267 of yacc.c.  */
-#line 1295 "yacc.tab.c"
+#line 1295 "code/y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1505,7 +1505,7 @@ yyreturn:
 }
 
 
-#line 15 "yacc.y"
+#line 15 "code/yacc.y"
 
 
 int main() {

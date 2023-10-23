@@ -39,7 +39,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 5 "yacc.y"
+#line 5 "code/yacc.y"
 {
     struct ID id;
     enum type typ;
@@ -49,7 +49,7 @@ typedef union YYSTYPE
     float fl;
 }
 /* Line 1529 of yacc.c.  */
-#line 53 "yacc.tab.h"
+#line 53 "code/y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

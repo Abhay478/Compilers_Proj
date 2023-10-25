@@ -34,7 +34,20 @@ op ({rel_op}|{log_op}|{arith_op}|{aug_op}|{acc_op}|{misc_ops})
 "//.*\n" {}
 "/\*.*\*/" {}
 
+"&&" {return LOGICAL_AND;}
+"||" {return LOGICAL_OR;}
+"!" {return LOGICAL_NOT;}
+{arith_op} {return yytext[0];}
+
+">" {return yytext[0];}
+"<" {return yytext[0];}
+">=" {return GTEQ;}
+"<=" {return LTEQ;}
+"==" {return EQ;}
+"!=" {return NEQ;}
+
 let {return KW_LET;}
+return {return KW_RETURN;}
 
 Cyclic {return KW_CYCLIC;}
 BigRational {return KW_BIG_RATIONAL;}

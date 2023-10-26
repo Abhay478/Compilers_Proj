@@ -16,7 +16,7 @@ arith_op (\+|\-|\*|\/|\%)
 aug_op {arith_op}=
 acc_op (\.|::)
 punct [,;:]
-misc_ops (@|"=>"|=|&|"|")
+misc_ops (@|&|"|"|~)
 
 uint (u8|u16|u32|u64)
 sint (i8|i16|i32|i64)
@@ -39,6 +39,7 @@ op ({rel_op}|{log_op}|{arith_op}|{aug_op}|{acc_op}|{misc_ops})
 "!" {return LOGICAL_NOT;}
 {arith_op} {return yytext[0];}
 
+"=" {return yytext[0];}
 ">" {return yytext[0];}
 "<" {return yytext[0];}
 ">=" {return GTEQ;}
@@ -58,6 +59,13 @@ case {return KW_CASE;}
 default { return KW_DEFAULT;}
 break {return KW_BREAK;}
 continue {return KW_CONTINUE;}
+print {return KW_PRINT;}
+claim {return KW_CLAIM;}
+is {return KW_IS;}
+Group {return KW_GROUP;}
+Ring {return KW_RING;}
+Field {return KW_FIELD;}
+Space {return KW_SPACE;}
 
 Cyclic {return KW_CYCLIC;}
 BigRational {return KW_BIG_RATIONAL;}

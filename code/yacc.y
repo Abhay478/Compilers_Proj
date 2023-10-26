@@ -13,10 +13,15 @@ void yyerror(const char* s);
 %token INCR DECR ARROW VARIANT
 %left log_op rel_op '>' '<'
 %left '+' '-' '*' '/' '%' '@'
-%right '!'
-%start statements
+%right '!' '.'
+%start P
 
 %%
+P               : statements
+                | P function
+                | P struct
+                | P enum
+                ;
 statements      : statement statements
                 | epsilon
                 ;
@@ -38,7 +43,8 @@ body            : '{' statements '}'
                 ;
               
 var             : IDENT
-                | IDENT '.' IDENT
+                | var '.' IDENT // Nested structs
+                | IDENT VARIANT IDENT // No nested enums
                 ;
 
 field_data_type : // KW_CYCLIC '<' LIT_INT '>'
@@ -271,10 +277,6 @@ group_inverse_rule  : '(' IDENT '=' '-' IDENT ')' ARROW body
 field_inverse_rule  : '(' IDENT '=' '~' IDENT ')' ARROW body
                     ;
 
-
-/*  */
-
-
 function        : function_header '{' function_body '}' 
                 ;
 
@@ -296,12 +298,11 @@ struct          : KW_STRUCT IDENT '{' attr_list '}'
 attr_list       : IDENT
                 | typ_var ',' IDENT 
                 ;
-enums           : KW_ENUM IDENT '{' variant_list '}'
+enum           : KW_ENUM IDENT '{' variant_list '}'
                 ;
 variant_list    : IDENT
                 | variant_list ',' IDENT 
                 ;
-                
 epsilon         : ;
 
 %%

@@ -151,8 +151,8 @@ if_body         : body
                 ;
 
 loop_stmt       : KW_WHILE '(' expression ')' body
-                | KW_FOR '(' assignment ';' expression ';' V ')' body
-                | KW_FOR '(' declaration ';' expression ';' V ')' body
+                | KW_FOR '(' assignment ';' expression ';' loop_mut ')' body
+                | KW_FOR '(' declaration ';' expression ';' loop_mut ')' body
                 | KW_FOR IDENT KW_IN IDENT body
                 ;
 

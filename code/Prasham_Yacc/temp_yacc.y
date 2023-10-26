@@ -70,7 +70,7 @@ expression      : arithmetic_expr
                 | call_stmt
                 //| var
                 //| constant
-                | unary_operation
+                //| unary_operation
                 | array_access
                 | array_decl
                 ;
@@ -105,8 +105,8 @@ logical_expr    : B logical_op logical_expr
                 ;
 
 B               : arithmetic_expr
-                | unary_operation
-                | call_stmt
+                //| unary_operation
+                //| call_stmt
                 | '(' logical_expr ')'
                 | KW_TRUE
                 | KW_FALSE
@@ -132,11 +132,11 @@ call_stmt       : var '(' pass_param_list ')'
 pass_param_list : expression ',' pass_param_list
                 | expression
                 ;
-
-unary_operation : var '+' '+'
-                | var '-' '-'
+/*
+unary_operation : '+' '+' var
+                | '-' '-' var
                 ;
-
+*/
 array_access    : var C
                 ;
 

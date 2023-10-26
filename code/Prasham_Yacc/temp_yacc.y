@@ -6,7 +6,7 @@ void yyerror(const char* s);
 
 %}
 
-%token KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
+%token KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
 
 %start statements
 
@@ -20,8 +20,10 @@ statement       : declaration ';'
                 | call_stmt_standalone
                 | return_stmt ';' 
                 | if_else_conditional
+                | switch_case
                 | loop_stmt
-                | switch_conditional
+                | KW_BREAK ';'
+                | KW_CONTINUE ';'
                 ;
                 
 var             : IDENT
@@ -63,6 +65,7 @@ A               : '=' expression
                 ;
 
 assignment      : var '=' expression
+                | array_access '=' expression
                 ;
 
 expression      : arithmetic_expr
@@ -71,7 +74,7 @@ expression      : arithmetic_expr
                 //| var
                 //| constant
                 //| unary_operation
-                | array_access
+                //| array_access
                 | array_decl
                 ;
 
@@ -179,13 +182,14 @@ V                   : unary_operation
                     | epsilon
                     ;
 
-switch_conditional  : KW_SWITCH '(' expression ')' '{' switch_case_blocks KW_DEFAULT ':' statements '}'
+switch_case         : KW_SWITCH '(' expression ')' '{' switch_case_blocks KW_DEFAULT ':' statements '}'
                     | KW_SWITCH '(' expression ')' '{' switch_case_blocks '}'
                     ;
 
 switch_case_blocks  : KW_CASE LIT_CHAR ':' statements switch_case_blocks
                     | KW_CASE LIT_INT ':' statements switch_case_blocks
                     | KW_CASE LIT_FLOAT ':' statements switch_case_blocks
+                    | epsilon
                     ;
 
 epsilon         : ;

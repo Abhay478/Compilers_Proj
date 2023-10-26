@@ -56,6 +56,7 @@ switch {return KW_SWITCH;}
 case {return KW_CASE;}
 default { return KW_DEFAULT;}
 break {return KW_BREAK;}
+continue {return KW_CONTINUE;}
 
 Cyclic {return KW_CYCLIC;}
 BigRational {return KW_BIG_RATIONAL;}

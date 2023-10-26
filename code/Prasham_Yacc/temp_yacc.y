@@ -78,25 +78,25 @@ expression      : arithmetic_expr
                 | array_decl
                 ;
 
-arithmetic_expr : arithmetic_expr '+' term
-                | arithmetic_expr '-' term
-                | term
+arithmetic_expr : arithmetic_expr '+' term {printf("Rule: arithmetic_expr : arithmetic_expr \'+\' term\n");}
+                | arithmetic_expr '-' term {printf("Rule: arithmetic_expr : arithmetic_expr \'-\' term\n");}
+                | term {printf("Rule: arithmetic_expr : term\n");}
                 //| '(' arithmetic_expr ')'
                 ;
 
-term            : term '*' factor
-                | term '/' factor
-                | term '%' factor
-                | factor
+term            : term '*' factor {printf("Rule: term : term \'*\' factor\n");}
+                | term '/' factor {printf("Rule: term : term \'/\' factor\n");}
+                | term '%' factor {printf("Rule: term : term \'\%\' factor\n");}
+                | factor {printf("Rule: term : factor\n");}
                 ;
 
-factor          : var
-                | '(' arithmetic_expr ')'
-                | '-' factor
-                | constant
-                | call_stmt
-                | array_access
-                | unary_operation
+factor          : var {printf("Rule: factor : var\n");}
+                | '(' arithmetic_expr ')' {printf("Rule: factor : \'(\' arithmetic_expr \')\'\n");}
+                | '-' factor 
+                | constant {printf("Rule: factor : constant\n");}
+                | call_stmt {printf("Rule: factor : call_stmt\n");}
+                | array_access {printf("Rule: factor : array_access\n");}
+                | unary_operation {printf("Rule: factor : unary_operation\n");}
                 ;
 
 constant        : LIT_CHAR

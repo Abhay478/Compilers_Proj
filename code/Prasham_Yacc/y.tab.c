@@ -162,51 +162,6 @@ extern int yydebug;
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
-/* Token kinds.  */
-#define YYEMPTY -2
-#define YYEOF 0
-#define YYerror 256
-#define YYUNDEF 257
-#define KW_LET 258
-#define KW_RETURN 259
-#define KW_IF 260
-#define KW_ELSE 261
-#define KW_WHILE 262
-#define KW_FOR 263
-#define KW_SWITCH 264
-#define KW_CASE 265
-#define KW_DEFAULT 266
-#define KW_BREAK 267
-#define KW_CONTINUE 268
-#define KW_CYCLIC 269
-#define KW_BIG_RATIONAL 270
-#define KW_COMPLEX 271
-#define KW_SYMMETRIC 272
-#define KW_ALTERNATING 273
-#define KW_DIHEDRAL 274
-#define KW_INV_MAT 275
-#define KW_BIGINT 276
-#define KW_MATRIX 277
-#define KW_POLYNOMIAL 278
-#define KW_VEC 279
-#define KW_BUF 280
-#define IDENT 281
-#define PRIMITIVE_DTYPE 282
-#define LIT_INT 283
-#define LIT_FLOAT 284
-#define LIT_STR 285
-#define LIT_CHAR 286
-#define LOGICAL_AND 287
-#define LOGICAL_OR 288
-#define LOGICAL_NOT 289
-#define EQ 290
-#define NEQ 291
-#define GT 292
-#define LT 293
-#define GTEQ 294
-#define LTEQ 295
-#define KW_TRUE 296
-#define KW_FALSE 297
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -1451,8 +1406,86 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 42: /* arithmetic_expr: arithmetic_expr '+' term  */
+#line 81 "temp_yacc.y"
+                                           {printf("Rule: arithmetic_expr : arithmetic_expr \'+\' term\n");}
+#line 1413 "y.tab.c"
+    break;
 
-#line 1456 "y.tab.c"
+  case 43: /* arithmetic_expr: arithmetic_expr '-' term  */
+#line 82 "temp_yacc.y"
+                                           {printf("Rule: arithmetic_expr : arithmetic_expr \'-\' term\n");}
+#line 1419 "y.tab.c"
+    break;
+
+  case 44: /* arithmetic_expr: term  */
+#line 83 "temp_yacc.y"
+                       {printf("Rule: arithmetic_expr : term\n");}
+#line 1425 "y.tab.c"
+    break;
+
+  case 45: /* term: term '*' factor  */
+#line 87 "temp_yacc.y"
+                                  {printf("Rule: term : term \'*\' factor\n");}
+#line 1431 "y.tab.c"
+    break;
+
+  case 46: /* term: term '/' factor  */
+#line 88 "temp_yacc.y"
+                                  {printf("Rule: term : term \'/\' factor\n");}
+#line 1437 "y.tab.c"
+    break;
+
+  case 47: /* term: term '%' factor  */
+#line 89 "temp_yacc.y"
+                                  {printf("Rule: term : term \'\%\' factor\n");}
+#line 1443 "y.tab.c"
+    break;
+
+  case 48: /* term: factor  */
+#line 90 "temp_yacc.y"
+                         {printf("Rule: term : factor\n");}
+#line 1449 "y.tab.c"
+    break;
+
+  case 49: /* factor: var  */
+#line 93 "temp_yacc.y"
+                      {printf("Rule: factor : var\n");}
+#line 1455 "y.tab.c"
+    break;
+
+  case 50: /* factor: '(' arithmetic_expr ')'  */
+#line 94 "temp_yacc.y"
+                                          {printf("Rule: factor : \'(\' arithmetic_expr \')\'\n");}
+#line 1461 "y.tab.c"
+    break;
+
+  case 52: /* factor: constant  */
+#line 96 "temp_yacc.y"
+                           {printf("Rule: factor : constant\n");}
+#line 1467 "y.tab.c"
+    break;
+
+  case 53: /* factor: call_stmt  */
+#line 97 "temp_yacc.y"
+                            {printf("Rule: factor : call_stmt\n");}
+#line 1473 "y.tab.c"
+    break;
+
+  case 54: /* factor: array_access  */
+#line 98 "temp_yacc.y"
+                               {printf("Rule: factor : array_access\n");}
+#line 1479 "y.tab.c"
+    break;
+
+  case 55: /* factor: unary_operation  */
+#line 99 "temp_yacc.y"
+                                  {printf("Rule: factor : unary_operation\n");}
+#line 1485 "y.tab.c"
+    break;
+
+
+#line 1489 "y.tab.c"
 
       default: break;
     }

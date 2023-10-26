@@ -28,9 +28,9 @@ statements      : statement statements
 
 statement       : declaration ';'
                 | assignment ';'
-                | call_stmt_standalone
+                | call_stmt
                 | return_stmt ';' 
-                | if_else_conditional
+                | conditional
                 | switch_case
                 | loop_stmt
                 | KW_PRINT '(' pass_param_list ')' ';'
@@ -47,8 +47,7 @@ var             : IDENT
                 | IDENT VARIANT IDENT // No nested enums
                 ;
 
-field_data_type : // KW_CYCLIC '<' LIT_INT '>'
-                | KW_BIG_RATIONAL
+field_data_type : KW_BIG_RATIONAL
                 | KW_COMPLEX
                 ;
 
@@ -108,98 +107,21 @@ expression      : expression '+' expression
                 | expression rel_op expression
                 | expression '>' expression
                 | expression '<' expression
-                | var | constant | unary_operation | array_access | call_stmt 
+                | var | constant | unary_operation | array_access | call 
                 | KW_TRUE | KW_FALSE
                 | expression '@' expression
-                //| call_stmt
-                //| var
-                //| constant
-                //| unary_operation
-                //| array_access
                 | array_decl
-                /* | var '@' var */
                 ;
-/* predicate       : logical_expr
-                | relational_expr
-                ; */
-
-/* arithmetic_expr : arithmetic_expr '+' term {}
-                | arithmetic_expr '-' term {}
-                | term {}
-                //| '(' arithmetic_expr ')'
-                ;
-
-term            : term '*' factor {}
-                | term '/' factor {}
-                | term '%' factor {}
-                | factor {}
-                ;
-
-factor          : var {}
-                | '(' arithmetic_expr ')' {}
-                | '-' factor 
-                | constant {}
-                | call_stmt {}
-                | array_access {}
-                | unary_operation {} 
-                 ; */
-
-/* 
-arithmetic_expr : arithmetic_expr '+' arithmetic_expr
-                | arithmetic_expr '-' arithmetic_expr
-                | arithmetic_expr '*' arithmetic_expr
-                | arithmetic_expr '/' arithmetic_expr
-                | arithmetic_expr '%' arithmetic_expr
-                | '(' arithmetic_expr ')'
-                | var | constant | unary_operation | array_access | call_stmt | var '@' var
-                ; */
-
-
-/* logical_expr    : B logical_op logical_expr 
-                | B
-                | LOGICAL_NOT logical_expr
-                ;
-
-B               : arithmetic_expr
-                //| unary_operation
-                //| call_stmt
-                | '(' logical_expr ')'
-                | KW_TRUE
-                | KW_FALSE
-                ; */
-/* 
-logical_expr    : logical_expr log_op logical_expr 
-                | '!' logical_expr
-                | '(' logical_expr ')'
-                | KW_TRUE
-                | KW_FALSE
-                ; */
-
-/* relational_expr : relational_expr rel_op relational_expr
-                | relational_expr '>' relational_expr
-                | relational_expr '<' relational_expr
-                | arithmetic_expr
-                ; */
-
-/* logical_op      : '>' 
-                | '<'
-                | GTEQ
-                | LTEQ
-                | EQ
-                | NEQ
-                | LOGICAL_AND
-                | LOGICAL_OR
-                ; */
 
 return_stmt     : KW_RETURN expression 
                 ;
 
-call_stmt_standalone    : var '(' pass_param_list ')' ';'
-                        | var '(' ')' ';'
-                        ;
+call_stmt       : IDENT '(' pass_param_list ')' ';'
+                | IDENT '(' ')' ';'
+                ;
 
-call_stmt       : var '(' pass_param_list ')' 
-                | var '(' ')'
+call            : IDENT '(' pass_param_list ')' 
+                | IDENT '(' ')'
                 ;
 
 pass_param_list : expression ',' pass_param_list
@@ -210,11 +132,7 @@ unary_operation : var INCR
                 | var DECR
                 ;
 
-array_access    : var C
-                ;
-
-C               : '[' LIT_INT ']' C
-                | '[' LIT_INT ']'
+array_access    : var array_decl
                 ;
 
 array_decl      : '[' array_list ']'
@@ -224,58 +142,54 @@ array_list      : constant ',' array_list
                 | constant
                 ;
 
-if_else_conditional : KW_IF '(' expression ')' if_body
-                    ;
+conditional     : KW_IF '(' expression ')' if_body
+                ;
 
-if_body             : body 
-                    | body KW_ELSE if_else_conditional
-                    | body KW_ELSE body
-                    /*| statement
-                    | statement KW_ELSE if_else_conditional
-                    | statement KW_ELSE body
-                    | statement KW_ELSE statement
-                    */;
+if_body         : body 
+                | body KW_ELSE conditional
+                | body KW_ELSE body
+                ;
 
-loop_stmt           : KW_WHILE '(' expression ')' body
-                    | KW_FOR '(' assignment ';' expression ';' V ')' body
-                    | KW_FOR '(' declaration ';' expression ';' V ')' body
-                    | KW_FOR IDENT KW_IN IDENT body
-                    ;
+loop_stmt       : KW_WHILE '(' expression ')' body
+                | KW_FOR '(' assignment ';' expression ';' V ')' body
+                | KW_FOR '(' declaration ';' expression ';' V ')' body
+                | KW_FOR IDENT KW_IN IDENT body
+                ;
 
-V                   : unary_operation
-                    | epsilon
-                    ;
+loop_mut        : unary_operation
+                | epsilon
+                ;
 
-switch_case         : KW_SWITCH '(' expression ')' '{' switch_case_blocks KW_DEFAULT ':' statements '}'
-                    | KW_SWITCH '(' expression ')' '{' switch_case_blocks '}'
-                    ;
+switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
+                | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
+                ;
 
-switch_case_blocks  : KW_CASE LIT_CHAR ':' statements switch_case_blocks
-                    | KW_CASE LIT_INT ':' statements switch_case_blocks
-                    | KW_CASE LIT_FLOAT ':' statements switch_case_blocks
-                    | epsilon
-                    ;
+sc_blocks       : KW_CASE LIT_CHAR ':' statements sc_blocks
+                | KW_CASE LIT_INT ':' statements sc_blocks
+                | KW_CASE LIT_FLOAT ':' statements sc_blocks
+                | epsilon
+                ;
 
-archetype_claim     : KW_CLAIM IDENT KW_IS KW_GROUP '{' group_closure_rule identity_rule group_inverse_rule '}' ';' {printf("Group claim rule\n");}
-                    | KW_CLAIM IDENT KW_IS KW_RING '{' ring_closure_rule identity_rule '}' ';'
-                    | KW_CLAIM IDENT KW_IS KW_FIELD '{' field_inverse_rule '}' ';'
-                    | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' group_closure_rule group_inverse_rule identity_rule ring_closure_rule'}' ';'
-                    ;
+archetype_claim : KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' {printf("Group claim rule\n");}
+                | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
+                | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
+                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule'}' ';'
+                ;
 
-group_closure_rule  : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body {printf("Group_closure_rule\n");}
-                    ;
+additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body {printf("Group_closure_rule\n");}
+                ;
 
-ring_closure_rule   : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
-                    ;
+mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
+                ;
 
-identity_rule       : '(' IDENT '=' LIT_INT ')' ARROW body
-                    ;
+identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body
+                ;
 
-group_inverse_rule  : '(' IDENT '=' '-' IDENT ')' ARROW body
-                    ;
+negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
+                ;
 
-field_inverse_rule  : '(' IDENT '=' '~' IDENT ')' ARROW body
-                    ;
+inverse_rule    : '(' IDENT '=' '~' IDENT ')' ARROW body
+                ;
 
 function        : function_header '{' function_body '}' 
                 ;
@@ -298,7 +212,7 @@ struct          : KW_STRUCT IDENT '{' attr_list '}'
 attr_list       : IDENT
                 | typ_var ',' IDENT 
                 ;
-enum           : KW_ENUM IDENT '{' variant_list '}'
+enum            : KW_ENUM IDENT '{' variant_list '}'
                 ;
 variant_list    : IDENT
                 | variant_list ',' IDENT 

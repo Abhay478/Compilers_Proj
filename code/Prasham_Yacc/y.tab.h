@@ -97,6 +97,51 @@ extern int yydebug;
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
+/* Token kinds.  */
+#define YYEMPTY -2
+#define YYEOF 0
+#define YYerror 256
+#define YYUNDEF 257
+#define KW_LET 258
+#define KW_RETURN 259
+#define KW_IF 260
+#define KW_ELSE 261
+#define KW_WHILE 262
+#define KW_FOR 263
+#define KW_SWITCH 264
+#define KW_CASE 265
+#define KW_DEFAULT 266
+#define KW_BREAK 267
+#define KW_CONTINUE 268
+#define KW_CYCLIC 269
+#define KW_BIG_RATIONAL 270
+#define KW_COMPLEX 271
+#define KW_SYMMETRIC 272
+#define KW_ALTERNATING 273
+#define KW_DIHEDRAL 274
+#define KW_INV_MAT 275
+#define KW_BIGINT 276
+#define KW_MATRIX 277
+#define KW_POLYNOMIAL 278
+#define KW_VEC 279
+#define KW_BUF 280
+#define IDENT 281
+#define PRIMITIVE_DTYPE 282
+#define LIT_INT 283
+#define LIT_FLOAT 284
+#define LIT_STR 285
+#define LIT_CHAR 286
+#define LOGICAL_AND 287
+#define LOGICAL_OR 288
+#define LOGICAL_NOT 289
+#define EQ 290
+#define NEQ 291
+#define GT 292
+#define LT 293
+#define GTEQ 294
+#define LTEQ 295
+#define KW_TRUE 296
+#define KW_FALSE 297
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

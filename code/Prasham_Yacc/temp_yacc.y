@@ -62,6 +62,14 @@ declaration     : KW_LET var ':' PRIMITIVE_DTYPE A
 
 A               : '=' expression
                 | epsilon
+                | ',' var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
+                | ',' var ':' PRIMITIVE_DTYPE A
+                | ',' var ':' IDENT A
+                | ',' var ':' group_data_type A
+                | ',' var ':' ring_data_type A
+                | ',' var ':' field_data_type A
+                | ',' var ':' space_data_type A
+                ;
                 ;
 
 assignment      : var '=' expression
@@ -76,6 +84,7 @@ expression      : arithmetic_expr
                 //| unary_operation
                 //| array_access
                 | array_decl
+                | var '@' var
                 ;
 
 arithmetic_expr : arithmetic_expr '+' term {printf("Rule: arithmetic_expr : arithmetic_expr \'+\' term\n");}

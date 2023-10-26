@@ -68,29 +68,23 @@ assignment      : var '=' expression
 expression      : arithmetic_expr
                 //| logical_expr
                 | call_stmt
-                | var
-                | constant
+                //| var
+                //| constant
                 | unary_operation
                 | array_access
                 | array_decl
                 ;
 
-arithmetic_expr : arithmetic_expr C
+arithmetic_expr : arithmetic_expr '+' term
+                | arithmetic_expr '-' term
                 | term
                 //| '(' arithmetic_expr ')'
                 ;
 
-C               : '+' term
-                | '-' term
-                ;
-
-term            : term D
+term            : term '*' factor
+                | term '/' factor
+                | term '%' factor
                 | factor
-                ;
-
-D               : '*' factor
-                | '/' factor
-                | '%' factor
                 ;
 
 factor          : var
@@ -112,8 +106,6 @@ logical_expr    : B logical_op logical_expr
 
 B               : arithmetic_expr
                 | unary_operation
-                | var
-                | constant
                 | call_stmt
                 | '(' logical_expr ')'
                 | KW_TRUE
@@ -133,8 +125,8 @@ logical_op      : '>'
 return_stmt     : KW_RETURN expression 
                 ;
 
-call_stmt       : IDENT '(' pass_param_list ')' 
-                | IDENT '(' ')'
+call_stmt       : var '(' pass_param_list ')' 
+                | var '(' ')'
                 ;
 
 pass_param_list : expression ',' pass_param_list
@@ -145,7 +137,7 @@ unary_operation : var '+' '+'
                 | var '-' '-'
                 ;
 
-array_access    : IDENT C
+array_access    : var C
                 ;
 
 C               : '[' LIT_INT ']' C

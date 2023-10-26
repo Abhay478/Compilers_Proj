@@ -1,0 +1,1547 @@
+Terminals unused in grammar
+
+    LOGICAL_AND
+    LOGICAL_OR
+    LOGICAL_NOT
+    EQ
+    NEQ
+    GT
+    LT
+    GTEQ
+    LTEQ
+    KW_TRUE
+    KW_FALSE
+
+
+State 20 conflicts: 2 shift/reduce
+
+
+Grammar
+
+    0 $accept: statements $end
+
+    1 statements: statement statements
+    2           | epsilon
+
+    3 statement: declaration ';'
+    4          | assignment ';'
+    5          | call_stmt ';'
+    6          | return_stmt ';'
+
+    7 var: IDENT
+    8    | IDENT '.' IDENT
+
+    9 field_data_type: ε
+   10                | KW_BIG_RATIONAL
+   11                | KW_COMPLEX
+
+   12 group_data_type: KW_CYCLIC '<' LIT_INT '>'
+   13                | KW_SYMMETRIC '<' LIT_INT '>'
+   14                | KW_ALTERNATING '<' LIT_INT '>'
+   15                | KW_DIHEDRAL '<' LIT_INT '>'
+   16                | KW_INV_MAT '<' LIT_INT ',' IDENT '>'
+
+   17 ring_data_type: KW_BIGINT
+   18               | KW_MATRIX '<' LIT_INT ',' IDENT '>'
+   19               | KW_POLYNOMIAL '<' IDENT '>'
+
+   20 space_data_type: KW_VEC '<' IDENT '>'
+   21                | KW_VEC '<' PRIMITIVE_DTYPE '>'
+
+   22 declaration: KW_LET var ':' PRIMITIVE_DTYPE A
+   23            | KW_LET var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
+   24            | KW_LET var ':' IDENT A
+   25            | KW_LET var ':' group_data_type A
+   26            | KW_LET var ':' ring_data_type A
+   27            | KW_LET var ':' field_data_type A
+   28            | KW_LET var ':' space_data_type A
+
+   29 A: '=' expression
+   30  | epsilon
+
+   31 assignment: var '=' expression
+
+   32 expression: arithmetic_expr
+   33           | call_stmt
+   34           | unary_operation
+   35           | array_access
+   36           | array_decl
+
+   37 arithmetic_expr: arithmetic_expr '+' term
+   38                | arithmetic_expr '-' term
+   39                | term
+
+   40 term: term '*' factor
+   41     | term '/' factor
+   42     | term '%' factor
+   43     | factor
+
+   44 factor: var
+   45       | '(' arithmetic_expr ')'
+   46       | '-' factor
+   47       | constant
+
+   48 constant: LIT_CHAR
+   49         | LIT_FLOAT
+   50         | LIT_INT
+   51         | LIT_STR
+
+   52 return_stmt: KW_RETURN expression
+
+   53 call_stmt: var '(' pass_param_list ')'
+   54          | var '(' ')'
+
+   55 pass_param_list: expression ',' pass_param_list
+   56                | expression
+
+   57 unary_operation: var '+' '+'
+   58                | var '-' '-'
+
+   59 array_access: var C
+
+   60 C: '[' LIT_INT ']' C
+   61  | '[' LIT_INT ']'
+
+   62 array_decl: '[' array_list ']'
+
+   63 array_list: constant ',' array_list
+   64           | constant
+
+   65 epsilon: ε
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '%' (37) 42
+    '(' (40) 45 53 54
+    ')' (41) 45 53 54
+    '*' (42) 40
+    '+' (43) 37 57
+    ',' (44) 16 18 55 63
+    '-' (45) 38 46 58
+    '.' (46) 8
+    '/' (47) 41
+    ':' (58) 22 23 24 25 26 27 28
+    ';' (59) 3 4 5 6
+    '<' (60) 12 13 14 15 16 18 19 20 21 23
+    '=' (61) 29 31
+    '>' (62) 12 13 14 15 16 18 19 20 21 23
+    '[' (91) 60 61 62
+    ']' (93) 60 61 62
+    error (256)
+    KW_LET (258) 22 23 24 25 26 27 28
+    KW_RETURN (259) 52
+    KW_CYCLIC (260) 12
+    KW_BIG_RATIONAL (261) 10
+    KW_COMPLEX (262) 11
+    KW_SYMMETRIC (263) 13
+    KW_ALTERNATING (264) 14
+    KW_DIHEDRAL (265) 15
+    KW_INV_MAT (266) 16
+    KW_BIGINT (267) 17
+    KW_MATRIX (268) 18
+    KW_POLYNOMIAL (269) 19
+    KW_VEC (270) 20 21
+    KW_BUF (271) 23
+    IDENT (272) 7 8 16 18 19 20 24
+    PRIMITIVE_DTYPE (273) 21 22 23
+    LIT_INT (274) 12 13 14 15 16 18 50 60 61
+    LIT_FLOAT (275) 49
+    LIT_STR (276) 51
+    LIT_CHAR (277) 48
+    LOGICAL_AND (278)
+    LOGICAL_OR (279)
+    LOGICAL_NOT (280)
+    EQ (281)
+    NEQ (282)
+    GT (283)
+    LT (284)
+    GTEQ (285)
+    LTEQ (286)
+    KW_TRUE (287)
+    KW_FALSE (288)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (50)
+        on left: 0
+    statements (51)
+        on left: 1 2
+        on right: 0 1
+    statement (52)
+        on left: 3 4 5 6
+        on right: 1
+    var (53)
+        on left: 7 8
+        on right: 22 23 24 25 26 27 28 31 44 53 54 57 58 59
+    field_data_type (54)
+        on left: 9 10 11
+        on right: 27
+    group_data_type (55)
+        on left: 12 13 14 15 16
+        on right: 25
+    ring_data_type (56)
+        on left: 17 18 19
+        on right: 26
+    space_data_type (57)
+        on left: 20 21
+        on right: 28
+    declaration (58)
+        on left: 22 23 24 25 26 27 28
+        on right: 3
+    A (59)
+        on left: 29 30
+        on right: 22 23 24 25 26 27 28
+    assignment (60)
+        on left: 31
+        on right: 4
+    expression (61)
+        on left: 32 33 34 35 36
+        on right: 29 31 52 55 56
+    arithmetic_expr (62)
+        on left: 37 38 39
+        on right: 32 37 38 45
+    term (63)
+        on left: 40 41 42 43
+        on right: 37 38 39 40 41 42
+    factor (64)
+        on left: 44 45 46 47
+        on right: 40 41 42 43 46
+    constant (65)
+        on left: 48 49 50 51
+        on right: 47 63 64
+    return_stmt (66)
+        on left: 52
+        on right: 6
+    call_stmt (67)
+        on left: 53 54
+        on right: 5 33
+    pass_param_list (68)
+        on left: 55 56
+        on right: 53 55
+    unary_operation (69)
+        on left: 57 58
+        on right: 34
+    array_access (70)
+        on left: 59
+        on right: 35
+    C (71)
+        on left: 60 61
+        on right: 59 60
+    array_decl (72)
+        on left: 62
+        on right: 36
+    array_list (73)
+        on left: 63 64
+        on right: 62 63
+    epsilon (74)
+        on left: 65
+        on right: 2 30
+
+
+State 0
+
+    0 $accept: • statements $end
+
+    KW_LET     shift, and go to state 1
+    KW_RETURN  shift, and go to state 2
+    IDENT      shift, and go to state 3
+
+    $default  reduce using rule 65 (epsilon)
+
+    statements   go to state 4
+    statement    go to state 5
+    var          go to state 6
+    declaration  go to state 7
+    assignment   go to state 8
+    return_stmt  go to state 9
+    call_stmt    go to state 10
+    epsilon      go to state 11
+
+
+State 1
+
+   22 declaration: KW_LET • var ':' PRIMITIVE_DTYPE A
+   23            | KW_LET • var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
+   24            | KW_LET • var ':' IDENT A
+   25            | KW_LET • var ':' group_data_type A
+   26            | KW_LET • var ':' ring_data_type A
+   27            | KW_LET • var ':' field_data_type A
+   28            | KW_LET • var ':' space_data_type A
+
+    IDENT  shift, and go to state 3
+
+    var  go to state 12
+
+
+State 2
+
+   52 return_stmt: KW_RETURN • expression
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+    '['        shift, and go to state 19
+
+    var              go to state 20
+    expression       go to state 21
+    arithmetic_expr  go to state 22
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+    call_stmt        go to state 26
+    unary_operation  go to state 27
+    array_access     go to state 28
+    array_decl       go to state 29
+
+
+State 3
+
+    7 var: IDENT •
+    8    | IDENT • '.' IDENT
+
+    '.'  shift, and go to state 30
+
+    $default  reduce using rule 7 (var)
+
+
+State 4
+
+    0 $accept: statements • $end
+
+    $end  shift, and go to state 31
+
+
+State 5
+
+    1 statements: statement • statements
+
+    KW_LET     shift, and go to state 1
+    KW_RETURN  shift, and go to state 2
+    IDENT      shift, and go to state 3
+
+    $default  reduce using rule 65 (epsilon)
+
+    statements   go to state 32
+    statement    go to state 5
+    var          go to state 6
+    declaration  go to state 7
+    assignment   go to state 8
+    return_stmt  go to state 9
+    call_stmt    go to state 10
+    epsilon      go to state 11
+
+
+State 6
+
+   31 assignment: var • '=' expression
+   53 call_stmt: var • '(' pass_param_list ')'
+   54          | var • '(' ')'
+
+    '='  shift, and go to state 33
+    '('  shift, and go to state 34
+
+
+State 7
+
+    3 statement: declaration • ';'
+
+    ';'  shift, and go to state 35
+
+
+State 8
+
+    4 statement: assignment • ';'
+
+    ';'  shift, and go to state 36
+
+
+State 9
+
+    6 statement: return_stmt • ';'
+
+    ';'  shift, and go to state 37
+
+
+State 10
+
+    5 statement: call_stmt • ';'
+
+    ';'  shift, and go to state 38
+
+
+State 11
+
+    2 statements: epsilon •
+
+    $default  reduce using rule 2 (statements)
+
+
+State 12
+
+   22 declaration: KW_LET var • ':' PRIMITIVE_DTYPE A
+   23            | KW_LET var • ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
+   24            | KW_LET var • ':' IDENT A
+   25            | KW_LET var • ':' group_data_type A
+   26            | KW_LET var • ':' ring_data_type A
+   27            | KW_LET var • ':' field_data_type A
+   28            | KW_LET var • ':' space_data_type A
+
+    ':'  shift, and go to state 39
+
+
+State 13
+
+   50 constant: LIT_INT •
+
+    $default  reduce using rule 50 (constant)
+
+
+State 14
+
+   49 constant: LIT_FLOAT •
+
+    $default  reduce using rule 49 (constant)
+
+
+State 15
+
+   51 constant: LIT_STR •
+
+    $default  reduce using rule 51 (constant)
+
+
+State 16
+
+   48 constant: LIT_CHAR •
+
+    $default  reduce using rule 48 (constant)
+
+
+State 17
+
+   46 factor: '-' • factor
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    factor    go to state 41
+    constant  go to state 25
+
+
+State 18
+
+   45 factor: '(' • arithmetic_expr ')'
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var              go to state 40
+    arithmetic_expr  go to state 42
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+
+
+State 19
+
+   62 array_decl: '[' • array_list ']'
+
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+
+    constant    go to state 43
+    array_list  go to state 44
+
+
+State 20
+
+   44 factor: var •
+   53 call_stmt: var • '(' pass_param_list ')'
+   54          | var • '(' ')'
+   57 unary_operation: var • '+' '+'
+   58                | var • '-' '-'
+   59 array_access: var • C
+
+    '+'  shift, and go to state 45
+    '-'  shift, and go to state 46
+    '('  shift, and go to state 34
+    '['  shift, and go to state 47
+
+    '+'       [reduce using rule 44 (factor)]
+    '-'       [reduce using rule 44 (factor)]
+    $default  reduce using rule 44 (factor)
+
+    C  go to state 48
+
+
+State 21
+
+   52 return_stmt: KW_RETURN expression •
+
+    $default  reduce using rule 52 (return_stmt)
+
+
+State 22
+
+   32 expression: arithmetic_expr •
+   37 arithmetic_expr: arithmetic_expr • '+' term
+   38                | arithmetic_expr • '-' term
+
+    '+'  shift, and go to state 49
+    '-'  shift, and go to state 50
+
+    $default  reduce using rule 32 (expression)
+
+
+State 23
+
+   39 arithmetic_expr: term •
+   40 term: term • '*' factor
+   41     | term • '/' factor
+   42     | term • '%' factor
+
+    '*'  shift, and go to state 51
+    '/'  shift, and go to state 52
+    '%'  shift, and go to state 53
+
+    $default  reduce using rule 39 (arithmetic_expr)
+
+
+State 24
+
+   43 term: factor •
+
+    $default  reduce using rule 43 (term)
+
+
+State 25
+
+   47 factor: constant •
+
+    $default  reduce using rule 47 (factor)
+
+
+State 26
+
+   33 expression: call_stmt •
+
+    $default  reduce using rule 33 (expression)
+
+
+State 27
+
+   34 expression: unary_operation •
+
+    $default  reduce using rule 34 (expression)
+
+
+State 28
+
+   35 expression: array_access •
+
+    $default  reduce using rule 35 (expression)
+
+
+State 29
+
+   36 expression: array_decl •
+
+    $default  reduce using rule 36 (expression)
+
+
+State 30
+
+    8 var: IDENT '.' • IDENT
+
+    IDENT  shift, and go to state 54
+
+
+State 31
+
+    0 $accept: statements $end •
+
+    $default  accept
+
+
+State 32
+
+    1 statements: statement statements •
+
+    $default  reduce using rule 1 (statements)
+
+
+State 33
+
+   31 assignment: var '=' • expression
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+    '['        shift, and go to state 19
+
+    var              go to state 20
+    expression       go to state 55
+    arithmetic_expr  go to state 22
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+    call_stmt        go to state 26
+    unary_operation  go to state 27
+    array_access     go to state 28
+    array_decl       go to state 29
+
+
+State 34
+
+   53 call_stmt: var '(' • pass_param_list ')'
+   54          | var '(' • ')'
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+    ')'        shift, and go to state 56
+    '['        shift, and go to state 19
+
+    var              go to state 20
+    expression       go to state 57
+    arithmetic_expr  go to state 22
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+    call_stmt        go to state 26
+    pass_param_list  go to state 58
+    unary_operation  go to state 27
+    array_access     go to state 28
+    array_decl       go to state 29
+
+
+State 35
+
+    3 statement: declaration ';' •
+
+    $default  reduce using rule 3 (statement)
+
+
+State 36
+
+    4 statement: assignment ';' •
+
+    $default  reduce using rule 4 (statement)
+
+
+State 37
+
+    6 statement: return_stmt ';' •
+
+    $default  reduce using rule 6 (statement)
+
+
+State 38
+
+    5 statement: call_stmt ';' •
+
+    $default  reduce using rule 5 (statement)
+
+
+State 39
+
+   22 declaration: KW_LET var ':' • PRIMITIVE_DTYPE A
+   23            | KW_LET var ':' • KW_BUF '<' PRIMITIVE_DTYPE '>' A
+   24            | KW_LET var ':' • IDENT A
+   25            | KW_LET var ':' • group_data_type A
+   26            | KW_LET var ':' • ring_data_type A
+   27            | KW_LET var ':' • field_data_type A
+   28            | KW_LET var ':' • space_data_type A
+
+    KW_CYCLIC        shift, and go to state 59
+    KW_BIG_RATIONAL  shift, and go to state 60
+    KW_COMPLEX       shift, and go to state 61
+    KW_SYMMETRIC     shift, and go to state 62
+    KW_ALTERNATING   shift, and go to state 63
+    KW_DIHEDRAL      shift, and go to state 64
+    KW_INV_MAT       shift, and go to state 65
+    KW_BIGINT        shift, and go to state 66
+    KW_MATRIX        shift, and go to state 67
+    KW_POLYNOMIAL    shift, and go to state 68
+    KW_VEC           shift, and go to state 69
+    KW_BUF           shift, and go to state 70
+    IDENT            shift, and go to state 71
+    PRIMITIVE_DTYPE  shift, and go to state 72
+
+    $default  reduce using rule 9 (field_data_type)
+
+    field_data_type  go to state 73
+    group_data_type  go to state 74
+    ring_data_type   go to state 75
+    space_data_type  go to state 76
+
+
+State 40
+
+   44 factor: var •
+
+    $default  reduce using rule 44 (factor)
+
+
+State 41
+
+   46 factor: '-' factor •
+
+    $default  reduce using rule 46 (factor)
+
+
+State 42
+
+   37 arithmetic_expr: arithmetic_expr • '+' term
+   38                | arithmetic_expr • '-' term
+   45 factor: '(' arithmetic_expr • ')'
+
+    '+'  shift, and go to state 49
+    '-'  shift, and go to state 50
+    ')'  shift, and go to state 77
+
+
+State 43
+
+   63 array_list: constant • ',' array_list
+   64           | constant •
+
+    ','  shift, and go to state 78
+
+    $default  reduce using rule 64 (array_list)
+
+
+State 44
+
+   62 array_decl: '[' array_list • ']'
+
+    ']'  shift, and go to state 79
+
+
+State 45
+
+   57 unary_operation: var '+' • '+'
+
+    '+'  shift, and go to state 80
+
+
+State 46
+
+   58 unary_operation: var '-' • '-'
+
+    '-'  shift, and go to state 81
+
+
+State 47
+
+   60 C: '[' • LIT_INT ']' C
+   61  | '[' • LIT_INT ']'
+
+    LIT_INT  shift, and go to state 82
+
+
+State 48
+
+   59 array_access: var C •
+
+    $default  reduce using rule 59 (array_access)
+
+
+State 49
+
+   37 arithmetic_expr: arithmetic_expr '+' • term
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    term      go to state 83
+    factor    go to state 24
+    constant  go to state 25
+
+
+State 50
+
+   38 arithmetic_expr: arithmetic_expr '-' • term
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    term      go to state 84
+    factor    go to state 24
+    constant  go to state 25
+
+
+State 51
+
+   40 term: term '*' • factor
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    factor    go to state 85
+    constant  go to state 25
+
+
+State 52
+
+   41 term: term '/' • factor
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    factor    go to state 86
+    constant  go to state 25
+
+
+State 53
+
+   42 term: term '%' • factor
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+
+    var       go to state 40
+    factor    go to state 87
+    constant  go to state 25
+
+
+State 54
+
+    8 var: IDENT '.' IDENT •
+
+    $default  reduce using rule 8 (var)
+
+
+State 55
+
+   31 assignment: var '=' expression •
+
+    $default  reduce using rule 31 (assignment)
+
+
+State 56
+
+   54 call_stmt: var '(' ')' •
+
+    $default  reduce using rule 54 (call_stmt)
+
+
+State 57
+
+   55 pass_param_list: expression • ',' pass_param_list
+   56                | expression •
+
+    ','  shift, and go to state 88
+
+    $default  reduce using rule 56 (pass_param_list)
+
+
+State 58
+
+   53 call_stmt: var '(' pass_param_list • ')'
+
+    ')'  shift, and go to state 89
+
+
+State 59
+
+   12 group_data_type: KW_CYCLIC • '<' LIT_INT '>'
+
+    '<'  shift, and go to state 90
+
+
+State 60
+
+   10 field_data_type: KW_BIG_RATIONAL •
+
+    $default  reduce using rule 10 (field_data_type)
+
+
+State 61
+
+   11 field_data_type: KW_COMPLEX •
+
+    $default  reduce using rule 11 (field_data_type)
+
+
+State 62
+
+   13 group_data_type: KW_SYMMETRIC • '<' LIT_INT '>'
+
+    '<'  shift, and go to state 91
+
+
+State 63
+
+   14 group_data_type: KW_ALTERNATING • '<' LIT_INT '>'
+
+    '<'  shift, and go to state 92
+
+
+State 64
+
+   15 group_data_type: KW_DIHEDRAL • '<' LIT_INT '>'
+
+    '<'  shift, and go to state 93
+
+
+State 65
+
+   16 group_data_type: KW_INV_MAT • '<' LIT_INT ',' IDENT '>'
+
+    '<'  shift, and go to state 94
+
+
+State 66
+
+   17 ring_data_type: KW_BIGINT •
+
+    $default  reduce using rule 17 (ring_data_type)
+
+
+State 67
+
+   18 ring_data_type: KW_MATRIX • '<' LIT_INT ',' IDENT '>'
+
+    '<'  shift, and go to state 95
+
+
+State 68
+
+   19 ring_data_type: KW_POLYNOMIAL • '<' IDENT '>'
+
+    '<'  shift, and go to state 96
+
+
+State 69
+
+   20 space_data_type: KW_VEC • '<' IDENT '>'
+   21                | KW_VEC • '<' PRIMITIVE_DTYPE '>'
+
+    '<'  shift, and go to state 97
+
+
+State 70
+
+   23 declaration: KW_LET var ':' KW_BUF • '<' PRIMITIVE_DTYPE '>' A
+
+    '<'  shift, and go to state 98
+
+
+State 71
+
+   24 declaration: KW_LET var ':' IDENT • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 100
+    epsilon  go to state 101
+
+
+State 72
+
+   22 declaration: KW_LET var ':' PRIMITIVE_DTYPE • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 102
+    epsilon  go to state 101
+
+
+State 73
+
+   27 declaration: KW_LET var ':' field_data_type • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 103
+    epsilon  go to state 101
+
+
+State 74
+
+   25 declaration: KW_LET var ':' group_data_type • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 104
+    epsilon  go to state 101
+
+
+State 75
+
+   26 declaration: KW_LET var ':' ring_data_type • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 105
+    epsilon  go to state 101
+
+
+State 76
+
+   28 declaration: KW_LET var ':' space_data_type • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 106
+    epsilon  go to state 101
+
+
+State 77
+
+   45 factor: '(' arithmetic_expr ')' •
+
+    $default  reduce using rule 45 (factor)
+
+
+State 78
+
+   63 array_list: constant ',' • array_list
+
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+
+    constant    go to state 43
+    array_list  go to state 107
+
+
+State 79
+
+   62 array_decl: '[' array_list ']' •
+
+    $default  reduce using rule 62 (array_decl)
+
+
+State 80
+
+   57 unary_operation: var '+' '+' •
+
+    $default  reduce using rule 57 (unary_operation)
+
+
+State 81
+
+   58 unary_operation: var '-' '-' •
+
+    $default  reduce using rule 58 (unary_operation)
+
+
+State 82
+
+   60 C: '[' LIT_INT • ']' C
+   61  | '[' LIT_INT • ']'
+
+    ']'  shift, and go to state 108
+
+
+State 83
+
+   37 arithmetic_expr: arithmetic_expr '+' term •
+   40 term: term • '*' factor
+   41     | term • '/' factor
+   42     | term • '%' factor
+
+    '*'  shift, and go to state 51
+    '/'  shift, and go to state 52
+    '%'  shift, and go to state 53
+
+    $default  reduce using rule 37 (arithmetic_expr)
+
+
+State 84
+
+   38 arithmetic_expr: arithmetic_expr '-' term •
+   40 term: term • '*' factor
+   41     | term • '/' factor
+   42     | term • '%' factor
+
+    '*'  shift, and go to state 51
+    '/'  shift, and go to state 52
+    '%'  shift, and go to state 53
+
+    $default  reduce using rule 38 (arithmetic_expr)
+
+
+State 85
+
+   40 term: term '*' factor •
+
+    $default  reduce using rule 40 (term)
+
+
+State 86
+
+   41 term: term '/' factor •
+
+    $default  reduce using rule 41 (term)
+
+
+State 87
+
+   42 term: term '%' factor •
+
+    $default  reduce using rule 42 (term)
+
+
+State 88
+
+   55 pass_param_list: expression ',' • pass_param_list
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+    '['        shift, and go to state 19
+
+    var              go to state 20
+    expression       go to state 57
+    arithmetic_expr  go to state 22
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+    call_stmt        go to state 26
+    pass_param_list  go to state 109
+    unary_operation  go to state 27
+    array_access     go to state 28
+    array_decl       go to state 29
+
+
+State 89
+
+   53 call_stmt: var '(' pass_param_list ')' •
+
+    $default  reduce using rule 53 (call_stmt)
+
+
+State 90
+
+   12 group_data_type: KW_CYCLIC '<' • LIT_INT '>'
+
+    LIT_INT  shift, and go to state 110
+
+
+State 91
+
+   13 group_data_type: KW_SYMMETRIC '<' • LIT_INT '>'
+
+    LIT_INT  shift, and go to state 111
+
+
+State 92
+
+   14 group_data_type: KW_ALTERNATING '<' • LIT_INT '>'
+
+    LIT_INT  shift, and go to state 112
+
+
+State 93
+
+   15 group_data_type: KW_DIHEDRAL '<' • LIT_INT '>'
+
+    LIT_INT  shift, and go to state 113
+
+
+State 94
+
+   16 group_data_type: KW_INV_MAT '<' • LIT_INT ',' IDENT '>'
+
+    LIT_INT  shift, and go to state 114
+
+
+State 95
+
+   18 ring_data_type: KW_MATRIX '<' • LIT_INT ',' IDENT '>'
+
+    LIT_INT  shift, and go to state 115
+
+
+State 96
+
+   19 ring_data_type: KW_POLYNOMIAL '<' • IDENT '>'
+
+    IDENT  shift, and go to state 116
+
+
+State 97
+
+   20 space_data_type: KW_VEC '<' • IDENT '>'
+   21                | KW_VEC '<' • PRIMITIVE_DTYPE '>'
+
+    IDENT            shift, and go to state 117
+    PRIMITIVE_DTYPE  shift, and go to state 118
+
+
+State 98
+
+   23 declaration: KW_LET var ':' KW_BUF '<' • PRIMITIVE_DTYPE '>' A
+
+    PRIMITIVE_DTYPE  shift, and go to state 119
+
+
+State 99
+
+   29 A: '=' • expression
+
+    IDENT      shift, and go to state 3
+    LIT_INT    shift, and go to state 13
+    LIT_FLOAT  shift, and go to state 14
+    LIT_STR    shift, and go to state 15
+    LIT_CHAR   shift, and go to state 16
+    '-'        shift, and go to state 17
+    '('        shift, and go to state 18
+    '['        shift, and go to state 19
+
+    var              go to state 20
+    expression       go to state 120
+    arithmetic_expr  go to state 22
+    term             go to state 23
+    factor           go to state 24
+    constant         go to state 25
+    call_stmt        go to state 26
+    unary_operation  go to state 27
+    array_access     go to state 28
+    array_decl       go to state 29
+
+
+State 100
+
+   24 declaration: KW_LET var ':' IDENT A •
+
+    $default  reduce using rule 24 (declaration)
+
+
+State 101
+
+   30 A: epsilon •
+
+    $default  reduce using rule 30 (A)
+
+
+State 102
+
+   22 declaration: KW_LET var ':' PRIMITIVE_DTYPE A •
+
+    $default  reduce using rule 22 (declaration)
+
+
+State 103
+
+   27 declaration: KW_LET var ':' field_data_type A •
+
+    $default  reduce using rule 27 (declaration)
+
+
+State 104
+
+   25 declaration: KW_LET var ':' group_data_type A •
+
+    $default  reduce using rule 25 (declaration)
+
+
+State 105
+
+   26 declaration: KW_LET var ':' ring_data_type A •
+
+    $default  reduce using rule 26 (declaration)
+
+
+State 106
+
+   28 declaration: KW_LET var ':' space_data_type A •
+
+    $default  reduce using rule 28 (declaration)
+
+
+State 107
+
+   63 array_list: constant ',' array_list •
+
+    $default  reduce using rule 63 (array_list)
+
+
+State 108
+
+   60 C: '[' LIT_INT ']' • C
+   61  | '[' LIT_INT ']' •
+
+    '['  shift, and go to state 47
+
+    $default  reduce using rule 61 (C)
+
+    C  go to state 121
+
+
+State 109
+
+   55 pass_param_list: expression ',' pass_param_list •
+
+    $default  reduce using rule 55 (pass_param_list)
+
+
+State 110
+
+   12 group_data_type: KW_CYCLIC '<' LIT_INT • '>'
+
+    '>'  shift, and go to state 122
+
+
+State 111
+
+   13 group_data_type: KW_SYMMETRIC '<' LIT_INT • '>'
+
+    '>'  shift, and go to state 123
+
+
+State 112
+
+   14 group_data_type: KW_ALTERNATING '<' LIT_INT • '>'
+
+    '>'  shift, and go to state 124
+
+
+State 113
+
+   15 group_data_type: KW_DIHEDRAL '<' LIT_INT • '>'
+
+    '>'  shift, and go to state 125
+
+
+State 114
+
+   16 group_data_type: KW_INV_MAT '<' LIT_INT • ',' IDENT '>'
+
+    ','  shift, and go to state 126
+
+
+State 115
+
+   18 ring_data_type: KW_MATRIX '<' LIT_INT • ',' IDENT '>'
+
+    ','  shift, and go to state 127
+
+
+State 116
+
+   19 ring_data_type: KW_POLYNOMIAL '<' IDENT • '>'
+
+    '>'  shift, and go to state 128
+
+
+State 117
+
+   20 space_data_type: KW_VEC '<' IDENT • '>'
+
+    '>'  shift, and go to state 129
+
+
+State 118
+
+   21 space_data_type: KW_VEC '<' PRIMITIVE_DTYPE • '>'
+
+    '>'  shift, and go to state 130
+
+
+State 119
+
+   23 declaration: KW_LET var ':' KW_BUF '<' PRIMITIVE_DTYPE • '>' A
+
+    '>'  shift, and go to state 131
+
+
+State 120
+
+   29 A: '=' expression •
+
+    $default  reduce using rule 29 (A)
+
+
+State 121
+
+   60 C: '[' LIT_INT ']' C •
+
+    $default  reduce using rule 60 (C)
+
+
+State 122
+
+   12 group_data_type: KW_CYCLIC '<' LIT_INT '>' •
+
+    $default  reduce using rule 12 (group_data_type)
+
+
+State 123
+
+   13 group_data_type: KW_SYMMETRIC '<' LIT_INT '>' •
+
+    $default  reduce using rule 13 (group_data_type)
+
+
+State 124
+
+   14 group_data_type: KW_ALTERNATING '<' LIT_INT '>' •
+
+    $default  reduce using rule 14 (group_data_type)
+
+
+State 125
+
+   15 group_data_type: KW_DIHEDRAL '<' LIT_INT '>' •
+
+    $default  reduce using rule 15 (group_data_type)
+
+
+State 126
+
+   16 group_data_type: KW_INV_MAT '<' LIT_INT ',' • IDENT '>'
+
+    IDENT  shift, and go to state 132
+
+
+State 127
+
+   18 ring_data_type: KW_MATRIX '<' LIT_INT ',' • IDENT '>'
+
+    IDENT  shift, and go to state 133
+
+
+State 128
+
+   19 ring_data_type: KW_POLYNOMIAL '<' IDENT '>' •
+
+    $default  reduce using rule 19 (ring_data_type)
+
+
+State 129
+
+   20 space_data_type: KW_VEC '<' IDENT '>' •
+
+    $default  reduce using rule 20 (space_data_type)
+
+
+State 130
+
+   21 space_data_type: KW_VEC '<' PRIMITIVE_DTYPE '>' •
+
+    $default  reduce using rule 21 (space_data_type)
+
+
+State 131
+
+   23 declaration: KW_LET var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' • A
+
+    '='  shift, and go to state 99
+
+    $default  reduce using rule 65 (epsilon)
+
+    A        go to state 134
+    epsilon  go to state 101
+
+
+State 132
+
+   16 group_data_type: KW_INV_MAT '<' LIT_INT ',' IDENT • '>'
+
+    '>'  shift, and go to state 135
+
+
+State 133
+
+   18 ring_data_type: KW_MATRIX '<' LIT_INT ',' IDENT • '>'
+
+    '>'  shift, and go to state 136
+
+
+State 134
+
+   23 declaration: KW_LET var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A •
+
+    $default  reduce using rule 23 (declaration)
+
+
+State 135
+
+   16 group_data_type: KW_INV_MAT '<' LIT_INT ',' IDENT '>' •
+
+    $default  reduce using rule 16 (group_data_type)
+
+
+State 136
+
+   18 ring_data_type: KW_MATRIX '<' LIT_INT ',' IDENT '>' •
+
+    $default  reduce using rule 18 (ring_data_type)

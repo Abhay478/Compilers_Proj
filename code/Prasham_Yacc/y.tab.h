@@ -56,35 +56,39 @@ extern int yydebug;
     YYUNDEF = 257,                 /* "invalid token"  */
     KW_LET = 258,                  /* KW_LET  */
     KW_RETURN = 259,               /* KW_RETURN  */
-    KW_CYCLIC = 260,               /* KW_CYCLIC  */
-    KW_BIG_RATIONAL = 261,         /* KW_BIG_RATIONAL  */
-    KW_COMPLEX = 262,              /* KW_COMPLEX  */
-    KW_SYMMETRIC = 263,            /* KW_SYMMETRIC  */
-    KW_ALTERNATING = 264,          /* KW_ALTERNATING  */
-    KW_DIHEDRAL = 265,             /* KW_DIHEDRAL  */
-    KW_INV_MAT = 266,              /* KW_INV_MAT  */
-    KW_BIGINT = 267,               /* KW_BIGINT  */
-    KW_MATRIX = 268,               /* KW_MATRIX  */
-    KW_POLYNOMIAL = 269,           /* KW_POLYNOMIAL  */
-    KW_VEC = 270,                  /* KW_VEC  */
-    KW_BUF = 271,                  /* KW_BUF  */
-    IDENT = 272,                   /* IDENT  */
-    PRIMITIVE_DTYPE = 273,         /* PRIMITIVE_DTYPE  */
-    LIT_INT = 274,                 /* LIT_INT  */
-    LIT_FLOAT = 275,               /* LIT_FLOAT  */
-    LIT_STR = 276,                 /* LIT_STR  */
-    LIT_CHAR = 277,                /* LIT_CHAR  */
-    LOGICAL_AND = 278,             /* LOGICAL_AND  */
-    LOGICAL_OR = 279,              /* LOGICAL_OR  */
-    LOGICAL_NOT = 280,             /* LOGICAL_NOT  */
-    EQ = 281,                      /* EQ  */
-    NEQ = 282,                     /* NEQ  */
-    GT = 283,                      /* GT  */
-    LT = 284,                      /* LT  */
-    GTEQ = 285,                    /* GTEQ  */
-    LTEQ = 286,                    /* LTEQ  */
-    KW_TRUE = 287,                 /* KW_TRUE  */
-    KW_FALSE = 288                 /* KW_FALSE  */
+    KW_IF = 260,                   /* KW_IF  */
+    KW_ELSE = 261,                 /* KW_ELSE  */
+    KW_WHILE = 262,                /* KW_WHILE  */
+    KW_FOR = 263,                  /* KW_FOR  */
+    KW_CYCLIC = 264,               /* KW_CYCLIC  */
+    KW_BIG_RATIONAL = 265,         /* KW_BIG_RATIONAL  */
+    KW_COMPLEX = 266,              /* KW_COMPLEX  */
+    KW_SYMMETRIC = 267,            /* KW_SYMMETRIC  */
+    KW_ALTERNATING = 268,          /* KW_ALTERNATING  */
+    KW_DIHEDRAL = 269,             /* KW_DIHEDRAL  */
+    KW_INV_MAT = 270,              /* KW_INV_MAT  */
+    KW_BIGINT = 271,               /* KW_BIGINT  */
+    KW_MATRIX = 272,               /* KW_MATRIX  */
+    KW_POLYNOMIAL = 273,           /* KW_POLYNOMIAL  */
+    KW_VEC = 274,                  /* KW_VEC  */
+    KW_BUF = 275,                  /* KW_BUF  */
+    IDENT = 276,                   /* IDENT  */
+    PRIMITIVE_DTYPE = 277,         /* PRIMITIVE_DTYPE  */
+    LIT_INT = 278,                 /* LIT_INT  */
+    LIT_FLOAT = 279,               /* LIT_FLOAT  */
+    LIT_STR = 280,                 /* LIT_STR  */
+    LIT_CHAR = 281,                /* LIT_CHAR  */
+    LOGICAL_AND = 282,             /* LOGICAL_AND  */
+    LOGICAL_OR = 283,              /* LOGICAL_OR  */
+    LOGICAL_NOT = 284,             /* LOGICAL_NOT  */
+    EQ = 285,                      /* EQ  */
+    NEQ = 286,                     /* NEQ  */
+    GT = 287,                      /* GT  */
+    LT = 288,                      /* LT  */
+    GTEQ = 289,                    /* GTEQ  */
+    LTEQ = 290,                    /* LTEQ  */
+    KW_TRUE = 291,                 /* KW_TRUE  */
+    KW_FALSE = 292                 /* KW_FALSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -95,35 +99,39 @@ extern int yydebug;
 #define YYUNDEF 257
 #define KW_LET 258
 #define KW_RETURN 259
-#define KW_CYCLIC 260
-#define KW_BIG_RATIONAL 261
-#define KW_COMPLEX 262
-#define KW_SYMMETRIC 263
-#define KW_ALTERNATING 264
-#define KW_DIHEDRAL 265
-#define KW_INV_MAT 266
-#define KW_BIGINT 267
-#define KW_MATRIX 268
-#define KW_POLYNOMIAL 269
-#define KW_VEC 270
-#define KW_BUF 271
-#define IDENT 272
-#define PRIMITIVE_DTYPE 273
-#define LIT_INT 274
-#define LIT_FLOAT 275
-#define LIT_STR 276
-#define LIT_CHAR 277
-#define LOGICAL_AND 278
-#define LOGICAL_OR 279
-#define LOGICAL_NOT 280
-#define EQ 281
-#define NEQ 282
-#define GT 283
-#define LT 284
-#define GTEQ 285
-#define LTEQ 286
-#define KW_TRUE 287
-#define KW_FALSE 288
+#define KW_IF 260
+#define KW_ELSE 261
+#define KW_WHILE 262
+#define KW_FOR 263
+#define KW_CYCLIC 264
+#define KW_BIG_RATIONAL 265
+#define KW_COMPLEX 266
+#define KW_SYMMETRIC 267
+#define KW_ALTERNATING 268
+#define KW_DIHEDRAL 269
+#define KW_INV_MAT 270
+#define KW_BIGINT 271
+#define KW_MATRIX 272
+#define KW_POLYNOMIAL 273
+#define KW_VEC 274
+#define KW_BUF 275
+#define IDENT 276
+#define PRIMITIVE_DTYPE 277
+#define LIT_INT 278
+#define LIT_FLOAT 279
+#define LIT_STR 280
+#define LIT_CHAR 281
+#define LOGICAL_AND 282
+#define LOGICAL_OR 283
+#define LOGICAL_NOT 284
+#define EQ 285
+#define NEQ 286
+#define GT 287
+#define LT 288
+#define GTEQ 289
+#define LTEQ 290
+#define KW_TRUE 291
+#define KW_FALSE 292
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

@@ -6,7 +6,7 @@ void yyerror(const char* s);
 
 %}
 
-%token KW_LET KW_RETURN KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
+%token KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
 
 %start statements
 
@@ -17,12 +17,12 @@ statements      : statement statements
 
 statement       : declaration ';'
                 | assignment ';'
-                | call_stmt ';'
+                | call_stmt_standalone
                 | return_stmt ';' 
-                /*| if_else_conditional
-                | switch_conditional
+                | if_else_conditional
                 | loop_stmt
-                */
+                //| switch_conditional
+                
                 ;
 var             : IDENT
                 | IDENT '.' IDENT
@@ -66,8 +66,8 @@ assignment      : var '=' expression
                 ;
 
 expression      : arithmetic_expr
-                //| logical_expr
-                | call_stmt
+                | logical_expr
+                //| call_stmt
                 //| var
                 //| constant
                 //| unary_operation
@@ -91,6 +91,9 @@ factor          : var
                 | '(' arithmetic_expr ')'
                 | '-' factor
                 | constant
+                | call_stmt
+                | array_access
+                | unary_operation
                 ;
 
 constant        : LIT_CHAR
@@ -98,7 +101,7 @@ constant        : LIT_CHAR
                 | LIT_INT
                 | LIT_STR
                 ;
-/*
+
 logical_expr    : B logical_op logical_expr 
                 | B
                 | LOGICAL_NOT logical_expr
@@ -121,9 +124,13 @@ logical_op      : '>'
                 | LOGICAL_AND
                 | LOGICAL_OR
                 ;
-*/
+
 return_stmt     : KW_RETURN expression 
                 ;
+
+call_stmt_standalone    : var '(' pass_param_list ')' ';'
+                        | var '(' ')' ';'
+                        ;
 
 call_stmt       : var '(' pass_param_list ')' 
                 | var '(' ')'
@@ -132,11 +139,11 @@ call_stmt       : var '(' pass_param_list ')'
 pass_param_list : expression ',' pass_param_list
                 | expression
                 ;
-/*
-unary_operation : '+' '+' var
-                | '-' '-' var
+
+unary_operation : var '+' '+' 
+                | var '-' '-'
                 ;
-*/
+
 array_access    : var C
                 ;
 
@@ -150,6 +157,27 @@ array_decl      : '[' array_list ']'
 array_list      : constant ',' array_list
                 | constant
                 ;
+
+if_else_conditional : KW_IF '(' logical_expr ')' D 
+                    ;
+
+D                   : '{' statements '}' 
+                    | '{' statements '}' KW_ELSE if_else_conditional
+                    | '{' statements '}' KW_ELSE '{' statements '}'
+                    /*| statement
+                    | statement KW_ELSE if_else_conditional
+                    | statement KW_ELSE '{' statements '}'
+                    | statement KW_ELSE statement
+                    */;
+
+loop_stmt           : KW_WHILE '(' logical_expr ')' '{' statements '}'
+                    | KW_FOR '(' assignment ';' logical_expr ';' V ')' '{' statements '}'
+                    | KW_FOR '(' declaration ';' logical_expr ';' V ')' '{' statements '}'
+                    ;
+
+V                   : unary_operation
+                    | epsilon
+                    ;
 
 epsilon         : ;
 

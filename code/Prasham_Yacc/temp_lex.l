@@ -48,6 +48,10 @@ op ({rel_op}|{log_op}|{arith_op}|{aug_op}|{acc_op}|{misc_ops})
 
 let {return KW_LET;}
 return {return KW_RETURN;}
+if {return KW_IF;}
+else {return KW_ELSE;}
+for {return KW_FOR;}
+while {return KW_WHILE;}
 
 Cyclic {return KW_CYCLIC;}
 BigRational {return KW_BIG_RATIONAL;}

@@ -6,7 +6,7 @@ void yyerror(const char* s);
 
 %}
 
-%token KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
+%token KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
 
 %start statements
 
@@ -21,9 +21,9 @@ statement       : declaration ';'
                 | return_stmt ';' 
                 | if_else_conditional
                 | loop_stmt
-                //| switch_conditional
-                
+                | switch_conditional
                 ;
+                
 var             : IDENT
                 | IDENT '.' IDENT
                 ;
@@ -177,6 +177,15 @@ loop_stmt           : KW_WHILE '(' logical_expr ')' '{' statements '}'
 
 V                   : unary_operation
                     | epsilon
+                    ;
+
+switch_conditional  : KW_SWITCH '(' expression ')' '{' switch_case_blocks KW_DEFAULT ':' statements '}'
+                    | KW_SWITCH '(' expression ')' '{' switch_case_blocks '}'
+                    ;
+
+switch_case_blocks  : KW_CASE LIT_CHAR ':' statements switch_case_blocks
+                    | KW_CASE LIT_INT ':' statements switch_case_blocks
+                    | KW_CASE LIT_FLOAT ':' statements switch_case_blocks
                     ;
 
 epsilon         : ;

@@ -52,6 +52,10 @@ if {return KW_IF;}
 else {return KW_ELSE;}
 for {return KW_FOR;}
 while {return KW_WHILE;}
+switch {return KW_SWITCH;}
+case {return KW_CASE;}
+default { return KW_DEFAULT;}
+break {return KW_BREAK;}
 
 Cyclic {return KW_CYCLIC;}
 BigRational {return KW_BIG_RATIONAL;}

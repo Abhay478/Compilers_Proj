@@ -51,6 +51,7 @@ return {return KW_RETURN;}
 if {return KW_IF;}
 else {return KW_ELSE;}
 for {return KW_FOR;}
+in {return KW_IN;}
 while {return KW_WHILE;}
 switch {return KW_SWITCH;}
 case {return KW_CASE;}

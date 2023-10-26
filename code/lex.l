@@ -9,21 +9,20 @@ id [[:alpha:]_][[:alnum:]_]*
 str_c \"([^"]|(\\\"))*\"
 char_c \'\\?([^']|(\\'))\'
 
-rel_op (>|<|==|!=|<=|>=)
+rel_op (==|!=|<=|>=)
 log_op (&&|"||"|!)
 spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
 aug_op {arith_op}=
-acc_op (\.|::)
 punct [,;:]
-misc_ops (@|"=>"|=|&|"|")
+misc_ops (@|=|&|"|")
 
 uint (u8|u16|u32|u64)
 sint (i8|i16|i32|i64)
 
 pdt ({uint}|{sint}|float|bool|char)
 
-op ({rel_op}|{log_op}|{arith_op}|{aug_op}|{acc_op}|{misc_ops})
+op ('>'|'<'|'!'|{arith_op}|{aug_op}|\.|{misc_ops})
 
 %%
 
@@ -52,18 +51,25 @@ enum {return KW_ENUM;}
 true {return KW_TRUE;}
 false {return KW_FALSE;}
 
+"++" {return INCR;}
+"--" {return DECR;}
+"=>" {return ARROW;}
+"::" {return VARIANT;}
+{rel_op} {return rel_op;}
+{log_op} {return log_op;}
+
 {pdt} {return PRIMITIVE_DTYPE;} 
 Group {return GROUP;}
 Ring {return RING;}
 Field {return FIELD;}
 Space {return SPACE;}
 
-{op} {return yytext;} /* operators */
+{op} {return yytext[0];} /* operators */
 
-{spl}|{punct} {return yytext;} /* punctuation and special characters */
+{spl}|{punct} {return yytext[0];} /* punctuation and special characters */
 
 
-{real} {return LIT_FL;}
+{real} {return LIT_FLOAT;}
 
 {id} {return IDENT;} /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 

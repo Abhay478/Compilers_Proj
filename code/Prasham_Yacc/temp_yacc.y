@@ -6,7 +6,8 @@ void yyerror(const char* s);
 
 %}
 
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_PRINT KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GT LT GTEQ LTEQ KW_TRUE KW_FALSE
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_PRINT KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
+%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR LOGICAL_AND LOGICAL_OR LOGICAL_NOT EQ NEQ GTEQ LTEQ KW_TRUE KW_FALSE
 
 %start statements
 
@@ -59,25 +60,23 @@ space_data_type : KW_VEC '<' IDENT '>'
                 | KW_VEC '<' PRIMITIVE_DTYPE '>'
                 ;
 
-declaration     : KW_LET var ':' PRIMITIVE_DTYPE A
-                | KW_LET var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
-                | KW_LET var ':' IDENT A
-                | KW_LET var ':' group_data_type A
-                | KW_LET var ':' ring_data_type A
-                | KW_LET var ':' field_data_type A
-                | KW_LET var ':' space_data_type A
+declaration     : KW_LET decl_tail
                 ;
 
+decl_tail       : var ':' decl_type A
+
+decl_type       : PRIMITIVE_DTYPE
+                | KW_BUF '<' PRIMITIVE_DTYPE '>'
+                | IDENT
+                | group_data_type
+                | ring_data_type
+                | field_data_type
+                | space_data_type
+                ; 
+
 A               : '=' expression
+                | ',' decl_tail
                 | epsilon
-                | ',' var ':' KW_BUF '<' PRIMITIVE_DTYPE '>' A
-                | ',' var ':' PRIMITIVE_DTYPE A
-                | ',' var ':' IDENT A
-                | ',' var ':' group_data_type A
-                | ',' var ':' ring_data_type A
-                | ',' var ':' field_data_type A
-                | ',' var ':' space_data_type A
-                ;
                 ;
 
 assignment      : var '=' expression

@@ -55,6 +55,7 @@ false {return KW_FALSE;}
 "--" {return DECR;}
 "=>" {return ARROW;}
 "::" {return VARIANT;}
+".." {return SLICE;}
 {rel_op} {return rel_op;}
 {log_op} {return log_op;}
 

@@ -10,16 +10,21 @@ void yyerror(const char* s);
 %token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
 %token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR log_op rel_op KW_TRUE KW_FALSE
 %token GROUP RING FIELD SPACE
-%token INCR DECR ARROW VARIANT
-%left log_op rel_op '>' '<'
-%left '+' '-' '*' '/' '%' '@'
-%right '!' '.'
+%token INCR DECR ARROW VARIANT SLICE // Two character operators.
+%left log_op 
+%left rel_op '>' '<'
+%right '!'
+%left '+' '-' 
+%left '*' '/' '%' 
+%left '@'
+%right '.'
 %start P
 
 %%
 P               : statements
                 | P function
                 | P struct
+                | P forge
                 | P enum
                 ;
 statements      : statement statements
@@ -55,16 +60,16 @@ group_data_type : KW_CYCLIC '<' LIT_INT '>'
                 | KW_SYMMETRIC '<' LIT_INT '>'
                 | KW_ALTERNATING '<' LIT_INT '>'
                 | KW_DIHEDRAL '<' LIT_INT '>'
-                | KW_INV_MAT '<' LIT_INT ',' IDENT '>'
+                | KW_INV_MAT '<' LIT_INT ',' type '>' // Second generic should be a field.
                 ;
 
 ring_data_type  : KW_BIGINT
-                | KW_MATRIX '<' LIT_INT ',' IDENT '>'
-                | KW_POLYNOMIAL '<' IDENT '>'
+                | KW_MATRIX '<' LIT_INT ',' type '>' // Second generic should be a field.
+                | KW_POLYNOMIAL '<' type '>' // Second generic should be a field.
                 ;
 
-space_data_type : KW_VEC '<' IDENT '>'
-                | KW_VEC '<' PRIMITIVE_DTYPE '>'
+space_data_type : KW_VEC '<' type '>'
+                /* | KW_VEC '<' PRIMITIVE_DTYPE '>' ALREADY IN TYPE */
                 ;
 
 declaration     : KW_LET decl_tail
@@ -79,11 +84,17 @@ type            : PRIMITIVE_DTYPE
                 | ring_data_type
                 | field_data_type
                 | space_data_type
+                | '&' type
+                | cart
                 ; 
 
-decl_cntd       : '=' expression
+decl_cntd       : '=' RHS
                 | ',' decl_tail
                 | epsilon
+                ;
+RHS             : expression
+                | '&' RHS
+                | '*' RHS
                 ;
 
 assignment      : var '=' expression
@@ -116,12 +127,12 @@ expression      : expression '+' expression
 return_stmt     : KW_RETURN expression 
                 ;
 
-call_stmt       : IDENT '(' pass_param_list ')' ';'
-                | IDENT '(' ')' ';'
+call_stmt       : type '(' pass_param_list ')' ';'
+                | type '(' ')' ';'
                 ;
 
-call            : IDENT '(' pass_param_list ')' 
-                | IDENT '(' ')'
+call            : type '(' pass_param_list ')' 
+                | type '(' ')'
                 ;
 
 pass_param_list : expression ',' pass_param_list
@@ -135,7 +146,8 @@ unary_operation : var INCR
 array_access    : var array_decl
                 ;
 
-array_decl      : '[' array_list ']'
+array_decl      : '[' array_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
+                | '['expression SLICE expression ']' // 
                 ;
 
 array_list      : constant ',' array_list
@@ -216,6 +228,13 @@ enum            : KW_ENUM IDENT '{' variant_list '}'
                 ;
 variant_list    : IDENT
                 | variant_list ',' IDENT 
+                ;
+forge           : KW_FORGE type '(' parameter_list ')' '{' statements '}'
+                ;
+cart            : '(' typ_list ')'
+                ;
+typ_list        : typ_list ',' type
+                | type
                 ;
 epsilon         : ;
 

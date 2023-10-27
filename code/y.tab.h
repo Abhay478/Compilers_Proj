@@ -92,7 +92,8 @@
      INCR = 308,
      DECR = 309,
      ARROW = 310,
-     VARIANT = 311
+     VARIANT = 311,
+     SLICE = 312
    };
 #endif
 /* Tokens.  */
@@ -150,6 +151,7 @@
 #define DECR 309
 #define ARROW 310
 #define VARIANT 311
+#define SLICE 312
 
 
 

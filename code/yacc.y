@@ -7,13 +7,13 @@ void yyerror(const char* s);
 %}
 
 // keywords
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_PRINT KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM 
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM
 
 // builtin types
 %token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
 
 // other
-%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE
+%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE 
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
 %right '!' // Also unary minus, see `expression` definition.
@@ -54,7 +54,7 @@ statement       : declaration ';'
                 | conditional
                 | switch_case
                 | loop_stmt
-                | KW_PRINT '(' pass_param_list ')' ';'
+                /* | PRINT '(' pass_param_list ')' ';' */
                 | KW_BREAK ';'
                 | KW_CONTINUE ';' 
                 | archetype_claim              

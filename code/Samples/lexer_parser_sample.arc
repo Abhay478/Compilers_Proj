@@ -7,7 +7,7 @@ fn fib(n: u32) : Buf<u32> {
         let c: u32 = a + b;
         a = b;
         b = c;
-        out.push(c);
+        out += [c];
     }
 
     return out;

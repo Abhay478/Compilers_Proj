@@ -10,7 +10,6 @@ str_c \"([^"]|(\\\"))*\"
 char_c \'\\?([^']|(\\'))\'
 
 rel_op (==|!=|<=|>=)
-log_op (&&|"||")
 spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
 aug_op {arith_op}=
@@ -55,8 +54,6 @@ default {return KW_DEFAULT;}
 switch {return KW_SWITCH;}
 case {return KW_CASE;}
 in {return KW_IN;}
-as {return KW_AS;}
-print {return KW_PRINT;}
 
 BigInt {return KW_BIGINT;}
 Polynomial {return KW_POLYNOMIAL;}

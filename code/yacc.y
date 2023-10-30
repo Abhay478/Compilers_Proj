@@ -34,6 +34,7 @@ P               : declarations // globals
                 | P struct
                 | P forge
                 | P enum
+                | P archetype_claim
                 ;
 
 declarations    : declaration ';' declarations
@@ -57,10 +58,9 @@ statement       : declaration ';'
                 /* | PRINT '(' pass_param_list ')' ';' */
                 | KW_BREAK ';'
                 | KW_CONTINUE ';' 
-                | archetype_claim              
+                | ';'
                 ;
 
-// TODO: use these instead
 generic         : IDENT '<' type_args '>'
                 ;
 
@@ -191,7 +191,7 @@ sc_blocks       : KW_CASE constant ':' statements sc_blocks
                 | epsilon
                 ; // NOTE: Does not cascade
 
-archetype_claim : KW_CLAIM IDENT KW_IS archetype '{' type_def rule_list '}' ';'
+archetype_claim : KW_CLAIM IDENT KW_IS archetype '{' type_def rule_list '}'
                 | KW_CLAIM IDENT KW_IS archetype KW_WITH '(' ident_list ')' ';'
                 ;
 

@@ -137,6 +137,15 @@ expression      : '(' expression ')'
                 | expression OR expression
                 | var | constant | unary_operation | array_access | call 
                 | array_decl
+                | cart_value
+                ;
+
+cart_value      : '(' expression ',' ')'
+                | '(' expression ',' cart_value_list ')'
+                ;
+
+cart_value_list : expression ',' cart_value_list
+                | expression
                 ;
 
 return_stmt     : KW_RETURN expression 
@@ -244,9 +253,10 @@ variant_list    : IDENT
                 ;
 forge           : KW_FORGE '(' parameter_list ')' KW_TO type body
                 ;
-cart            : '(' typ_list ')'
+cart            : '(' type ',' ')'
+                | '(' type ',' type_list ')'
                 ;
-typ_list        : typ_list ',' type
+type_list       : type_list ',' type
                 | type
                 ;
 epsilon         : ;

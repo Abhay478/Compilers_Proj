@@ -138,55 +138,51 @@ Grammar
   101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
   102            | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
 
-  103 sc_blocks: KW_CASE LIT_CHAR ':' statements sc_blocks
-  104          | KW_CASE LIT_INT ':' statements sc_blocks
-  105          | KW_CASE LIT_FLOAT ':' statements sc_blocks
-  106          | epsilon
+  103 sc_blocks: KW_CASE constant ':' statements sc_blocks
+  104          | epsilon
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
-  108                | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
-  109                | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
+  106                | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
+  107                | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
+  108                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body
+  109 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body
 
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
+  110 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
 
-  113 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW body
+  111 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW body
 
-  114 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW body
+  112 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW body
 
-  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW body
+  113 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW body
 
-  116 function: function_header '{' function_body '}'
+  114 function: function_header body
 
-  117 function_header: KW_FN IDENT '(' parameter_list ')' ':' type
+  115 function_header: KW_FN IDENT '(' parameter_list ')' ':' type
 
-  118 function_body: statements
+  116 parameter_list: typ_var
+  117               | parameter_list ',' typ_var
 
-  119 parameter_list: typ_var
-  120               | parameter_list ',' typ_var
+  118 typ_var: IDENT ':' type
 
-  121 typ_var: IDENT ':' type
+  119 struct: KW_STRUCT IDENT '{' attr_list '}'
 
-  122 struct: KW_STRUCT IDENT '{' attr_list '}'
+  120 attr_list: attr_list ',' typ_var
+  121          | typ_var
 
-  123 attr_list: IDENT
-  124          | typ_var ',' IDENT
+  122 enum: KW_ENUM IDENT '{' variant_list '}'
 
-  125 enum: KW_ENUM IDENT '{' variant_list '}'
+  123 variant_list: IDENT
+  124             | variant_list ',' IDENT
 
-  126 variant_list: IDENT
-  127             | variant_list ',' IDENT
+  125 forge: KW_FORGE '(' parameter_list ')' KW_TO type body
 
-  128 forge: KW_FORGE type '(' parameter_list '{' statements '}'
+  126 cart: '(' typ_list ')'
 
-  129 cart: '(' typ_list ')'
+  127 typ_list: typ_list ',' type
+  128         | type
 
-  130 typ_list: typ_list ',' type
-  131         | type
-
-  132 epsilon: /* empty */
+  129 epsilon: /* empty */
 
 
 Terminals, with rules where they appear
@@ -195,33 +191,34 @@ $end (0) 0
 '!' (33) 60
 '%' (37) 66
 '&' (38) 44
-'(' (40) 49 59 81 91 95 96 97 101 102 110 111 112 113 114 115 117 128
-    129
-')' (41) 49 59 81 91 95 96 97 101 102 110 111 112 113 114 115 117 129
-'*' (42) 48 49 64 112
-'+' (43) 67 111
-',' (44) 27 29 34 82 89 120 124 127 130
-'-' (45) 61 68 114
+'(' (40) 49 59 81 91 95 96 97 101 102 108 109 110 111 112 113 115 125
+    126
+')' (41) 49 59 81 91 95 96 97 101 102 108 109 110 111 112 113 115 125
+    126
+'*' (42) 48 49 64 110
+'+' (43) 67 109
+',' (44) 27 29 34 82 89 117 120 124 127
+'-' (45) 61 68 112
 '.' (46) 47
 '/' (47) 65
-':' (58) 101 103 104 105 117 121
-';' (59) 6 11 12 13 14 18 19 96 97 107 108 109 110
+':' (58) 101 103 115 118
+';' (59) 6 11 12 13 14 18 19 96 97 105 106 107 108
 '<' (60) 23 24 25 26 27 29 30 31 38 70
-'=' (61) 36 51 52 110 111 112 113 114 115
+'=' (61) 36 51 52 108 109 110 111 112 113
 '>' (62) 23 24 25 26 27 29 30 31 38 69
 '@' (64) 63
 '[' (91) 87 88
 ']' (93) 87 88
-'{' (123) 8 101 102 107 108 109 110 116 122 125 128
-'}' (125) 8 101 102 107 108 109 110 116 122 125 128
-'~' (126) 115
+'{' (123) 8 101 102 105 106 107 108 119 122
+'}' (125) 8 101 102 105 106 107 108 119 122
+'~' (126) 113
 error (256)
-KW_CLAIM (258) 107 108 109 110
-KW_IS (259) 107 108 109 110
-KW_GROUP (260) 107
-KW_RING (261) 108
-KW_FIELD (262) 109 110
-KW_SPACE (263) 110
+KW_CLAIM (258) 105 106 107 108
+KW_IS (259) 105 106 107 108
+KW_GROUP (260) 105
+KW_RING (261) 106
+KW_FIELD (262) 107 108
+KW_SPACE (263) 108
 KW_LET (264) 32
 KW_RETURN (265) 80
 KW_IF (266) 91
@@ -230,152 +227,152 @@ KW_WHILE (268) 95
 KW_FOR (269) 96 97 98
 KW_IN (270) 98
 KW_SWITCH (271) 101 102
-KW_CASE (272) 103 104 105
+KW_CASE (272) 103
 KW_DEFAULT (273) 101
 KW_BREAK (274) 18
 KW_CONTINUE (275) 19
-KW_FN (276) 117
+KW_FN (276) 115
 KW_MORPH (277)
-KW_FORGE (278) 128
+KW_FORGE (278) 125
 KW_AS (279) 62
-KW_STRUCT (280) 122
-KW_ENUM (281) 125
-KW_CYCLIC (282) 23
-KW_BIG_RATIONAL (283) 21
-KW_COMPLEX (284) 22
-KW_SYMMETRIC (285) 24
-KW_ALTERNATING (286) 25
-KW_DIHEDRAL (287) 26
-KW_INV_MAT (288) 27
-KW_BIGINT (289) 28
-KW_MATRIX (290) 29
-KW_POLYNOMIAL (291) 30
-KW_VEC (292) 31
-KW_BUF (293) 38
-IDENT (294) 39 46 47 50 81 98 107 108 109 110 111 112 113 114 115 117
-    121 122 123 124 125 126 127
-PRIMITIVE_DTYPE (295) 37 38
-LIT_INT (296) 23 24 25 26 27 29 55 104 113
-LIT_FLOAT (297) 54 105
-LIT_STR (298) 56
-LIT_CHAR (299) 53 103
-rel_op (300) 71
-KW_TRUE (301) 57
-KW_FALSE (302) 58
-INCR (303) 84
-DECR (304) 85
-ARROW (305) 111 112 113 114 115
-VARIANT (306) 50
-SLICE (307) 88
-AND (308) 72
-OR (309) 73
+KW_STRUCT (280) 119
+KW_ENUM (281) 122
+KW_TO (282) 125
+KW_CYCLIC (283) 23
+KW_BIG_RATIONAL (284) 21
+KW_COMPLEX (285) 22
+KW_SYMMETRIC (286) 24
+KW_ALTERNATING (287) 25
+KW_DIHEDRAL (288) 26
+KW_INV_MAT (289) 27
+KW_BIGINT (290) 28
+KW_MATRIX (291) 29
+KW_POLYNOMIAL (292) 30
+KW_VEC (293) 31
+KW_BUF (294) 38
+IDENT (295) 39 46 47 50 81 98 105 106 107 108 109 110 111 112 113 115
+    118 119 122 123 124
+PRIMITIVE_DTYPE (296) 37 38
+LIT_INT (297) 23 24 25 26 27 29 55 111
+LIT_FLOAT (298) 54
+LIT_STR (299) 56
+LIT_CHAR (300) 53
+rel_op (301) 71
+KW_TRUE (302) 57
+KW_FALSE (303) 58
+INCR (304) 84
+DECR (305) 85
+ARROW (306) 109 110 111 112 113
+VARIANT (307) 50
+SLICE (308) 88
+AND (309) 72
+OR (310) 73
 
 
 Nonterminals, with rules where they appear
 
-$accept (77)
+$accept (78)
     on left: 0
-P (78)
+P (79)
     on left: 1 2 3 4 5, on right: 0 2 3 4 5
-declarations (79)
+declarations (80)
     on left: 6 7, on right: 1 6
-body (80)
-    on left: 8, on right: 92 93 94 95 96 97 98 111 112 113 114 115
-statements (81)
-    on left: 9 10, on right: 8 9 101 103 104 105 118 128
-statement (82)
+body (81)
+    on left: 8, on right: 92 93 94 95 96 97 98 109 110 111 112 113
+    114 125
+statements (82)
+    on left: 9 10, on right: 8 9 101 103
+statement (83)
     on left: 11 12 13 14 15 16 17 18 19 20, on right: 9
-field_data_type (83)
+field_data_type (84)
     on left: 21 22, on right: 42
-group_data_type (84)
+group_data_type (85)
     on left: 23 24 25 26 27, on right: 40
-ring_data_type (85)
+ring_data_type (86)
     on left: 28 29 30, on right: 41
-space_data_type (86)
+space_data_type (87)
     on left: 31, on right: 43
-declaration (87)
+declaration (88)
     on left: 32, on right: 6 11 97
-decl_list (88)
+decl_list (89)
     on left: 33 34, on right: 32 34
-decl_item (89)
+decl_item (90)
     on left: 35 36, on right: 33 34
-type (90)
+type (91)
     on left: 37 38 39 40 41 42 43 44 45, on right: 27 29 30 31 44 62
-    110 117 121 128 130 131
-var (91)
+    108 115 118 125 127 128
+var (92)
     on left: 46 47 48 49 50, on right: 47 48 51 74 84 85 86
-assignment (92)
+assignment (93)
     on left: 51 52, on right: 12 96
-constant (93)
-    on left: 53 54 55 56 57 58, on right: 75 89 90
-expression (94)
+constant (94)
+    on left: 53 54 55 56 57 58, on right: 75 89 90 103
+expression (95)
     on left: 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76
     77 78 79, on right: 36 49 51 52 59 60 61 62 63 64 65 66 67 68 69
     70 71 72 73 80 82 88 91 95 96 97 101 102
-return_stmt (95)
+return_stmt (96)
     on left: 80, on right: 14
-call (96)
+call (97)
     on left: 81, on right: 13 78
-pass_param_list (97)
+pass_param_list (98)
     on left: 82 83, on right: 81 82
-unary_operation (98)
+unary_operation (99)
     on left: 84 85, on right: 76 99
-array_access (99)
+array_access (100)
     on left: 86, on right: 52 77
-array_decl (100)
+array_decl (101)
     on left: 87 88, on right: 79 86
-array_list (101)
+array_list (102)
     on left: 89 90, on right: 87 89
-conditional (102)
+conditional (103)
     on left: 91, on right: 15 93
-if_body (103)
+if_body (104)
     on left: 92 93 94, on right: 91
-loop_stmt (104)
+loop_stmt (105)
     on left: 95 96 97 98, on right: 17
-loop_mut (105)
+loop_mut (106)
     on left: 99 100, on right: 96 97
-switch_case (106)
+switch_case (107)
     on left: 101 102, on right: 16
-sc_blocks (107)
-    on left: 103 104 105 106, on right: 101 102 103 104 105
-archetype_claim (108)
-    on left: 107 108 109 110, on right: 20
-additive_rule (109)
-    on left: 111, on right: 107 110
-mult_rule (110)
-    on left: 112, on right: 108 110
-identity_rule (111)
-    on left: 113, on right: 107 108 110
-negation_rule (112)
-    on left: 114, on right: 107 110
-inverse_rule (113)
-    on left: 115, on right: 109
-function (114)
-    on left: 116, on right: 2
-function_header (115)
-    on left: 117, on right: 116
-function_body (116)
-    on left: 118, on right: 116
+sc_blocks (108)
+    on left: 103 104, on right: 101 102 103
+archetype_claim (109)
+    on left: 105 106 107 108, on right: 20
+additive_rule (110)
+    on left: 109, on right: 105 108
+mult_rule (111)
+    on left: 110, on right: 106 108
+identity_rule (112)
+    on left: 111, on right: 105 106 108
+negation_rule (113)
+    on left: 112, on right: 105 108
+inverse_rule (114)
+    on left: 113, on right: 107
+function (115)
+    on left: 114, on right: 2
+function_header (116)
+    on left: 115, on right: 114
 parameter_list (117)
-    on left: 119 120, on right: 117 120 128
+    on left: 116 117, on right: 115 117 125
 typ_var (118)
-    on left: 121, on right: 35 36 119 120 124
+    on left: 118, on right: 35 36 116 117 120 121
 struct (119)
-    on left: 122, on right: 3
+    on left: 119, on right: 3
 attr_list (120)
-    on left: 123 124, on right: 122
+    on left: 120 121, on right: 119 120
 enum (121)
-    on left: 125, on right: 5
+    on left: 122, on right: 5
 variant_list (122)
-    on left: 126 127, on right: 125 127
+    on left: 123 124, on right: 122 124
 forge (123)
-    on left: 128, on right: 4
+    on left: 125, on right: 4
 cart (124)
-    on left: 129, on right: 45
+    on left: 126, on right: 45
 typ_list (125)
-    on left: 130 131, on right: 129 130
+    on left: 127 128, on right: 126 127
 epsilon (126)
-    on left: 132, on right: 7 10 83 100 106
+    on left: 129, on right: 7 10 83 100 104
 
 
 state 0
@@ -384,7 +381,7 @@ state 0
 
     KW_LET  shift, and go to state 1
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
     P             go to state 2
     declarations  go to state 3
@@ -447,7 +444,7 @@ state 5
 
 state 6
 
-  121 typ_var: IDENT . ':' type
+  118 typ_var: IDENT . ':' type
 
     ':'  shift, and go to state 21
 
@@ -488,52 +485,30 @@ state 10
 
 state 11
 
-  117 function_header: KW_FN . IDENT '(' parameter_list ')' ':' type
+  115 function_header: KW_FN . IDENT '(' parameter_list ')' ':' type
 
     IDENT  shift, and go to state 24
 
 
 state 12
 
-  128 forge: KW_FORGE . type '(' parameter_list '{' statements '}'
+  125 forge: KW_FORGE . '(' parameter_list ')' KW_TO type body
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 45
-    cart             go to state 46
+    '('  shift, and go to state 25
 
 
 state 13
 
-  122 struct: KW_STRUCT . IDENT '{' attr_list '}'
+  119 struct: KW_STRUCT . IDENT '{' attr_list '}'
 
-    IDENT  shift, and go to state 47
+    IDENT  shift, and go to state 26
 
 
 state 14
 
-  125 enum: KW_ENUM . IDENT '{' variant_list '}'
+  122 enum: KW_ENUM . IDENT '{' variant_list '}'
 
-    IDENT  shift, and go to state 48
+    IDENT  shift, and go to state 27
 
 
 state 15
@@ -545,9 +520,11 @@ state 15
 
 state 16
 
-  116 function: function_header . '{' function_body '}'
+  114 function: function_header . body
 
-    '{'  shift, and go to state 49
+    '{'  shift, and go to state 28
+
+    body  go to state 29
 
 
 state 17
@@ -577,40 +554,40 @@ state 20
 
     KW_LET  shift, and go to state 1
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
-    declarations  go to state 50
+    declarations  go to state 30
     declaration   go to state 4
     epsilon       go to state 5
 
 
 state 21
 
-  121 typ_var: IDENT ':' . type
+  118 typ_var: IDENT ':' . type
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
 
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
     type             go to state 51
-    cart             go to state 46
+    cart             go to state 52
 
 
 state 22
@@ -619,7 +596,7 @@ state 22
 
     IDENT  shift, and go to state 6
 
-    decl_list  go to state 52
+    decl_list  go to state 53
     decl_item  go to state 8
     typ_var    go to state 9
 
@@ -628,476 +605,485 @@ state 23
 
    36 decl_item: typ_var '=' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 67
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 68
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 24
 
-  117 function_header: KW_FN IDENT . '(' parameter_list ')' ':' type
+  115 function_header: KW_FN IDENT . '(' parameter_list ')' ':' type
 
-    '('  shift, and go to state 72
+    '('  shift, and go to state 73
 
 
 state 25
 
-   23 group_data_type: KW_CYCLIC . '<' LIT_INT '>'
+  125 forge: KW_FORGE '(' . parameter_list ')' KW_TO type body
 
-    '<'  shift, and go to state 73
+    IDENT  shift, and go to state 6
+
+    parameter_list  go to state 74
+    typ_var         go to state 75
 
 
 state 26
 
-   21 field_data_type: KW_BIG_RATIONAL .
+  119 struct: KW_STRUCT IDENT . '{' attr_list '}'
 
-    $default  reduce using rule 21 (field_data_type)
+    '{'  shift, and go to state 76
 
 
 state 27
 
-   22 field_data_type: KW_COMPLEX .
+  122 enum: KW_ENUM IDENT . '{' variant_list '}'
 
-    $default  reduce using rule 22 (field_data_type)
+    '{'  shift, and go to state 77
 
 
 state 28
 
-   24 group_data_type: KW_SYMMETRIC . '<' LIT_INT '>'
+    8 body: '{' . statements '}'
 
-    '<'  shift, and go to state 74
+    KW_CLAIM     shift, and go to state 78
+    KW_LET       shift, and go to state 1
+    KW_RETURN    shift, and go to state 79
+    KW_IF        shift, and go to state 80
+    KW_WHILE     shift, and go to state 81
+    KW_FOR       shift, and go to state 82
+    KW_SWITCH    shift, and go to state 83
+    KW_BREAK     shift, and go to state 84
+    KW_CONTINUE  shift, and go to state 85
+    IDENT        shift, and go to state 54
+    '*'          shift, and go to state 62
+
+    $default  reduce using rule 129 (epsilon)
+
+    statements       go to state 86
+    statement        go to state 87
+    declaration      go to state 88
+    var              go to state 89
+    assignment       go to state 90
+    return_stmt      go to state 91
+    call             go to state 92
+    array_access     go to state 93
+    conditional      go to state 94
+    loop_stmt        go to state 95
+    switch_case      go to state 96
+    archetype_claim  go to state 97
+    epsilon          go to state 98
 
 
 state 29
 
-   25 group_data_type: KW_ALTERNATING . '<' LIT_INT '>'
+  114 function: function_header body .
 
-    '<'  shift, and go to state 75
+    $default  reduce using rule 114 (function)
 
 
 state 30
-
-   26 group_data_type: KW_DIHEDRAL . '<' LIT_INT '>'
-
-    '<'  shift, and go to state 76
-
-
-state 31
-
-   27 group_data_type: KW_INV_MAT . '<' LIT_INT ',' type '>'
-
-    '<'  shift, and go to state 77
-
-
-state 32
-
-   28 ring_data_type: KW_BIGINT .
-
-    $default  reduce using rule 28 (ring_data_type)
-
-
-state 33
-
-   29 ring_data_type: KW_MATRIX . '<' LIT_INT ',' type '>'
-
-    '<'  shift, and go to state 78
-
-
-state 34
-
-   30 ring_data_type: KW_POLYNOMIAL . '<' type '>'
-
-    '<'  shift, and go to state 79
-
-
-state 35
-
-   31 space_data_type: KW_VEC . '<' type '>'
-
-    '<'  shift, and go to state 80
-
-
-state 36
-
-   38 type: KW_BUF . '<' PRIMITIVE_DTYPE '>'
-
-    '<'  shift, and go to state 81
-
-
-state 37
-
-   39 type: IDENT .
-
-    $default  reduce using rule 39 (type)
-
-
-state 38
-
-   37 type: PRIMITIVE_DTYPE .
-
-    $default  reduce using rule 37 (type)
-
-
-state 39
-
-   44 type: '&' . type
-
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 82
-    cart             go to state 46
-
-
-state 40
-
-  129 cart: '(' . typ_list ')'
-
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 83
-    cart             go to state 46
-    typ_list         go to state 84
-
-
-state 41
-
-   42 type: field_data_type .
-
-    $default  reduce using rule 42 (type)
-
-
-state 42
-
-   40 type: group_data_type .
-
-    $default  reduce using rule 40 (type)
-
-
-state 43
-
-   41 type: ring_data_type .
-
-    $default  reduce using rule 41 (type)
-
-
-state 44
-
-   43 type: space_data_type .
-
-    $default  reduce using rule 43 (type)
-
-
-state 45
-
-  128 forge: KW_FORGE type . '(' parameter_list '{' statements '}'
-
-    '('  shift, and go to state 85
-
-
-state 46
-
-   45 type: cart .
-
-    $default  reduce using rule 45 (type)
-
-
-state 47
-
-  122 struct: KW_STRUCT IDENT . '{' attr_list '}'
-
-    '{'  shift, and go to state 86
-
-
-state 48
-
-  125 enum: KW_ENUM IDENT . '{' variant_list '}'
-
-    '{'  shift, and go to state 87
-
-
-state 49
-
-  116 function: function_header '{' . function_body '}'
-
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 96
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    function_body    go to state 108
-    epsilon          go to state 109
-
-
-state 50
 
     6 declarations: declaration ';' declarations .
 
     $default  reduce using rule 6 (declarations)
 
 
+state 31
+
+   23 group_data_type: KW_CYCLIC . '<' LIT_INT '>'
+
+    '<'  shift, and go to state 99
+
+
+state 32
+
+   21 field_data_type: KW_BIG_RATIONAL .
+
+    $default  reduce using rule 21 (field_data_type)
+
+
+state 33
+
+   22 field_data_type: KW_COMPLEX .
+
+    $default  reduce using rule 22 (field_data_type)
+
+
+state 34
+
+   24 group_data_type: KW_SYMMETRIC . '<' LIT_INT '>'
+
+    '<'  shift, and go to state 100
+
+
+state 35
+
+   25 group_data_type: KW_ALTERNATING . '<' LIT_INT '>'
+
+    '<'  shift, and go to state 101
+
+
+state 36
+
+   26 group_data_type: KW_DIHEDRAL . '<' LIT_INT '>'
+
+    '<'  shift, and go to state 102
+
+
+state 37
+
+   27 group_data_type: KW_INV_MAT . '<' LIT_INT ',' type '>'
+
+    '<'  shift, and go to state 103
+
+
+state 38
+
+   28 ring_data_type: KW_BIGINT .
+
+    $default  reduce using rule 28 (ring_data_type)
+
+
+state 39
+
+   29 ring_data_type: KW_MATRIX . '<' LIT_INT ',' type '>'
+
+    '<'  shift, and go to state 104
+
+
+state 40
+
+   30 ring_data_type: KW_POLYNOMIAL . '<' type '>'
+
+    '<'  shift, and go to state 105
+
+
+state 41
+
+   31 space_data_type: KW_VEC . '<' type '>'
+
+    '<'  shift, and go to state 106
+
+
+state 42
+
+   38 type: KW_BUF . '<' PRIMITIVE_DTYPE '>'
+
+    '<'  shift, and go to state 107
+
+
+state 43
+
+   39 type: IDENT .
+
+    $default  reduce using rule 39 (type)
+
+
+state 44
+
+   37 type: PRIMITIVE_DTYPE .
+
+    $default  reduce using rule 37 (type)
+
+
+state 45
+
+   44 type: '&' . type
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 108
+    cart             go to state 52
+
+
+state 46
+
+  126 cart: '(' . typ_list ')'
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 109
+    cart             go to state 52
+    typ_list         go to state 110
+
+
+state 47
+
+   42 type: field_data_type .
+
+    $default  reduce using rule 42 (type)
+
+
+state 48
+
+   40 type: group_data_type .
+
+    $default  reduce using rule 40 (type)
+
+
+state 49
+
+   41 type: ring_data_type .
+
+    $default  reduce using rule 41 (type)
+
+
+state 50
+
+   43 type: space_data_type .
+
+    $default  reduce using rule 43 (type)
+
+
 state 51
 
-  121 typ_var: IDENT ':' type .
+  118 typ_var: IDENT ':' type .
 
-    $default  reduce using rule 121 (typ_var)
+    $default  reduce using rule 118 (typ_var)
 
 
 state 52
+
+   45 type: cart .
+
+    $default  reduce using rule 45 (type)
+
+
+state 53
 
    34 decl_list: decl_item ',' decl_list .
 
     $default  reduce using rule 34 (decl_list)
 
 
-state 53
+state 54
 
    46 var: IDENT .
    50    | IDENT . VARIANT IDENT
    81 call: IDENT . '(' pass_param_list ')'
 
-    VARIANT  shift, and go to state 110
-    '('      shift, and go to state 111
+    VARIANT  shift, and go to state 111
+    '('      shift, and go to state 112
 
     $default  reduce using rule 46 (var)
 
 
-state 54
+state 55
 
    55 constant: LIT_INT .
 
     $default  reduce using rule 55 (constant)
 
 
-state 55
+state 56
 
    54 constant: LIT_FLOAT .
 
     $default  reduce using rule 54 (constant)
 
 
-state 56
+state 57
 
    56 constant: LIT_STR .
 
     $default  reduce using rule 56 (constant)
 
 
-state 57
+state 58
 
    53 constant: LIT_CHAR .
 
     $default  reduce using rule 53 (constant)
 
 
-state 58
+state 59
 
    57 constant: KW_TRUE .
 
     $default  reduce using rule 57 (constant)
 
 
-state 59
+state 60
 
    58 constant: KW_FALSE .
 
     $default  reduce using rule 58 (constant)
 
 
-state 60
+state 61
 
    60 expression: '!' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 112
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
-
-
-state 61
-
-   48 var: '*' . var
-   49    | '*' . '(' expression ')'
-
-    IDENT  shift, and go to state 113
-    '*'    shift, and go to state 61
-    '('    shift, and go to state 114
-
-    var  go to state 115
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 113
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 62
 
-   61 expression: '-' . expression
+   48 var: '*' . var
+   49    | '*' . '(' expression ')'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT  shift, and go to state 114
+    '*'    shift, and go to state 62
+    '('    shift, and go to state 115
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 116
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var  go to state 116
 
 
 state 63
 
-   59 expression: '(' . expression ')'
+   61 expression: '-' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
+    var              go to state 66
+    constant         go to state 67
     expression       go to state 117
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 64
 
-   87 array_decl: '[' . array_list ']'
-   88           | '[' . expression SLICE expression ']'
+   59 expression: '(' . expression ')'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 118
-    expression       go to state 119
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
-    array_list       go to state 120
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 118
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 65
+
+   87 array_decl: '[' . array_list ']'
+   88           | '[' . expression SLICE expression ']'
+
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
+
+    var              go to state 66
+    constant         go to state 119
+    expression       go to state 120
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
+    array_list       go to state 121
+
+
+state 66
 
    47 var: var . '.' IDENT
    74 expression: var .
@@ -1105,24 +1091,24 @@ state 65
    85                | var . DECR
    86 array_access: var . array_decl
 
-    INCR  shift, and go to state 121
-    DECR  shift, and go to state 122
-    '.'   shift, and go to state 123
-    '['   shift, and go to state 64
+    INCR  shift, and go to state 122
+    DECR  shift, and go to state 123
+    '.'   shift, and go to state 124
+    '['   shift, and go to state 65
 
     $default  reduce using rule 74 (expression)
 
-    array_decl  go to state 124
+    array_decl  go to state 125
 
 
-state 66
+state 67
 
    75 expression: constant .
 
     $default  reduce using rule 75 (expression)
 
 
-state 67
+state 68
 
    36 decl_item: typ_var '=' expression .
    62 expression: expression . KW_AS type
@@ -1138,469 +1124,468 @@ state 67
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 36 (decl_item)
 
 
-state 68
+state 69
 
    78 expression: call .
 
     $default  reduce using rule 78 (expression)
 
 
-state 69
+state 70
 
    76 expression: unary_operation .
 
     $default  reduce using rule 76 (expression)
 
 
-state 70
+state 71
 
    77 expression: array_access .
 
     $default  reduce using rule 77 (expression)
 
 
-state 71
+state 72
 
    79 expression: array_decl .
 
     $default  reduce using rule 79 (expression)
 
 
-state 72
+state 73
 
-  117 function_header: KW_FN IDENT '(' . parameter_list ')' ':' type
+  115 function_header: KW_FN IDENT '(' . parameter_list ')' ':' type
 
     IDENT  shift, and go to state 6
 
-    parameter_list  go to state 137
-    typ_var         go to state 138
-
-
-state 73
-
-   23 group_data_type: KW_CYCLIC '<' . LIT_INT '>'
-
-    LIT_INT  shift, and go to state 139
+    parameter_list  go to state 138
+    typ_var         go to state 75
 
 
 state 74
 
-   24 group_data_type: KW_SYMMETRIC '<' . LIT_INT '>'
+  117 parameter_list: parameter_list . ',' typ_var
+  125 forge: KW_FORGE '(' parameter_list . ')' KW_TO type body
 
-    LIT_INT  shift, and go to state 140
+    ','  shift, and go to state 139
+    ')'  shift, and go to state 140
 
 
 state 75
 
-   25 group_data_type: KW_ALTERNATING '<' . LIT_INT '>'
+  116 parameter_list: typ_var .
 
-    LIT_INT  shift, and go to state 141
+    $default  reduce using rule 116 (parameter_list)
 
 
 state 76
 
-   26 group_data_type: KW_DIHEDRAL '<' . LIT_INT '>'
+  119 struct: KW_STRUCT IDENT '{' . attr_list '}'
 
-    LIT_INT  shift, and go to state 142
+    IDENT  shift, and go to state 6
+
+    typ_var    go to state 141
+    attr_list  go to state 142
 
 
 state 77
 
-   27 group_data_type: KW_INV_MAT '<' . LIT_INT ',' type '>'
+  122 enum: KW_ENUM IDENT '{' . variant_list '}'
 
-    LIT_INT  shift, and go to state 143
+    IDENT  shift, and go to state 143
+
+    variant_list  go to state 144
 
 
 state 78
 
-   29 ring_data_type: KW_MATRIX '<' . LIT_INT ',' type '>'
+  105 archetype_claim: KW_CLAIM . IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
+  106                | KW_CLAIM . IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
+  107                | KW_CLAIM . IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
+  108                | KW_CLAIM . IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    LIT_INT  shift, and go to state 144
+    IDENT  shift, and go to state 145
 
 
 state 79
 
-   30 ring_data_type: KW_POLYNOMIAL '<' . type '>'
+   80 return_stmt: KW_RETURN . expression
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 145
-    cart             go to state 46
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 146
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 80
 
-   31 space_data_type: KW_VEC '<' . type '>'
+   91 conditional: KW_IF . '(' expression ')' if_body
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 146
-    cart             go to state 46
+    '('  shift, and go to state 147
 
 
 state 81
 
-   38 type: KW_BUF '<' . PRIMITIVE_DTYPE '>'
+   95 loop_stmt: KW_WHILE . '(' expression ')' body
 
-    PRIMITIVE_DTYPE  shift, and go to state 147
+    '('  shift, and go to state 148
 
 
 state 82
-
-   44 type: '&' type .
-
-    $default  reduce using rule 44 (type)
-
-
-state 83
-
-  131 typ_list: type .
-
-    $default  reduce using rule 131 (typ_list)
-
-
-state 84
-
-  129 cart: '(' typ_list . ')'
-  130 typ_list: typ_list . ',' type
-
-    ','  shift, and go to state 148
-    ')'  shift, and go to state 149
-
-
-state 85
-
-  128 forge: KW_FORGE type '(' . parameter_list '{' statements '}'
-
-    IDENT  shift, and go to state 6
-
-    parameter_list  go to state 150
-    typ_var         go to state 138
-
-
-state 86
-
-  122 struct: KW_STRUCT IDENT '{' . attr_list '}'
-
-    IDENT  shift, and go to state 151
-
-    typ_var    go to state 152
-    attr_list  go to state 153
-
-
-state 87
-
-  125 enum: KW_ENUM IDENT '{' . variant_list '}'
-
-    IDENT  shift, and go to state 154
-
-    variant_list  go to state 155
-
-
-state 88
-
-  107 archetype_claim: KW_CLAIM . IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
-  108                | KW_CLAIM . IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
-  109                | KW_CLAIM . IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM . IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    IDENT  shift, and go to state 156
-
-
-state 89
-
-   80 return_stmt: KW_RETURN . expression
-
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
-
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 157
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
-
-
-state 90
-
-   91 conditional: KW_IF . '(' expression ')' if_body
-
-    '('  shift, and go to state 158
-
-
-state 91
-
-   95 loop_stmt: KW_WHILE . '(' expression ')' body
-
-    '('  shift, and go to state 159
-
-
-state 92
 
    96 loop_stmt: KW_FOR . '(' assignment ';' expression ';' loop_mut ')' body
    97          | KW_FOR . '(' declaration ';' expression ';' loop_mut ')' body
    98          | KW_FOR . IDENT KW_IN IDENT body
 
-    IDENT  shift, and go to state 160
-    '('    shift, and go to state 161
+    IDENT  shift, and go to state 149
+    '('    shift, and go to state 150
 
 
-state 93
+state 83
 
   101 switch_case: KW_SWITCH . '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
   102            | KW_SWITCH . '(' expression ')' '{' sc_blocks '}'
 
-    '('  shift, and go to state 162
+    '('  shift, and go to state 151
 
 
-state 94
+state 84
 
    18 statement: KW_BREAK . ';'
 
-    ';'  shift, and go to state 163
+    ';'  shift, and go to state 152
 
 
-state 95
+state 85
 
    19 statement: KW_CONTINUE . ';'
 
-    ';'  shift, and go to state 164
+    ';'  shift, and go to state 153
 
 
-state 96
+state 86
 
-  118 function_body: statements .
+    8 body: '{' statements . '}'
 
-    $default  reduce using rule 118 (function_body)
+    '}'  shift, and go to state 154
 
 
-state 97
+state 87
 
     9 statements: statement . statements
 
-    KW_CLAIM     shift, and go to state 88
+    KW_CLAIM     shift, and go to state 78
     KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
+    KW_RETURN    shift, and go to state 79
+    KW_IF        shift, and go to state 80
+    KW_WHILE     shift, and go to state 81
+    KW_FOR       shift, and go to state 82
+    KW_SWITCH    shift, and go to state 83
+    KW_BREAK     shift, and go to state 84
+    KW_CONTINUE  shift, and go to state 85
+    IDENT        shift, and go to state 54
+    '*'          shift, and go to state 62
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
-    statements       go to state 165
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
+    statements       go to state 155
+    statement        go to state 87
+    declaration      go to state 88
+    var              go to state 89
+    assignment       go to state 90
+    return_stmt      go to state 91
+    call             go to state 92
+    array_access     go to state 93
+    conditional      go to state 94
+    loop_stmt        go to state 95
+    switch_case      go to state 96
+    archetype_claim  go to state 97
+    epsilon          go to state 98
 
 
-state 98
+state 88
 
    11 statement: declaration . ';'
 
-    ';'  shift, and go to state 166
+    ';'  shift, and go to state 156
 
 
-state 99
+state 89
 
    47 var: var . '.' IDENT
    51 assignment: var . '=' expression
    86 array_access: var . array_decl
 
-    '.'  shift, and go to state 123
-    '='  shift, and go to state 167
-    '['  shift, and go to state 64
+    '.'  shift, and go to state 124
+    '='  shift, and go to state 157
+    '['  shift, and go to state 65
 
-    array_decl  go to state 124
+    array_decl  go to state 125
 
 
-state 100
+state 90
 
    12 statement: assignment . ';'
 
-    ';'  shift, and go to state 168
+    ';'  shift, and go to state 158
 
 
-state 101
+state 91
 
    14 statement: return_stmt . ';'
 
-    ';'  shift, and go to state 169
+    ';'  shift, and go to state 159
 
 
-state 102
+state 92
 
    13 statement: call . ';'
 
-    ';'  shift, and go to state 170
+    ';'  shift, and go to state 160
 
 
-state 103
+state 93
 
    52 assignment: array_access . '=' expression
 
-    '='  shift, and go to state 171
+    '='  shift, and go to state 161
 
 
-state 104
+state 94
 
    15 statement: conditional .
 
     $default  reduce using rule 15 (statement)
 
 
-state 105
+state 95
 
    17 statement: loop_stmt .
 
     $default  reduce using rule 17 (statement)
 
 
-state 106
+state 96
 
    16 statement: switch_case .
 
     $default  reduce using rule 16 (statement)
 
 
-state 107
+state 97
 
    20 statement: archetype_claim .
 
     $default  reduce using rule 20 (statement)
 
 
-state 108
-
-  116 function: function_header '{' function_body . '}'
-
-    '}'  shift, and go to state 172
-
-
-state 109
+state 98
 
    10 statements: epsilon .
 
     $default  reduce using rule 10 (statements)
 
 
+state 99
+
+   23 group_data_type: KW_CYCLIC '<' . LIT_INT '>'
+
+    LIT_INT  shift, and go to state 162
+
+
+state 100
+
+   24 group_data_type: KW_SYMMETRIC '<' . LIT_INT '>'
+
+    LIT_INT  shift, and go to state 163
+
+
+state 101
+
+   25 group_data_type: KW_ALTERNATING '<' . LIT_INT '>'
+
+    LIT_INT  shift, and go to state 164
+
+
+state 102
+
+   26 group_data_type: KW_DIHEDRAL '<' . LIT_INT '>'
+
+    LIT_INT  shift, and go to state 165
+
+
+state 103
+
+   27 group_data_type: KW_INV_MAT '<' . LIT_INT ',' type '>'
+
+    LIT_INT  shift, and go to state 166
+
+
+state 104
+
+   29 ring_data_type: KW_MATRIX '<' . LIT_INT ',' type '>'
+
+    LIT_INT  shift, and go to state 167
+
+
+state 105
+
+   30 ring_data_type: KW_POLYNOMIAL '<' . type '>'
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 168
+    cart             go to state 52
+
+
+state 106
+
+   31 space_data_type: KW_VEC '<' . type '>'
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 169
+    cart             go to state 52
+
+
+state 107
+
+   38 type: KW_BUF '<' . PRIMITIVE_DTYPE '>'
+
+    PRIMITIVE_DTYPE  shift, and go to state 170
+
+
+state 108
+
+   44 type: '&' type .
+
+    $default  reduce using rule 44 (type)
+
+
+state 109
+
+  128 typ_list: type .
+
+    $default  reduce using rule 128 (typ_list)
+
+
 state 110
+
+  126 cart: '(' typ_list . ')'
+  127 typ_list: typ_list . ',' type
+
+    ','  shift, and go to state 171
+    ')'  shift, and go to state 172
+
+
+state 111
 
    50 var: IDENT VARIANT . IDENT
 
     IDENT  shift, and go to state 173
 
 
-state 111
+state 112
 
    81 call: IDENT '(' . pass_param_list ')'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
-    var              go to state 65
-    constant         go to state 66
+    var              go to state 66
+    constant         go to state 67
     expression       go to state 174
-    call             go to state 68
+    call             go to state 69
     pass_param_list  go to state 175
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
     epsilon          go to state 176
 
 
-state 112
+state 113
 
    60 expression: '!' expression .
    62           | expression . KW_AS type
@@ -1616,69 +1601,69 @@ state 112
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 60 (expression)
 
 
-state 113
+state 114
 
    46 var: IDENT .
    50    | IDENT . VARIANT IDENT
 
-    VARIANT  shift, and go to state 110
+    VARIANT  shift, and go to state 111
 
     $default  reduce using rule 46 (var)
 
 
-state 114
+state 115
 
    49 var: '*' '(' . expression ')'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
+    var              go to state 66
+    constant         go to state 67
     expression       go to state 177
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
-state 115
+state 116
 
    47 var: var . '.' IDENT
    48    | '*' var .
 
-    '.'  shift, and go to state 123
+    '.'  shift, and go to state 124
 
     $default  reduce using rule 48 (var)
 
 
-state 116
+state 117
 
    61 expression: '-' expression .
    62           | expression . KW_AS type
@@ -1694,23 +1679,23 @@ state 116
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 61 (expression)
 
 
-state 117
+state 118
 
    59 expression: '(' expression . ')'
    62           | expression . KW_AS type
@@ -1726,22 +1711,22 @@ state 117
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
     ')'     shift, and go to state 178
 
 
-state 118
+state 119
 
    75 expression: constant .
    89 array_list: constant . ',' array_list
@@ -1753,7 +1738,7 @@ state 118
     $default  reduce using rule 75 (expression)
 
 
-state 119
+state 120
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -1769,546 +1754,439 @@ state 119
    73           | expression . OR expression
    88 array_decl: '[' expression . SLICE expression ']'
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
     SLICE   shift, and go to state 180
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
 
-state 120
+state 121
 
    87 array_decl: '[' array_list . ']'
 
     ']'  shift, and go to state 181
 
 
-state 121
+state 122
 
    84 unary_operation: var INCR .
 
     $default  reduce using rule 84 (unary_operation)
 
 
-state 122
+state 123
 
    85 unary_operation: var DECR .
 
     $default  reduce using rule 85 (unary_operation)
 
 
-state 123
+state 124
 
    47 var: var '.' . IDENT
 
     IDENT  shift, and go to state 182
 
 
-state 124
+state 125
 
    86 array_access: var array_decl .
 
     $default  reduce using rule 86 (array_access)
 
 
-state 125
+state 126
 
    62 expression: expression KW_AS . type
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
 
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
     type             go to state 183
-    cart             go to state 46
-
-
-state 126
-
-   71 expression: expression rel_op . expression
-
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
-
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 184
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    cart             go to state 52
 
 
 state 127
 
-   72 expression: expression AND . expression
+   71 expression: expression rel_op . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 185
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 184
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 128
 
-   73 expression: expression OR . expression
+   72 expression: expression AND . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 186
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 185
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 129
 
-   63 expression: expression '@' . expression
+   73 expression: expression OR . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 187
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 186
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 130
 
-   64 expression: expression '*' . expression
+   63 expression: expression '@' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 188
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 187
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 131
 
-   65 expression: expression '/' . expression
+   64 expression: expression '*' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 189
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 188
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 132
 
-   66 expression: expression '%' . expression
+   65 expression: expression '/' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 190
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 189
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 133
 
-   67 expression: expression '+' . expression
+   66 expression: expression '%' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 191
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 190
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 134
 
-   68 expression: expression '-' . expression
+   67 expression: expression '+' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 192
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 191
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 135
 
-   69 expression: expression '>' . expression
+   68 expression: expression '-' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 193
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 192
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 136
 
-   70 expression: expression '<' . expression
+   69 expression: expression '>' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 194
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 193
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 137
 
-  117 function_header: KW_FN IDENT '(' parameter_list . ')' ':' type
-  120 parameter_list: parameter_list . ',' typ_var
+   70 expression: expression '<' . expression
 
-    ','  shift, and go to state 195
-    ')'  shift, and go to state 196
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
+
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 194
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 138
 
-  119 parameter_list: typ_var .
+  115 function_header: KW_FN IDENT '(' parameter_list . ')' ':' type
+  117 parameter_list: parameter_list . ',' typ_var
 
-    $default  reduce using rule 119 (parameter_list)
+    ','  shift, and go to state 139
+    ')'  shift, and go to state 195
 
 
 state 139
 
-   23 group_data_type: KW_CYCLIC '<' LIT_INT . '>'
+  117 parameter_list: parameter_list ',' . typ_var
 
-    '>'  shift, and go to state 197
+    IDENT  shift, and go to state 6
+
+    typ_var  go to state 196
 
 
 state 140
 
-   24 group_data_type: KW_SYMMETRIC '<' LIT_INT . '>'
+  125 forge: KW_FORGE '(' parameter_list ')' . KW_TO type body
 
-    '>'  shift, and go to state 198
+    KW_TO  shift, and go to state 197
 
 
 state 141
 
-   25 group_data_type: KW_ALTERNATING '<' LIT_INT . '>'
+  121 attr_list: typ_var .
 
-    '>'  shift, and go to state 199
+    $default  reduce using rule 121 (attr_list)
 
 
 state 142
 
-   26 group_data_type: KW_DIHEDRAL '<' LIT_INT . '>'
+  119 struct: KW_STRUCT IDENT '{' attr_list . '}'
+  120 attr_list: attr_list . ',' typ_var
 
-    '>'  shift, and go to state 200
+    '}'  shift, and go to state 198
+    ','  shift, and go to state 199
 
 
 state 143
 
-   27 group_data_type: KW_INV_MAT '<' LIT_INT . ',' type '>'
+  123 variant_list: IDENT .
 
-    ','  shift, and go to state 201
+    $default  reduce using rule 123 (variant_list)
 
 
 state 144
 
-   29 ring_data_type: KW_MATRIX '<' LIT_INT . ',' type '>'
+  122 enum: KW_ENUM IDENT '{' variant_list . '}'
+  124 variant_list: variant_list . ',' IDENT
 
-    ','  shift, and go to state 202
+    '}'  shift, and go to state 200
+    ','  shift, and go to state 201
 
 
 state 145
 
-   30 ring_data_type: KW_POLYNOMIAL '<' type . '>'
+  105 archetype_claim: KW_CLAIM IDENT . KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
+  106                | KW_CLAIM IDENT . KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
+  107                | KW_CLAIM IDENT . KW_IS KW_FIELD '{' inverse_rule '}' ';'
+  108                | KW_CLAIM IDENT . KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    '>'  shift, and go to state 203
+    KW_IS  shift, and go to state 202
 
 
 state 146
-
-   31 space_data_type: KW_VEC '<' type . '>'
-
-    '>'  shift, and go to state 204
-
-
-state 147
-
-   38 type: KW_BUF '<' PRIMITIVE_DTYPE . '>'
-
-    '>'  shift, and go to state 205
-
-
-state 148
-
-  130 typ_list: typ_list ',' . type
-
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 206
-    cart             go to state 46
-
-
-state 149
-
-  129 cart: '(' typ_list ')' .
-
-    $default  reduce using rule 129 (cart)
-
-
-state 150
-
-  120 parameter_list: parameter_list . ',' typ_var
-  128 forge: KW_FORGE type '(' parameter_list . '{' statements '}'
-
-    '{'  shift, and go to state 207
-    ','  shift, and go to state 195
-
-
-state 151
-
-  121 typ_var: IDENT . ':' type
-  123 attr_list: IDENT .
-
-    ':'  shift, and go to state 21
-
-    $default  reduce using rule 123 (attr_list)
-
-
-state 152
-
-  124 attr_list: typ_var . ',' IDENT
-
-    ','  shift, and go to state 208
-
-
-state 153
-
-  122 struct: KW_STRUCT IDENT '{' attr_list . '}'
-
-    '}'  shift, and go to state 209
-
-
-state 154
-
-  126 variant_list: IDENT .
-
-    $default  reduce using rule 126 (variant_list)
-
-
-state 155
-
-  125 enum: KW_ENUM IDENT '{' variant_list . '}'
-  127 variant_list: variant_list . ',' IDENT
-
-    '}'  shift, and go to state 210
-    ','  shift, and go to state 211
-
-
-state 156
-
-  107 archetype_claim: KW_CLAIM IDENT . KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
-  108                | KW_CLAIM IDENT . KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
-  109                | KW_CLAIM IDENT . KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT . KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    KW_IS  shift, and go to state 212
-
-
-state 157
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -2324,229 +2202,328 @@ state 157
    73           | expression . OR expression
    80 return_stmt: KW_RETURN expression .
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 80 (return_stmt)
 
 
-state 158
+state 147
 
    91 conditional: KW_IF '(' . expression ')' if_body
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 213
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 203
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
-state 159
+state 148
 
    95 loop_stmt: KW_WHILE '(' . expression ')' body
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 214
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 204
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
-state 160
+state 149
 
    98 loop_stmt: KW_FOR IDENT . KW_IN IDENT body
 
-    KW_IN  shift, and go to state 215
+    KW_IN  shift, and go to state 205
 
 
-state 161
+state 150
 
    96 loop_stmt: KW_FOR '(' . assignment ';' expression ';' loop_mut ')' body
    97          | KW_FOR '(' . declaration ';' expression ';' loop_mut ')' body
 
     KW_LET  shift, and go to state 1
-    IDENT   shift, and go to state 113
-    '*'     shift, and go to state 61
+    IDENT   shift, and go to state 114
+    '*'     shift, and go to state 62
 
-    declaration   go to state 216
-    var           go to state 99
-    assignment    go to state 217
-    array_access  go to state 103
+    declaration   go to state 206
+    var           go to state 89
+    assignment    go to state 207
+    array_access  go to state 93
 
 
-state 162
+state 151
 
   101 switch_case: KW_SWITCH '(' . expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
   102            | KW_SWITCH '(' . expression ')' '{' sc_blocks '}'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 218
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 208
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
-state 163
+state 152
 
    18 statement: KW_BREAK ';' .
 
     $default  reduce using rule 18 (statement)
 
 
-state 164
+state 153
 
    19 statement: KW_CONTINUE ';' .
 
     $default  reduce using rule 19 (statement)
 
 
-state 165
+state 154
+
+    8 body: '{' statements '}' .
+
+    $default  reduce using rule 8 (body)
+
+
+state 155
 
     9 statements: statement statements .
 
     $default  reduce using rule 9 (statements)
 
 
-state 166
+state 156
 
    11 statement: declaration ';' .
 
     $default  reduce using rule 11 (statement)
 
 
-state 167
+state 157
 
    51 assignment: var '=' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 219
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 209
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
-state 168
+state 158
 
    12 statement: assignment ';' .
 
     $default  reduce using rule 12 (statement)
 
 
-state 169
+state 159
 
    14 statement: return_stmt ';' .
 
     $default  reduce using rule 14 (statement)
 
 
-state 170
+state 160
 
    13 statement: call ';' .
 
     $default  reduce using rule 13 (statement)
 
 
-state 171
+state 161
 
    52 assignment: array_access '=' . expression
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 220
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 210
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
+
+
+state 162
+
+   23 group_data_type: KW_CYCLIC '<' LIT_INT . '>'
+
+    '>'  shift, and go to state 211
+
+
+state 163
+
+   24 group_data_type: KW_SYMMETRIC '<' LIT_INT . '>'
+
+    '>'  shift, and go to state 212
+
+
+state 164
+
+   25 group_data_type: KW_ALTERNATING '<' LIT_INT . '>'
+
+    '>'  shift, and go to state 213
+
+
+state 165
+
+   26 group_data_type: KW_DIHEDRAL '<' LIT_INT . '>'
+
+    '>'  shift, and go to state 214
+
+
+state 166
+
+   27 group_data_type: KW_INV_MAT '<' LIT_INT . ',' type '>'
+
+    ','  shift, and go to state 215
+
+
+state 167
+
+   29 ring_data_type: KW_MATRIX '<' LIT_INT . ',' type '>'
+
+    ','  shift, and go to state 216
+
+
+state 168
+
+   30 ring_data_type: KW_POLYNOMIAL '<' type . '>'
+
+    '>'  shift, and go to state 217
+
+
+state 169
+
+   31 space_data_type: KW_VEC '<' type . '>'
+
+    '>'  shift, and go to state 218
+
+
+state 170
+
+   38 type: KW_BUF '<' PRIMITIVE_DTYPE . '>'
+
+    '>'  shift, and go to state 219
+
+
+state 171
+
+  127 typ_list: typ_list ',' . type
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 220
+    cart             go to state 52
 
 
 state 172
 
-  116 function: function_header '{' function_body '}' .
+  126 cart: '(' typ_list ')' .
 
-    $default  reduce using rule 116 (function)
+    $default  reduce using rule 126 (cart)
 
 
 state 173
@@ -2572,18 +2549,18 @@ state 174
    73           | expression . OR expression
    82 pass_param_list: expression . ',' pass_param_list
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
     ','     shift, and go to state 221
 
 
@@ -2617,18 +2594,18 @@ state 177
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
     ')'     shift, and go to state 223
 
 
@@ -2643,12 +2620,12 @@ state 179
 
    89 array_list: constant ',' . array_list
 
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
 
     constant    go to state 224
     array_list  go to state 225
@@ -2658,26 +2635,26 @@ state 180
 
    88 array_decl: '[' expression SLICE . expression ']'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    var              go to state 65
-    constant         go to state 66
+    var              go to state 66
+    constant         go to state 67
     expression       go to state 226
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 181
@@ -2717,8 +2694,8 @@ state 184
    72           | expression . AND expression
    73           | expression . OR expression
 
-    AND  shift, and go to state 127
-    OR   shift, and go to state 128
+    AND  shift, and go to state 128
+    OR   shift, and go to state 129
 
     $default  reduce using rule 71 (expression)
 
@@ -2739,7 +2716,7 @@ state 185
    72           | expression AND expression .
    73           | expression . OR expression
 
-    OR  shift, and go to state 128
+    OR  shift, and go to state 129
 
     $default  reduce using rule 72 (expression)
 
@@ -2779,16 +2756,16 @@ state 187
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 63 (expression)
 
@@ -2809,13 +2786,13 @@ state 188
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 64 (expression)
 
@@ -2836,13 +2813,13 @@ state 189
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 65 (expression)
 
@@ -2863,13 +2840,13 @@ state 190
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 66 (expression)
 
@@ -2890,11 +2867,11 @@ state 191
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 67 (expression)
 
@@ -2915,11 +2892,11 @@ state 192
    72           | expression . AND expression
    73           | expression . OR expression
 
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 68 (expression)
 
@@ -2940,8 +2917,8 @@ state 193
    72           | expression . AND expression
    73           | expression . OR expression
 
-    AND  shift, and go to state 127
-    OR   shift, and go to state 128
+    AND  shift, and go to state 128
+    OR   shift, and go to state 129
 
     $default  reduce using rule 69 (expression)
 
@@ -2962,217 +2939,99 @@ state 194
    72           | expression . AND expression
    73           | expression . OR expression
 
-    AND  shift, and go to state 127
-    OR   shift, and go to state 128
+    AND  shift, and go to state 128
+    OR   shift, and go to state 129
 
     $default  reduce using rule 70 (expression)
 
 
 state 195
 
-  120 parameter_list: parameter_list ',' . typ_var
+  115 function_header: KW_FN IDENT '(' parameter_list ')' . ':' type
 
-    IDENT  shift, and go to state 6
-
-    typ_var  go to state 227
+    ':'  shift, and go to state 227
 
 
 state 196
 
-  117 function_header: KW_FN IDENT '(' parameter_list ')' . ':' type
+  117 parameter_list: parameter_list ',' typ_var .
 
-    ':'  shift, and go to state 228
+    $default  reduce using rule 117 (parameter_list)
 
 
 state 197
 
-   23 group_data_type: KW_CYCLIC '<' LIT_INT '>' .
+  125 forge: KW_FORGE '(' parameter_list ')' KW_TO . type body
 
-    $default  reduce using rule 23 (group_data_type)
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 228
+    cart             go to state 52
 
 
 state 198
 
-   24 group_data_type: KW_SYMMETRIC '<' LIT_INT '>' .
+  119 struct: KW_STRUCT IDENT '{' attr_list '}' .
 
-    $default  reduce using rule 24 (group_data_type)
+    $default  reduce using rule 119 (struct)
 
 
 state 199
 
-   25 group_data_type: KW_ALTERNATING '<' LIT_INT '>' .
+  120 attr_list: attr_list ',' . typ_var
 
-    $default  reduce using rule 25 (group_data_type)
+    IDENT  shift, and go to state 6
+
+    typ_var  go to state 229
 
 
 state 200
 
-   26 group_data_type: KW_DIHEDRAL '<' LIT_INT '>' .
+  122 enum: KW_ENUM IDENT '{' variant_list '}' .
 
-    $default  reduce using rule 26 (group_data_type)
+    $default  reduce using rule 122 (enum)
 
 
 state 201
 
-   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' . type '>'
+  124 variant_list: variant_list ',' . IDENT
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 229
-    cart             go to state 46
+    IDENT  shift, and go to state 230
 
 
 state 202
 
-   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' . type '>'
+  105 archetype_claim: KW_CLAIM IDENT KW_IS . KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
+  106                | KW_CLAIM IDENT KW_IS . KW_RING '{' mult_rule identity_rule '}' ';'
+  107                | KW_CLAIM IDENT KW_IS . KW_FIELD '{' inverse_rule '}' ';'
+  108                | KW_CLAIM IDENT KW_IS . KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 230
-    cart             go to state 46
+    KW_GROUP  shift, and go to state 231
+    KW_RING   shift, and go to state 232
+    KW_FIELD  shift, and go to state 233
+    KW_SPACE  shift, and go to state 234
 
 
 state 203
-
-   30 ring_data_type: KW_POLYNOMIAL '<' type '>' .
-
-    $default  reduce using rule 30 (ring_data_type)
-
-
-state 204
-
-   31 space_data_type: KW_VEC '<' type '>' .
-
-    $default  reduce using rule 31 (space_data_type)
-
-
-state 205
-
-   38 type: KW_BUF '<' PRIMITIVE_DTYPE '>' .
-
-    $default  reduce using rule 38 (type)
-
-
-state 206
-
-  130 typ_list: typ_list ',' type .
-
-    $default  reduce using rule 130 (typ_list)
-
-
-state 207
-
-  128 forge: KW_FORGE type '(' parameter_list '{' . statements '}'
-
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 231
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
-
-
-state 208
-
-  124 attr_list: typ_var ',' . IDENT
-
-    IDENT  shift, and go to state 232
-
-
-state 209
-
-  122 struct: KW_STRUCT IDENT '{' attr_list '}' .
-
-    $default  reduce using rule 122 (struct)
-
-
-state 210
-
-  125 enum: KW_ENUM IDENT '{' variant_list '}' .
-
-    $default  reduce using rule 125 (enum)
-
-
-state 211
-
-  127 variant_list: variant_list ',' . IDENT
-
-    IDENT  shift, and go to state 233
-
-
-state 212
-
-  107 archetype_claim: KW_CLAIM IDENT KW_IS . KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
-  108                | KW_CLAIM IDENT KW_IS . KW_RING '{' mult_rule identity_rule '}' ';'
-  109                | KW_CLAIM IDENT KW_IS . KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT KW_IS . KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    KW_GROUP  shift, and go to state 234
-    KW_RING   shift, and go to state 235
-    KW_FIELD  shift, and go to state 236
-    KW_SPACE  shift, and go to state 237
-
-
-state 213
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -3188,22 +3047,22 @@ state 213
    73           | expression . OR expression
    91 conditional: KW_IF '(' expression . ')' if_body
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ')'     shift, and go to state 238
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ')'     shift, and go to state 235
 
 
-state 214
+state 204
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -3219,43 +3078,43 @@ state 214
    73           | expression . OR expression
    95 loop_stmt: KW_WHILE '(' expression . ')' body
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ')'     shift, and go to state 239
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ')'     shift, and go to state 236
 
 
-state 215
+state 205
 
    98 loop_stmt: KW_FOR IDENT KW_IN . IDENT body
 
-    IDENT  shift, and go to state 240
+    IDENT  shift, and go to state 237
 
 
-state 216
+state 206
 
    97 loop_stmt: KW_FOR '(' declaration . ';' expression ';' loop_mut ')' body
 
-    ';'  shift, and go to state 241
+    ';'  shift, and go to state 238
 
 
-state 217
+state 207
 
    96 loop_stmt: KW_FOR '(' assignment . ';' expression ';' loop_mut ')' body
 
-    ';'  shift, and go to state 242
+    ';'  shift, and go to state 239
 
 
-state 218
+state 208
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -3272,22 +3131,22 @@ state 218
   101 switch_case: KW_SWITCH '(' expression . ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
   102            | KW_SWITCH '(' expression . ')' '{' sc_blocks '}'
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ')'     shift, and go to state 243
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ')'     shift, and go to state 240
 
 
-state 219
+state 209
 
    51 assignment: var '=' expression .
    62 expression: expression . KW_AS type
@@ -3303,23 +3162,23 @@ state 219
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 51 (assignment)
 
 
-state 220
+state 210
 
    52 assignment: array_access '=' expression .
    62 expression: expression . KW_AS type
@@ -3335,49 +3194,163 @@ state 220
    72           | expression . AND expression
    73           | expression . OR expression
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
 
     $default  reduce using rule 52 (assignment)
+
+
+state 211
+
+   23 group_data_type: KW_CYCLIC '<' LIT_INT '>' .
+
+    $default  reduce using rule 23 (group_data_type)
+
+
+state 212
+
+   24 group_data_type: KW_SYMMETRIC '<' LIT_INT '>' .
+
+    $default  reduce using rule 24 (group_data_type)
+
+
+state 213
+
+   25 group_data_type: KW_ALTERNATING '<' LIT_INT '>' .
+
+    $default  reduce using rule 25 (group_data_type)
+
+
+state 214
+
+   26 group_data_type: KW_DIHEDRAL '<' LIT_INT '>' .
+
+    $default  reduce using rule 26 (group_data_type)
+
+
+state 215
+
+   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' . type '>'
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 241
+    cart             go to state 52
+
+
+state 216
+
+   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' . type '>'
+
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 242
+    cart             go to state 52
+
+
+state 217
+
+   30 ring_data_type: KW_POLYNOMIAL '<' type '>' .
+
+    $default  reduce using rule 30 (ring_data_type)
+
+
+state 218
+
+   31 space_data_type: KW_VEC '<' type '>' .
+
+    $default  reduce using rule 31 (space_data_type)
+
+
+state 219
+
+   38 type: KW_BUF '<' PRIMITIVE_DTYPE '>' .
+
+    $default  reduce using rule 38 (type)
+
+
+state 220
+
+  127 typ_list: typ_list ',' type .
+
+    $default  reduce using rule 127 (typ_list)
 
 
 state 221
 
    82 pass_param_list: expression ',' . pass_param_list
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
-    var              go to state 65
-    constant         go to state 66
+    var              go to state 66
+    constant         go to state 67
     expression       go to state 174
-    call             go to state 68
-    pass_param_list  go to state 244
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    call             go to state 69
+    pass_param_list  go to state 243
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
     epsilon          go to state 176
 
 
@@ -3428,350 +3401,298 @@ state 226
    73           | expression . OR expression
    88 array_decl: '[' expression SLICE expression . ']'
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ']'     shift, and go to state 245
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ']'     shift, and go to state 244
 
 
 state 227
 
-  120 parameter_list: parameter_list ',' typ_var .
+  115 function_header: KW_FN IDENT '(' parameter_list ')' ':' . type
 
-    $default  reduce using rule 120 (parameter_list)
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 245
+    cart             go to state 52
 
 
 state 228
 
-  117 function_header: KW_FN IDENT '(' parameter_list ')' ':' . type
+  125 forge: KW_FORGE '(' parameter_list ')' KW_TO type . body
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
+    '{'  shift, and go to state 28
 
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 246
-    cart             go to state 46
+    body  go to state 246
 
 
 state 229
 
-   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' type . '>'
+  120 attr_list: attr_list ',' typ_var .
 
-    '>'  shift, and go to state 247
+    $default  reduce using rule 120 (attr_list)
 
 
 state 230
 
-   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' type . '>'
+  124 variant_list: variant_list ',' IDENT .
 
-    '>'  shift, and go to state 248
+    $default  reduce using rule 124 (variant_list)
 
 
 state 231
 
-  128 forge: KW_FORGE type '(' parameter_list '{' statements . '}'
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP . '{' additive_rule identity_rule negation_rule '}' ';'
 
-    '}'  shift, and go to state 249
+    '{'  shift, and go to state 247
 
 
 state 232
 
-  124 attr_list: typ_var ',' IDENT .
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING . '{' mult_rule identity_rule '}' ';'
 
-    $default  reduce using rule 124 (attr_list)
+    '{'  shift, and go to state 248
 
 
 state 233
 
-  127 variant_list: variant_list ',' IDENT .
+  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD . '{' inverse_rule '}' ';'
 
-    $default  reduce using rule 127 (variant_list)
+    '{'  shift, and go to state 249
 
 
 state 234
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP . '{' additive_rule identity_rule negation_rule '}' ';'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE . '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     '{'  shift, and go to state 250
 
 
 state 235
 
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING . '{' mult_rule identity_rule '}' ';'
+   91 conditional: KW_IF '(' expression ')' . if_body
 
-    '{'  shift, and go to state 251
+    '{'  shift, and go to state 28
+
+    body     go to state 251
+    if_body  go to state 252
 
 
 state 236
 
-  109 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD . '{' inverse_rule '}' ';'
+   95 loop_stmt: KW_WHILE '(' expression ')' . body
 
-    '{'  shift, and go to state 252
+    '{'  shift, and go to state 28
+
+    body  go to state 253
 
 
 state 237
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE . '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+   98 loop_stmt: KW_FOR IDENT KW_IN IDENT . body
 
-    '{'  shift, and go to state 253
+    '{'  shift, and go to state 28
+
+    body  go to state 254
 
 
 state 238
 
-   91 conditional: KW_IF '(' expression ')' . if_body
+   97 loop_stmt: KW_FOR '(' declaration ';' . expression ';' loop_mut ')' body
 
-    '{'  shift, and go to state 254
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    body     go to state 255
-    if_body  go to state 256
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 255
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 239
 
-   95 loop_stmt: KW_WHILE '(' expression ')' . body
+   96 loop_stmt: KW_FOR '(' assignment ';' . expression ';' loop_mut ')' body
 
-    '{'  shift, and go to state 254
+    IDENT      shift, and go to state 54
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
+    '!'        shift, and go to state 61
+    '*'        shift, and go to state 62
+    '-'        shift, and go to state 63
+    '('        shift, and go to state 64
+    '['        shift, and go to state 65
 
-    body  go to state 257
+    var              go to state 66
+    constant         go to state 67
+    expression       go to state 256
+    call             go to state 69
+    unary_operation  go to state 70
+    array_access     go to state 71
+    array_decl       go to state 72
 
 
 state 240
 
-   98 loop_stmt: KW_FOR IDENT KW_IN IDENT . body
+  101 switch_case: KW_SWITCH '(' expression ')' . '{' sc_blocks KW_DEFAULT ':' statements '}'
+  102            | KW_SWITCH '(' expression ')' . '{' sc_blocks '}'
 
-    '{'  shift, and go to state 254
-
-    body  go to state 258
+    '{'  shift, and go to state 257
 
 
 state 241
 
-   97 loop_stmt: KW_FOR '(' declaration ';' . expression ';' loop_mut ')' body
+   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' type . '>'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
-
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 259
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    '>'  shift, and go to state 258
 
 
 state 242
 
-   96 loop_stmt: KW_FOR '(' assignment ';' . expression ';' loop_mut ')' body
+   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' type . '>'
 
-    IDENT      shift, and go to state 53
-    LIT_INT    shift, and go to state 54
-    LIT_FLOAT  shift, and go to state 55
-    LIT_STR    shift, and go to state 56
-    LIT_CHAR   shift, and go to state 57
-    KW_TRUE    shift, and go to state 58
-    KW_FALSE   shift, and go to state 59
-    '!'        shift, and go to state 60
-    '*'        shift, and go to state 61
-    '-'        shift, and go to state 62
-    '('        shift, and go to state 63
-    '['        shift, and go to state 64
-
-    var              go to state 65
-    constant         go to state 66
-    expression       go to state 260
-    call             go to state 68
-    unary_operation  go to state 69
-    array_access     go to state 70
-    array_decl       go to state 71
+    '>'  shift, and go to state 259
 
 
 state 243
-
-  101 switch_case: KW_SWITCH '(' expression ')' . '{' sc_blocks KW_DEFAULT ':' statements '}'
-  102            | KW_SWITCH '(' expression ')' . '{' sc_blocks '}'
-
-    '{'  shift, and go to state 261
-
-
-state 244
 
    82 pass_param_list: expression ',' pass_param_list .
 
     $default  reduce using rule 82 (pass_param_list)
 
 
-state 245
+state 244
 
    88 array_decl: '[' expression SLICE expression ']' .
 
     $default  reduce using rule 88 (array_decl)
 
 
+state 245
+
+  115 function_header: KW_FN IDENT '(' parameter_list ')' ':' type .
+
+    $default  reduce using rule 115 (function_header)
+
+
 state 246
 
-  117 function_header: KW_FN IDENT '(' parameter_list ')' ':' type .
+  125 forge: KW_FORGE '(' parameter_list ')' KW_TO type body .
 
-    $default  reduce using rule 117 (function_header)
+    $default  reduce using rule 125 (forge)
 
 
 state 247
 
-   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' type '>' .
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' . additive_rule identity_rule negation_rule '}' ';'
 
-    $default  reduce using rule 27 (group_data_type)
+    '('  shift, and go to state 260
+
+    additive_rule  go to state 261
 
 
 state 248
 
-   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' type '>' .
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' . mult_rule identity_rule '}' ';'
 
-    $default  reduce using rule 29 (ring_data_type)
+    '('  shift, and go to state 262
+
+    mult_rule  go to state 263
 
 
 state 249
 
-  128 forge: KW_FORGE type '(' parameter_list '{' statements '}' .
+  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' . inverse_rule '}' ';'
 
-    $default  reduce using rule 128 (forge)
+    '('  shift, and go to state 264
+
+    inverse_rule  go to state 265
 
 
 state 250
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' . additive_rule identity_rule negation_rule '}' ';'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' . KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    '('  shift, and go to state 262
-
-    additive_rule  go to state 263
+    KW_FIELD  shift, and go to state 266
 
 
 state 251
-
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' . mult_rule identity_rule '}' ';'
-
-    '('  shift, and go to state 264
-
-    mult_rule  go to state 265
-
-
-state 252
-
-  109 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' . inverse_rule '}' ';'
-
-    '('  shift, and go to state 266
-
-    inverse_rule  go to state 267
-
-
-state 253
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' . KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    KW_FIELD  shift, and go to state 268
-
-
-state 254
-
-    8 body: '{' . statements '}'
-
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 269
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
-
-
-state 255
 
    92 if_body: body .
    93        | body . KW_ELSE conditional
    94        | body . KW_ELSE body
 
-    KW_ELSE  shift, and go to state 270
+    KW_ELSE  shift, and go to state 267
 
     $default  reduce using rule 92 (if_body)
 
 
-state 256
+state 252
 
    91 conditional: KW_IF '(' expression ')' if_body .
 
     $default  reduce using rule 91 (conditional)
 
 
-state 257
+state 253
 
    95 loop_stmt: KW_WHILE '(' expression ')' body .
 
     $default  reduce using rule 95 (loop_stmt)
 
 
-state 258
+state 254
 
    98 loop_stmt: KW_FOR IDENT KW_IN IDENT body .
 
     $default  reduce using rule 98 (loop_stmt)
 
 
-state 259
+state 255
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -3787,22 +3708,22 @@ state 259
    73           | expression . OR expression
    97 loop_stmt: KW_FOR '(' declaration ';' expression . ';' loop_mut ')' body
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ';'     shift, and go to state 271
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ';'     shift, and go to state 268
 
 
-state 260
+state 256
 
    62 expression: expression . KW_AS type
    63           | expression . '@' expression
@@ -3818,936 +3739,821 @@ state 260
    73           | expression . OR expression
    96 loop_stmt: KW_FOR '(' assignment ';' expression . ';' loop_mut ')' body
 
-    KW_AS   shift, and go to state 125
-    rel_op  shift, and go to state 126
-    AND     shift, and go to state 127
-    OR      shift, and go to state 128
-    '@'     shift, and go to state 129
-    '*'     shift, and go to state 130
-    '/'     shift, and go to state 131
-    '%'     shift, and go to state 132
-    '+'     shift, and go to state 133
-    '-'     shift, and go to state 134
-    '>'     shift, and go to state 135
-    '<'     shift, and go to state 136
-    ';'     shift, and go to state 272
+    KW_AS   shift, and go to state 126
+    rel_op  shift, and go to state 127
+    AND     shift, and go to state 128
+    OR      shift, and go to state 129
+    '@'     shift, and go to state 130
+    '*'     shift, and go to state 131
+    '/'     shift, and go to state 132
+    '%'     shift, and go to state 133
+    '+'     shift, and go to state 134
+    '-'     shift, and go to state 135
+    '>'     shift, and go to state 136
+    '<'     shift, and go to state 137
+    ';'     shift, and go to state 269
 
 
-state 261
+state 257
 
   101 switch_case: KW_SWITCH '(' expression ')' '{' . sc_blocks KW_DEFAULT ':' statements '}'
   102            | KW_SWITCH '(' expression ')' '{' . sc_blocks '}'
 
-    KW_CASE  shift, and go to state 273
+    KW_CASE  shift, and go to state 270
 
-    $default  reduce using rule 132 (epsilon)
+    $default  reduce using rule 129 (epsilon)
 
-    sc_blocks  go to state 274
-    epsilon    go to state 275
+    sc_blocks  go to state 271
+    epsilon    go to state 272
+
+
+state 258
+
+   27 group_data_type: KW_INV_MAT '<' LIT_INT ',' type '>' .
+
+    $default  reduce using rule 27 (group_data_type)
+
+
+state 259
+
+   29 ring_data_type: KW_MATRIX '<' LIT_INT ',' type '>' .
+
+    $default  reduce using rule 29 (ring_data_type)
+
+
+state 260
+
+  109 additive_rule: '(' . IDENT '=' IDENT '+' IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 273
+
+
+state 261
+
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule . identity_rule negation_rule '}' ';'
+
+    '('  shift, and go to state 274
+
+    identity_rule  go to state 275
 
 
 state 262
 
-  111 additive_rule: '(' . IDENT '=' IDENT '+' IDENT ')' ARROW body
+  110 mult_rule: '(' . IDENT '=' IDENT '*' IDENT ')' ARROW body
 
     IDENT  shift, and go to state 276
 
 
 state 263
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule . identity_rule negation_rule '}' ';'
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule . identity_rule '}' ';'
 
-    '('  shift, and go to state 277
+    '('  shift, and go to state 274
 
-    identity_rule  go to state 278
+    identity_rule  go to state 277
 
 
 state 264
 
-  112 mult_rule: '(' . IDENT '=' IDENT '*' IDENT ')' ARROW body
+  113 inverse_rule: '(' . IDENT '=' '~' IDENT ')' ARROW body
 
-    IDENT  shift, and go to state 279
+    IDENT  shift, and go to state 278
 
 
 state 265
 
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule . identity_rule '}' ';'
+  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule . '}' ';'
 
-    '('  shift, and go to state 277
-
-    identity_rule  go to state 280
+    '}'  shift, and go to state 279
 
 
 state 266
 
-  115 inverse_rule: '(' . IDENT '=' '~' IDENT ')' ARROW body
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD . '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    IDENT  shift, and go to state 281
+    '='  shift, and go to state 280
 
 
 state 267
 
-  109 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule . '}' ';'
+   93 if_body: body KW_ELSE . conditional
+   94        | body KW_ELSE . body
 
-    '}'  shift, and go to state 282
+    KW_IF  shift, and go to state 80
+    '{'    shift, and go to state 28
+
+    body         go to state 281
+    conditional  go to state 282
 
 
 state 268
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD . '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+   97 loop_stmt: KW_FOR '(' declaration ';' expression ';' . loop_mut ')' body
 
-    '='  shift, and go to state 283
+    IDENT  shift, and go to state 114
+    '*'    shift, and go to state 62
+
+    $default  reduce using rule 129 (epsilon)
+
+    var              go to state 283
+    unary_operation  go to state 284
+    loop_mut         go to state 285
+    epsilon          go to state 286
 
 
 state 269
 
-    8 body: '{' statements . '}'
+   96 loop_stmt: KW_FOR '(' assignment ';' expression ';' . loop_mut ')' body
 
-    '}'  shift, and go to state 284
+    IDENT  shift, and go to state 114
+    '*'    shift, and go to state 62
+
+    $default  reduce using rule 129 (epsilon)
+
+    var              go to state 283
+    unary_operation  go to state 284
+    loop_mut         go to state 287
+    epsilon          go to state 286
 
 
 state 270
 
-   93 if_body: body KW_ELSE . conditional
-   94        | body KW_ELSE . body
+  103 sc_blocks: KW_CASE . constant ':' statements sc_blocks
 
-    KW_IF  shift, and go to state 90
-    '{'    shift, and go to state 254
+    LIT_INT    shift, and go to state 55
+    LIT_FLOAT  shift, and go to state 56
+    LIT_STR    shift, and go to state 57
+    LIT_CHAR   shift, and go to state 58
+    KW_TRUE    shift, and go to state 59
+    KW_FALSE   shift, and go to state 60
 
-    body         go to state 285
-    conditional  go to state 286
+    constant  go to state 288
 
 
 state 271
 
-   97 loop_stmt: KW_FOR '(' declaration ';' expression ';' . loop_mut ')' body
+  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks . KW_DEFAULT ':' statements '}'
+  102            | KW_SWITCH '(' expression ')' '{' sc_blocks . '}'
 
-    IDENT  shift, and go to state 113
-    '*'    shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    var              go to state 287
-    unary_operation  go to state 288
-    loop_mut         go to state 289
-    epsilon          go to state 290
+    KW_DEFAULT  shift, and go to state 289
+    '}'         shift, and go to state 290
 
 
 state 272
 
-   96 loop_stmt: KW_FOR '(' assignment ';' expression ';' . loop_mut ')' body
+  104 sc_blocks: epsilon .
 
-    IDENT  shift, and go to state 113
-    '*'    shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    var              go to state 287
-    unary_operation  go to state 288
-    loop_mut         go to state 291
-    epsilon          go to state 290
+    $default  reduce using rule 104 (sc_blocks)
 
 
 state 273
 
-  103 sc_blocks: KW_CASE . LIT_CHAR ':' statements sc_blocks
-  104          | KW_CASE . LIT_INT ':' statements sc_blocks
-  105          | KW_CASE . LIT_FLOAT ':' statements sc_blocks
+  109 additive_rule: '(' IDENT . '=' IDENT '+' IDENT ')' ARROW body
 
-    LIT_INT    shift, and go to state 292
-    LIT_FLOAT  shift, and go to state 293
-    LIT_CHAR   shift, and go to state 294
+    '='  shift, and go to state 291
 
 
 state 274
 
-  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks . KW_DEFAULT ':' statements '}'
-  102            | KW_SWITCH '(' expression ')' '{' sc_blocks . '}'
+  111 identity_rule: '(' . IDENT '=' LIT_INT ')' ARROW body
 
-    KW_DEFAULT  shift, and go to state 295
-    '}'         shift, and go to state 296
+    IDENT  shift, and go to state 292
 
 
 state 275
 
-  106 sc_blocks: epsilon .
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule . negation_rule '}' ';'
 
-    $default  reduce using rule 106 (sc_blocks)
+    '('  shift, and go to state 293
+
+    negation_rule  go to state 294
 
 
 state 276
 
-  111 additive_rule: '(' IDENT . '=' IDENT '+' IDENT ')' ARROW body
+  110 mult_rule: '(' IDENT . '=' IDENT '*' IDENT ')' ARROW body
 
-    '='  shift, and go to state 297
+    '='  shift, and go to state 295
 
 
 state 277
 
-  113 identity_rule: '(' . IDENT '=' LIT_INT ')' ARROW body
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule . '}' ';'
 
-    IDENT  shift, and go to state 298
+    '}'  shift, and go to state 296
 
 
 state 278
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule . negation_rule '}' ';'
+  113 inverse_rule: '(' IDENT . '=' '~' IDENT ')' ARROW body
 
-    '('  shift, and go to state 299
-
-    negation_rule  go to state 300
+    '='  shift, and go to state 297
 
 
 state 279
 
-  112 mult_rule: '(' IDENT . '=' IDENT '*' IDENT ')' ARROW body
+  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' . ';'
 
-    '='  shift, and go to state 301
+    ';'  shift, and go to state 298
 
 
 state 280
 
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule . '}' ';'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' . '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    '}'  shift, and go to state 302
+    '('  shift, and go to state 299
 
 
 state 281
-
-  115 inverse_rule: '(' IDENT . '=' '~' IDENT ')' ARROW body
-
-    '='  shift, and go to state 303
-
-
-state 282
-
-  109 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' . ';'
-
-    ';'  shift, and go to state 304
-
-
-state 283
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' . '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    '('  shift, and go to state 305
-
-
-state 284
-
-    8 body: '{' statements '}' .
-
-    $default  reduce using rule 8 (body)
-
-
-state 285
 
    94 if_body: body KW_ELSE body .
 
     $default  reduce using rule 94 (if_body)
 
 
-state 286
+state 282
 
    93 if_body: body KW_ELSE conditional .
 
     $default  reduce using rule 93 (if_body)
 
 
-state 287
+state 283
 
    47 var: var . '.' IDENT
    84 unary_operation: var . INCR
    85                | var . DECR
 
-    INCR  shift, and go to state 121
-    DECR  shift, and go to state 122
-    '.'   shift, and go to state 123
+    INCR  shift, and go to state 122
+    DECR  shift, and go to state 123
+    '.'   shift, and go to state 124
 
 
-state 288
+state 284
 
    99 loop_mut: unary_operation .
 
     $default  reduce using rule 99 (loop_mut)
 
 
-state 289
+state 285
 
    97 loop_stmt: KW_FOR '(' declaration ';' expression ';' loop_mut . ')' body
 
-    ')'  shift, and go to state 306
+    ')'  shift, and go to state 300
 
 
-state 290
+state 286
 
   100 loop_mut: epsilon .
 
     $default  reduce using rule 100 (loop_mut)
 
 
-state 291
+state 287
 
    96 loop_stmt: KW_FOR '(' assignment ';' expression ';' loop_mut . ')' body
 
-    ')'  shift, and go to state 307
+    ')'  shift, and go to state 301
 
 
-state 292
+state 288
 
-  104 sc_blocks: KW_CASE LIT_INT . ':' statements sc_blocks
+  103 sc_blocks: KW_CASE constant . ':' statements sc_blocks
 
-    ':'  shift, and go to state 308
-
-
-state 293
-
-  105 sc_blocks: KW_CASE LIT_FLOAT . ':' statements sc_blocks
-
-    ':'  shift, and go to state 309
+    ':'  shift, and go to state 302
 
 
-state 294
-
-  103 sc_blocks: KW_CASE LIT_CHAR . ':' statements sc_blocks
-
-    ':'  shift, and go to state 310
-
-
-state 295
+state 289
 
   101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT . ':' statements '}'
 
-    ':'  shift, and go to state 311
+    ':'  shift, and go to state 303
 
 
-state 296
+state 290
 
   102 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks '}' .
 
     $default  reduce using rule 102 (switch_case)
 
 
+state 291
+
+  109 additive_rule: '(' IDENT '=' . IDENT '+' IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 304
+
+
+state 292
+
+  111 identity_rule: '(' IDENT . '=' LIT_INT ')' ARROW body
+
+    '='  shift, and go to state 305
+
+
+state 293
+
+  112 negation_rule: '(' . IDENT '=' '-' IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 306
+
+
+state 294
+
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule . '}' ';'
+
+    '}'  shift, and go to state 307
+
+
+state 295
+
+  110 mult_rule: '(' IDENT '=' . IDENT '*' IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 308
+
+
+state 296
+
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' . ';'
+
+    ';'  shift, and go to state 309
+
+
 state 297
 
-  111 additive_rule: '(' IDENT '=' . IDENT '+' IDENT ')' ARROW body
+  113 inverse_rule: '(' IDENT '=' . '~' IDENT ')' ARROW body
 
-    IDENT  shift, and go to state 312
+    '~'  shift, and go to state 310
 
 
 state 298
 
-  113 identity_rule: '(' IDENT . '=' LIT_INT ')' ARROW body
+  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';' .
 
-    '='  shift, and go to state 313
+    $default  reduce using rule 107 (archetype_claim)
 
 
 state 299
 
-  114 negation_rule: '(' . IDENT '=' '-' IDENT ')' ARROW body
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' . type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    IDENT  shift, and go to state 314
+    KW_CYCLIC        shift, and go to state 31
+    KW_BIG_RATIONAL  shift, and go to state 32
+    KW_COMPLEX       shift, and go to state 33
+    KW_SYMMETRIC     shift, and go to state 34
+    KW_ALTERNATING   shift, and go to state 35
+    KW_DIHEDRAL      shift, and go to state 36
+    KW_INV_MAT       shift, and go to state 37
+    KW_BIGINT        shift, and go to state 38
+    KW_MATRIX        shift, and go to state 39
+    KW_POLYNOMIAL    shift, and go to state 40
+    KW_VEC           shift, and go to state 41
+    KW_BUF           shift, and go to state 42
+    IDENT            shift, and go to state 43
+    PRIMITIVE_DTYPE  shift, and go to state 44
+    '&'              shift, and go to state 45
+    '('              shift, and go to state 46
+
+    field_data_type  go to state 47
+    group_data_type  go to state 48
+    ring_data_type   go to state 49
+    space_data_type  go to state 50
+    type             go to state 311
+    cart             go to state 52
 
 
 state 300
 
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule . '}' ';'
+   97 loop_stmt: KW_FOR '(' declaration ';' expression ';' loop_mut ')' . body
 
-    '}'  shift, and go to state 315
+    '{'  shift, and go to state 28
+
+    body  go to state 312
 
 
 state 301
 
-  112 mult_rule: '(' IDENT '=' . IDENT '*' IDENT ')' ARROW body
+   96 loop_stmt: KW_FOR '(' assignment ';' expression ';' loop_mut ')' . body
 
-    IDENT  shift, and go to state 316
+    '{'  shift, and go to state 28
+
+    body  go to state 313
 
 
 state 302
 
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' . ';'
+  103 sc_blocks: KW_CASE constant ':' . statements sc_blocks
 
-    ';'  shift, and go to state 317
+    KW_CLAIM     shift, and go to state 78
+    KW_LET       shift, and go to state 1
+    KW_RETURN    shift, and go to state 79
+    KW_IF        shift, and go to state 80
+    KW_WHILE     shift, and go to state 81
+    KW_FOR       shift, and go to state 82
+    KW_SWITCH    shift, and go to state 83
+    KW_BREAK     shift, and go to state 84
+    KW_CONTINUE  shift, and go to state 85
+    IDENT        shift, and go to state 54
+    '*'          shift, and go to state 62
+
+    $default  reduce using rule 129 (epsilon)
+
+    statements       go to state 314
+    statement        go to state 87
+    declaration      go to state 88
+    var              go to state 89
+    assignment       go to state 90
+    return_stmt      go to state 91
+    call             go to state 92
+    array_access     go to state 93
+    conditional      go to state 94
+    loop_stmt        go to state 95
+    switch_case      go to state 96
+    archetype_claim  go to state 97
+    epsilon          go to state 98
 
 
 state 303
 
-  115 inverse_rule: '(' IDENT '=' . '~' IDENT ')' ARROW body
+  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' . statements '}'
 
-    '~'  shift, and go to state 318
+    KW_CLAIM     shift, and go to state 78
+    KW_LET       shift, and go to state 1
+    KW_RETURN    shift, and go to state 79
+    KW_IF        shift, and go to state 80
+    KW_WHILE     shift, and go to state 81
+    KW_FOR       shift, and go to state 82
+    KW_SWITCH    shift, and go to state 83
+    KW_BREAK     shift, and go to state 84
+    KW_CONTINUE  shift, and go to state 85
+    IDENT        shift, and go to state 54
+    '*'          shift, and go to state 62
+
+    $default  reduce using rule 129 (epsilon)
+
+    statements       go to state 315
+    statement        go to state 87
+    declaration      go to state 88
+    var              go to state 89
+    assignment       go to state 90
+    return_stmt      go to state 91
+    call             go to state 92
+    array_access     go to state 93
+    conditional      go to state 94
+    loop_stmt        go to state 95
+    switch_case      go to state 96
+    archetype_claim  go to state 97
+    epsilon          go to state 98
 
 
 state 304
 
-  109 archetype_claim: KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';' .
+  109 additive_rule: '(' IDENT '=' IDENT . '+' IDENT ')' ARROW body
 
-    $default  reduce using rule 109 (archetype_claim)
+    '+'  shift, and go to state 316
 
 
 state 305
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' . type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  111 identity_rule: '(' IDENT '=' . LIT_INT ')' ARROW body
 
-    KW_CYCLIC        shift, and go to state 25
-    KW_BIG_RATIONAL  shift, and go to state 26
-    KW_COMPLEX       shift, and go to state 27
-    KW_SYMMETRIC     shift, and go to state 28
-    KW_ALTERNATING   shift, and go to state 29
-    KW_DIHEDRAL      shift, and go to state 30
-    KW_INV_MAT       shift, and go to state 31
-    KW_BIGINT        shift, and go to state 32
-    KW_MATRIX        shift, and go to state 33
-    KW_POLYNOMIAL    shift, and go to state 34
-    KW_VEC           shift, and go to state 35
-    KW_BUF           shift, and go to state 36
-    IDENT            shift, and go to state 37
-    PRIMITIVE_DTYPE  shift, and go to state 38
-    '&'              shift, and go to state 39
-    '('              shift, and go to state 40
-
-    field_data_type  go to state 41
-    group_data_type  go to state 42
-    ring_data_type   go to state 43
-    space_data_type  go to state 44
-    type             go to state 319
-    cart             go to state 46
+    LIT_INT  shift, and go to state 317
 
 
 state 306
 
-   97 loop_stmt: KW_FOR '(' declaration ';' expression ';' loop_mut ')' . body
+  112 negation_rule: '(' IDENT . '=' '-' IDENT ')' ARROW body
 
-    '{'  shift, and go to state 254
-
-    body  go to state 320
+    '='  shift, and go to state 318
 
 
 state 307
 
-   96 loop_stmt: KW_FOR '(' assignment ';' expression ';' loop_mut ')' . body
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' . ';'
 
-    '{'  shift, and go to state 254
-
-    body  go to state 321
+    ';'  shift, and go to state 319
 
 
 state 308
 
-  104 sc_blocks: KW_CASE LIT_INT ':' . statements sc_blocks
+  110 mult_rule: '(' IDENT '=' IDENT . '*' IDENT ')' ARROW body
 
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 322
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
+    '*'  shift, and go to state 320
 
 
 state 309
 
-  105 sc_blocks: KW_CASE LIT_FLOAT ':' . statements sc_blocks
+  106 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';' .
 
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 323
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
+    $default  reduce using rule 106 (archetype_claim)
 
 
 state 310
 
-  103 sc_blocks: KW_CASE LIT_CHAR ':' . statements sc_blocks
+  113 inverse_rule: '(' IDENT '=' '~' . IDENT ')' ARROW body
 
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 324
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
+    IDENT  shift, and go to state 321
 
 
 state 311
 
-  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' . statements '}'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type . ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    KW_CLAIM     shift, and go to state 88
-    KW_LET       shift, and go to state 1
-    KW_RETURN    shift, and go to state 89
-    KW_IF        shift, and go to state 90
-    KW_WHILE     shift, and go to state 91
-    KW_FOR       shift, and go to state 92
-    KW_SWITCH    shift, and go to state 93
-    KW_BREAK     shift, and go to state 94
-    KW_CONTINUE  shift, and go to state 95
-    IDENT        shift, and go to state 53
-    '*'          shift, and go to state 61
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 325
-    statement        go to state 97
-    declaration      go to state 98
-    var              go to state 99
-    assignment       go to state 100
-    return_stmt      go to state 101
-    call             go to state 102
-    array_access     go to state 103
-    conditional      go to state 104
-    loop_stmt        go to state 105
-    switch_case      go to state 106
-    archetype_claim  go to state 107
-    epsilon          go to state 109
+    ')'  shift, and go to state 322
 
 
 state 312
-
-  111 additive_rule: '(' IDENT '=' IDENT . '+' IDENT ')' ARROW body
-
-    '+'  shift, and go to state 326
-
-
-state 313
-
-  113 identity_rule: '(' IDENT '=' . LIT_INT ')' ARROW body
-
-    LIT_INT  shift, and go to state 327
-
-
-state 314
-
-  114 negation_rule: '(' IDENT . '=' '-' IDENT ')' ARROW body
-
-    '='  shift, and go to state 328
-
-
-state 315
-
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' . ';'
-
-    ';'  shift, and go to state 329
-
-
-state 316
-
-  112 mult_rule: '(' IDENT '=' IDENT . '*' IDENT ')' ARROW body
-
-    '*'  shift, and go to state 330
-
-
-state 317
-
-  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';' .
-
-    $default  reduce using rule 108 (archetype_claim)
-
-
-state 318
-
-  115 inverse_rule: '(' IDENT '=' '~' . IDENT ')' ARROW body
-
-    IDENT  shift, and go to state 331
-
-
-state 319
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type . ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    ')'  shift, and go to state 332
-
-
-state 320
 
    97 loop_stmt: KW_FOR '(' declaration ';' expression ';' loop_mut ')' body .
 
     $default  reduce using rule 97 (loop_stmt)
 
 
-state 321
+state 313
 
    96 loop_stmt: KW_FOR '(' assignment ';' expression ';' loop_mut ')' body .
 
     $default  reduce using rule 96 (loop_stmt)
 
 
+state 314
+
+  103 sc_blocks: KW_CASE constant ':' statements . sc_blocks
+
+    KW_CASE  shift, and go to state 270
+
+    $default  reduce using rule 129 (epsilon)
+
+    sc_blocks  go to state 323
+    epsilon    go to state 272
+
+
+state 315
+
+  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements . '}'
+
+    '}'  shift, and go to state 324
+
+
+state 316
+
+  109 additive_rule: '(' IDENT '=' IDENT '+' . IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 325
+
+
+state 317
+
+  111 identity_rule: '(' IDENT '=' LIT_INT . ')' ARROW body
+
+    ')'  shift, and go to state 326
+
+
+state 318
+
+  112 negation_rule: '(' IDENT '=' . '-' IDENT ')' ARROW body
+
+    '-'  shift, and go to state 327
+
+
+state 319
+
+  105 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' .
+
+    $default  reduce using rule 105 (archetype_claim)
+
+
+state 320
+
+  110 mult_rule: '(' IDENT '=' IDENT '*' . IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 328
+
+
+state 321
+
+  113 inverse_rule: '(' IDENT '=' '~' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 329
+
+
 state 322
 
-  104 sc_blocks: KW_CASE LIT_INT ':' statements . sc_blocks
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' . ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    KW_CASE  shift, and go to state 273
-
-    $default  reduce using rule 132 (epsilon)
-
-    sc_blocks  go to state 333
-    epsilon    go to state 275
+    ';'  shift, and go to state 330
 
 
 state 323
 
-  105 sc_blocks: KW_CASE LIT_FLOAT ':' statements . sc_blocks
-
-    KW_CASE  shift, and go to state 273
-
-    $default  reduce using rule 132 (epsilon)
-
-    sc_blocks  go to state 334
-    epsilon    go to state 275
-
-
-state 324
-
-  103 sc_blocks: KW_CASE LIT_CHAR ':' statements . sc_blocks
-
-    KW_CASE  shift, and go to state 273
-
-    $default  reduce using rule 132 (epsilon)
-
-    sc_blocks  go to state 335
-    epsilon    go to state 275
-
-
-state 325
-
-  101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements . '}'
-
-    '}'  shift, and go to state 336
-
-
-state 326
-
-  111 additive_rule: '(' IDENT '=' IDENT '+' . IDENT ')' ARROW body
-
-    IDENT  shift, and go to state 337
-
-
-state 327
-
-  113 identity_rule: '(' IDENT '=' LIT_INT . ')' ARROW body
-
-    ')'  shift, and go to state 338
-
-
-state 328
-
-  114 negation_rule: '(' IDENT '=' . '-' IDENT ')' ARROW body
-
-    '-'  shift, and go to state 339
-
-
-state 329
-
-  107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' .
-
-    $default  reduce using rule 107 (archetype_claim)
-
-
-state 330
-
-  112 mult_rule: '(' IDENT '=' IDENT '*' . IDENT ')' ARROW body
-
-    IDENT  shift, and go to state 340
-
-
-state 331
-
-  115 inverse_rule: '(' IDENT '=' '~' IDENT . ')' ARROW body
-
-    ')'  shift, and go to state 341
-
-
-state 332
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' . ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    ';'  shift, and go to state 342
-
-
-state 333
-
-  104 sc_blocks: KW_CASE LIT_INT ':' statements sc_blocks .
-
-    $default  reduce using rule 104 (sc_blocks)
-
-
-state 334
-
-  105 sc_blocks: KW_CASE LIT_FLOAT ':' statements sc_blocks .
-
-    $default  reduce using rule 105 (sc_blocks)
-
-
-state 335
-
-  103 sc_blocks: KW_CASE LIT_CHAR ':' statements sc_blocks .
+  103 sc_blocks: KW_CASE constant ':' statements sc_blocks .
 
     $default  reduce using rule 103 (sc_blocks)
 
 
-state 336
+state 324
 
   101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}' .
 
     $default  reduce using rule 101 (switch_case)
 
 
+state 325
+
+  109 additive_rule: '(' IDENT '=' IDENT '+' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 331
+
+
+state 326
+
+  111 identity_rule: '(' IDENT '=' LIT_INT ')' . ARROW body
+
+    ARROW  shift, and go to state 332
+
+
+state 327
+
+  112 negation_rule: '(' IDENT '=' '-' . IDENT ')' ARROW body
+
+    IDENT  shift, and go to state 333
+
+
+state 328
+
+  110 mult_rule: '(' IDENT '=' IDENT '*' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 334
+
+
+state 329
+
+  113 inverse_rule: '(' IDENT '=' '~' IDENT ')' . ARROW body
+
+    ARROW  shift, and go to state 335
+
+
+state 330
+
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' . additive_rule negation_rule identity_rule mult_rule '}' ';'
+
+    '('  shift, and go to state 260
+
+    additive_rule  go to state 336
+
+
+state 331
+
+  109 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' . ARROW body
+
+    ARROW  shift, and go to state 337
+
+
+state 332
+
+  111 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW . body
+
+    '{'  shift, and go to state 28
+
+    body  go to state 338
+
+
+state 333
+
+  112 negation_rule: '(' IDENT '=' '-' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 339
+
+
+state 334
+
+  110 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' . ARROW body
+
+    ARROW  shift, and go to state 340
+
+
+state 335
+
+  113 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW . body
+
+    '{'  shift, and go to state 28
+
+    body  go to state 341
+
+
+state 336
+
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule . negation_rule identity_rule mult_rule '}' ';'
+
+    '('  shift, and go to state 293
+
+    negation_rule  go to state 342
+
+
 state 337
 
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT . ')' ARROW body
+  109 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW . body
 
-    ')'  shift, and go to state 343
+    '{'  shift, and go to state 28
+
+    body  go to state 343
 
 
 state 338
 
-  113 identity_rule: '(' IDENT '=' LIT_INT ')' . ARROW body
+  111 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW body .
 
-    ARROW  shift, and go to state 344
+    $default  reduce using rule 111 (identity_rule)
 
 
 state 339
 
-  114 negation_rule: '(' IDENT '=' '-' . IDENT ')' ARROW body
+  112 negation_rule: '(' IDENT '=' '-' IDENT ')' . ARROW body
 
-    IDENT  shift, and go to state 345
+    ARROW  shift, and go to state 344
 
 
 state 340
 
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT . ')' ARROW body
+  110 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW . body
 
-    ')'  shift, and go to state 346
+    '{'  shift, and go to state 28
+
+    body  go to state 345
 
 
 state 341
 
-  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' . ARROW body
+  113 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW body .
 
-    ARROW  shift, and go to state 347
+    $default  reduce using rule 113 (inverse_rule)
 
 
 state 342
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' . additive_rule negation_rule identity_rule mult_rule '}' ';'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule . identity_rule mult_rule '}' ';'
 
-    '('  shift, and go to state 262
+    '('  shift, and go to state 274
 
-    additive_rule  go to state 348
+    identity_rule  go to state 346
 
 
 state 343
 
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' . ARROW body
+  109 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body .
 
-    ARROW  shift, and go to state 349
+    $default  reduce using rule 109 (additive_rule)
 
 
 state 344
 
-  113 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW . body
+  112 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW . body
 
-    '{'  shift, and go to state 254
+    '{'  shift, and go to state 28
 
-    body  go to state 350
+    body  go to state 347
 
 
 state 345
 
-  114 negation_rule: '(' IDENT '=' '-' IDENT . ')' ARROW body
+  110 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW body .
 
-    ')'  shift, and go to state 351
+    $default  reduce using rule 110 (mult_rule)
 
 
 state 346
 
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' . ARROW body
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule . mult_rule '}' ';'
 
-    ARROW  shift, and go to state 352
+    '('  shift, and go to state 262
+
+    mult_rule  go to state 348
 
 
 state 347
 
-  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW . body
+  112 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW body .
 
-    '{'  shift, and go to state 254
-
-    body  go to state 353
+    $default  reduce using rule 112 (negation_rule)
 
 
 state 348
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule . negation_rule identity_rule mult_rule '}' ';'
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule . '}' ';'
 
-    '('  shift, and go to state 299
-
-    negation_rule  go to state 354
+    '}'  shift, and go to state 349
 
 
 state 349
 
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW . body
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' . ';'
 
-    '{'  shift, and go to state 254
-
-    body  go to state 355
+    ';'  shift, and go to state 350
 
 
 state 350
 
-  113 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW body .
+  108 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';' .
 
-    $default  reduce using rule 113 (identity_rule)
-
-
-state 351
-
-  114 negation_rule: '(' IDENT '=' '-' IDENT ')' . ARROW body
-
-    ARROW  shift, and go to state 356
-
-
-state 352
-
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW . body
-
-    '{'  shift, and go to state 254
-
-    body  go to state 357
-
-
-state 353
-
-  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW body .
-
-    $default  reduce using rule 115 (inverse_rule)
-
-
-state 354
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule . identity_rule mult_rule '}' ';'
-
-    '('  shift, and go to state 277
-
-    identity_rule  go to state 358
-
-
-state 355
-
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body .
-
-    $default  reduce using rule 111 (additive_rule)
-
-
-state 356
-
-  114 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW . body
-
-    '{'  shift, and go to state 254
-
-    body  go to state 359
-
-
-state 357
-
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW body .
-
-    $default  reduce using rule 112 (mult_rule)
-
-
-state 358
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule . mult_rule '}' ';'
-
-    '('  shift, and go to state 264
-
-    mult_rule  go to state 360
-
-
-state 359
-
-  114 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW body .
-
-    $default  reduce using rule 114 (negation_rule)
-
-
-state 360
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule . '}' ';'
-
-    '}'  shift, and go to state 361
-
-
-state 361
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' . ';'
-
-    ';'  shift, and go to state 362
-
-
-state 362
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';' .
-
-    $default  reduce using rule 110 (archetype_claim)
+    $default  reduce using rule 108 (archetype_claim)

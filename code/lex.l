@@ -14,7 +14,7 @@ spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
 aug_op {arith_op}=
 punct [,;:]
-misc_ops (@|=|&|"|")
+misc_ops (@|=|&|"|"|~)
 
 uint (u8|u16|u32|u64)
 sint (i8|i16|i32|i64)

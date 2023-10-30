@@ -7,7 +7,7 @@ void yyerror(const char* s);
 %}
 
 // keywords
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_TO
 
 // builtin types
 %token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
@@ -186,19 +186,22 @@ switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' stat
                 | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
                 ;
 
-sc_blocks       : KW_CASE LIT_CHAR ':' statements sc_blocks
+/* sc_blocks       : KW_CASE LIT_CHAR ':' statements sc_blocks
                 | KW_CASE LIT_INT ':' statements sc_blocks
                 | KW_CASE LIT_FLOAT ':' statements sc_blocks
                 | epsilon
+                ; */
+sc_blocks       : KW_CASE constant ':' statements sc_blocks
+                | epsilon
                 ;
 
-archetype_claim : KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' {printf("Group claim rule\n");}
+archetype_claim : KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' 
                 | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
                 | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
                 | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule'}' ';'
                 ;
 
-additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body {printf("Group_closure_rule\n");}
+additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body 
                 ;
 
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
@@ -213,14 +216,14 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
 inverse_rule    : '(' IDENT '=' '~' IDENT ')' ARROW body
                 ;
 
-function        : function_header '{' function_body '}' 
+function        : function_header body 
                 ;
 
 function_header : KW_FN IDENT '(' parameter_list ')' ':' type
                 ;
 
-function_body   : statements
-                ;
+/* function_body   : statements
+                ; */
 
 parameter_list  : typ_var
                 | parameter_list ',' typ_var 
@@ -231,15 +234,15 @@ typ_var         : IDENT ':' type
 
 struct          : KW_STRUCT IDENT '{' attr_list '}'
                 ;
-attr_list       : IDENT
-                | typ_var ',' IDENT 
+attr_list       : attr_list ',' typ_var
+                | typ_var
                 ;
 enum            : KW_ENUM IDENT '{' variant_list '}'
                 ;
 variant_list    : IDENT
                 | variant_list ',' IDENT 
                 ;
-forge           : KW_FORGE type '(' parameter_list   '{' statements '}'
+forge           : KW_FORGE '(' parameter_list ')' KW_TO type body
                 ;
 cart            : '(' typ_list ')'
                 ;

@@ -15,9 +15,9 @@ void yyerror(const char* s);
 
 %left '['
 %left INCR DECR
+%left '.'
 %right '!' // Also unary minus, ref, and deref - see `expression` definition.
 %left KW_AS 
-%left '.'
 %left '@'
 %left '*' '/' '%' 
 %left '+' '-' 
@@ -90,20 +90,12 @@ type            : PRIMITIVE_DTYPE
                 | '&' type
                 | cart
                 ; 
-              
-/* var             : IDENT
-                | var '.' IDENT // Nested structs
-                | '*' var
-                | '*' '(' expression ')'
-                | IDENT VARIANT IDENT // No nested enums
-                ; */
 
 assign_op       : ASSIGN_OP
                 | '='
                 ;
 
-assignment      : expression assign_op expression
-                //| array_access assign_op expression
+assignment      : expression assign_op expression // expression must be an lvalue
                 ;
 
 constant        : LIT_CHAR
@@ -112,6 +104,7 @@ constant        : LIT_CHAR
                 | LIT_STR
                 | KW_TRUE
                 | KW_FALSE
+                | IDENT VARIANT IDENT // Enum variant
                 ;
 
 expression      : '(' expression ')'
@@ -121,7 +114,6 @@ expression      : '(' expression ')'
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 | expression '.' IDENT
-                | IDENT VARIANT IDENT
                 | expression KW_AS '(' type ')'
                 | expression '@' expression
                 | expression '*' expression
@@ -138,7 +130,7 @@ expression      : '(' expression ')'
                 | IDENT | constant | unary_operation | call 
                 | array_decl // array value
                 | cart_value // tuple value
-                ;
+                ; // semantic check: check if lvalue
 
 cart_value      : '(' expression ',' ')'
                 | '(' expression ',' cart_value_list ')'

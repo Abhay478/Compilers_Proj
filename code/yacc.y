@@ -13,9 +13,10 @@ void yyerror(const char* s);
 %token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
 
 // other
-%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE 
+%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE ASSIGN_OP
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
+%left '['
 %right '!' // Also unary minus, see `expression` definition.
 %left KW_AS
 %left '@'
@@ -60,23 +61,16 @@ statement       : declaration ';'
                 | archetype_claim              
                 ;
 
-field_data_type : KW_BIG_RATIONAL
-                | KW_COMPLEX
+// TODO: use these instead
+generic         : IDENT '<' type_args '>'
                 ;
 
-group_data_type : KW_CYCLIC '<' LIT_INT '>'
-                | KW_SYMMETRIC '<' LIT_INT '>'
-                | KW_ALTERNATING '<' LIT_INT '>'
-                | KW_DIHEDRAL '<' LIT_INT '>'
-                | KW_INV_MAT '<' LIT_INT ',' type '>' // Second generic should be a field.
+type_args       : type_arg ',' type_args
+                | type_arg
                 ;
 
-ring_data_type  : KW_BIGINT
-                | KW_MATRIX '<' LIT_INT ',' type '>' // Second generic should be a field.
-                | KW_POLYNOMIAL '<' type '>' // Second generic should be a field.
-                ;
-
-space_data_type : KW_VEC '<' type '>' // Second generic should be a field.
+type_arg        : type
+                | LIT_INT
                 ;
 
 declaration     : KW_LET decl_list
@@ -86,17 +80,14 @@ decl_list       : decl_item
                 | decl_item ',' decl_list
                 ;
 
-decl_item       : typ_var
-                | typ_var '=' expression
+decl_item       : type_var
+                | type_var '=' expression
                 ;
 
 type            : PRIMITIVE_DTYPE
                 | KW_BUF '<' PRIMITIVE_DTYPE '>'
                 | IDENT
-                | group_data_type
-                | ring_data_type
-                | field_data_type
-                | space_data_type
+                | generic
                 | '&' type
                 | cart
                 ; 
@@ -108,8 +99,12 @@ var             : IDENT
                 | IDENT VARIANT IDENT // No nested enums
                 ;
 
-assignment      : var '=' expression
-                | array_access '=' expression
+assign_op       : ASSIGN_OP
+                | '='
+                ;
+
+assignment      : var assign_op expression
+                | array_access assign_op expression
                 ;
 
 constant        : LIT_CHAR
@@ -121,9 +116,10 @@ constant        : LIT_CHAR
                 ;
 
 expression      : '(' expression ')'
+                | expression array_index      %prec '['
                 | '!' expression
                 | '-' expression              %prec '!'  // Unary minus has precedence of '!', not subtraction.
-                | expression KW_AS type
+                | expression KW_AS '(' type ')'
                 | expression '@' expression
                 | expression '*' expression
                 | expression '/' expression
@@ -135,9 +131,9 @@ expression      : '(' expression ')'
                 | expression rel_op expression
                 | expression AND expression 
                 | expression OR expression
-                | var | constant | unary_operation | array_access | call 
-                | array_decl
-                | cart_value
+                | var | constant | unary_operation | call 
+                | array_decl // array value
+                | cart_value // tuple value
                 ;
 
 cart_value      : '(' expression ',' ')'
@@ -151,10 +147,10 @@ cart_value_list : expression ',' cart_value_list
 return_stmt     : KW_RETURN expression 
                 ;
 
-call            : IDENT '(' pass_param_list ')' 
+call            : IDENT '(' expr_list ')' 
                 ;
 
-pass_param_list : expression ',' pass_param_list
+expr_list       : expression ',' expr_list
                 | epsilon
                 ;
 
@@ -162,15 +158,14 @@ unary_operation : var INCR
                 | var DECR
                 ;
 
-array_access    : var array_decl
+array_access    : expression array_index
                 ;
 
-array_decl      : '[' array_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
-                | '['expression SLICE expression ']' // 
+array_decl      : '[' expr_list ']'
                 ;
 
-array_list      : constant ',' array_list
-                | constant
+array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
+                | '['expression SLICE expression ']' // subarray access
                 ;
 
 conditional     : KW_IF '(' expression ')' if_body
@@ -195,19 +190,31 @@ switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' stat
                 | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
                 ;
 
-/* sc_blocks       : KW_CASE LIT_CHAR ':' statements sc_blocks
-                | KW_CASE LIT_INT ':' statements sc_blocks
-                | KW_CASE LIT_FLOAT ':' statements sc_blocks
-                | epsilon
-                ; */
 sc_blocks       : KW_CASE constant ':' statements sc_blocks
                 | epsilon
                 ;
 
-archetype_claim : KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' 
-                | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
-                | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule'}' ';'
+archetype_claim : KW_CLAIM IDENT KW_IS archetype '{' type_def rule_list '}' ';'
+
+archetype       : KW_GROUP
+                | KW_RING
+                | KW_FIELD
+                | KW_SPACE
+                ;
+
+type_def        : archetype '=' type ';'
+                | epsilon
+                ;
+
+rule_list       : rule_list rule
+                | rule
+                ;
+
+rule            : additive_rule
+                | mult_rule
+                | identity_rule
+                | negation_rule
+                | inverse_rule
                 ;
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body 
@@ -216,49 +223,55 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
                 ;
 
-identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body
+identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body // LIT_INT should be 0 or 1, depending on the archetype
                 ;
 
 negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
                 ;
 
-inverse_rule    : '(' IDENT '=' '~' IDENT ')' ARROW body
+inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body // LIT_INT must be 1
                 ;
 
 function        : function_header body 
                 ;
 
-function_header : KW_FN IDENT '(' parameter_list ')' ':' type
+function_header : KW_FN IDENT '(' param_list ')' ':' type
                 ;
 
-/* function_body   : statements
-                ; */
-
-parameter_list  : typ_var
-                | parameter_list ',' typ_var 
+type_var_list   : type_var_list ',' type_var
+                | type_var
                 ;
 
-typ_var         : IDENT ':' type
+param_list      : type_var_list
+                ;
+
+type_var        : IDENT ':' type
                 ;
 
 struct          : KW_STRUCT IDENT '{' attr_list '}'
                 ;
-attr_list       : attr_list ',' typ_var
-                | typ_var
+
+attr_list       : type_var_list
                 ;
+
 enum            : KW_ENUM IDENT '{' variant_list '}'
                 ;
+
 variant_list    : IDENT
                 | variant_list ',' IDENT 
                 ;
-forge           : KW_FORGE '(' parameter_list ')' KW_TO type body
+
+forge           : KW_FORGE '(' param_list ')' KW_AS type body
                 ;
+
 cart            : '(' type ',' ')'
                 | '(' type ',' type_list ')'
                 ;
+
 type_list       : type_list ',' type
                 | type
                 ;
+
 epsilon         : ;
 
 %%

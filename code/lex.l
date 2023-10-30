@@ -12,16 +12,16 @@ char_c \'\\?([^']|(\\'))\'
 rel_op (==|!=|<=|>=)
 spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
-aug_op {arith_op}=
+assign_op {arith_op}=
 punct [,;:]
-misc_ops (@|=|&|"|"|~)
+misc_ops (@|=|&)
 
 uint (u8|u16|u32|u64)
 sint (i8|i16|i32|i64)
 
-pdt ({uint}|{sint}|float|bool|char)
+pdt ({uint}|{sint}|float|bool|char|str)
 
-op ('>'|'<'|'!'|{arith_op}|{aug_op}|\.|{misc_ops})
+op ('>'|'<'|'!'|{arith_op}|\.|{misc_ops})
 
 %%
 
@@ -85,6 +85,8 @@ Space {return KW_SPACE;}
 {pdt} {return PRIMITIVE_DTYPE;} 
 
 {op} {return yytext[0];} /* single character operators */
+
+{assign_op} {return ASSIGN_OP;} /* assignment operators */
 
 {spl}|{punct} {return yytext[0];} /* punctuation and special characters */
 

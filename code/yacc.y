@@ -67,6 +67,7 @@ generic         : IDENT '<' type_args '>'
 
 type_args       : type_arg ',' type_args
                 | type_arg
+                | epsilon
                 ;
 
 type_arg        : type
@@ -133,12 +134,12 @@ expression      : '(' expression ')'
                 | cart_value // tuple value
                 ; // semantic check: check if lvalue
 
-cart_value      : '(' expression ',' ')'
-                | '(' expression ',' cart_value_list ')'
+cart_value      : '(' expression ',' cart_value_list ')'
                 ;
 
 cart_value_list : expression ',' cart_value_list
                 | expression
+                | epsilon
                 ;
 
 return_stmt     : KW_RETURN expression 
@@ -150,6 +151,7 @@ call            : IDENT '(' expr_list ')'
                 ;
 
 expr_list       : expression ',' expr_list
+                | expression
                 | epsilon
                 ;
 
@@ -242,7 +244,8 @@ function_header : KW_FN IDENT '(' param_list ')' ':' type
                 | KW_FN IDENT '(' param_list ')' // return type is void
                 ;
 
-type_var_list   : type_var_list ',' type_var
+type_var_list   : type_var ',' type_var_list
+                | type_var
                 | epsilon
                 ;
 
@@ -263,6 +266,7 @@ enum            : KW_ENUM IDENT '{' variant_list '}'
 
 ident_list      : ident_list ',' IDENT
                 | IDENT
+                | epsilon
                 ;
 variant_list    : ident_list
                 ;

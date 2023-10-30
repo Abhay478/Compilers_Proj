@@ -7,25 +7,24 @@ void yyerror(const char* s);
 %}
 
 // keywords
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_TO
-
-// builtin types
-%token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_WITH
 
 // other
 %token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE ASSIGN_OP
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
 %left '['
-%right '!' // Also unary minus, see `expression` definition.
-%left KW_AS
+%left INCR DECR
+%right '!' // Also unary minus, ref, and deref - see `expression` definition.
+%left KW_AS 
+%left '.'
 %left '@'
 %left '*' '/' '%' 
 %left '+' '-' 
 %left rel_op '>' '<'
+%left KW_IN
 %left AND
 %left OR
-%left '.'
 
 %start P
 
@@ -85,26 +84,26 @@ decl_item       : type_var
                 ;
 
 type            : PRIMITIVE_DTYPE
-                | KW_BUF '<' PRIMITIVE_DTYPE '>'
+                | '[' type ']'
                 | IDENT
                 | generic
                 | '&' type
                 | cart
                 ; 
               
-var             : IDENT
+/* var             : IDENT
                 | var '.' IDENT // Nested structs
                 | '*' var
                 | '*' '(' expression ')'
                 | IDENT VARIANT IDENT // No nested enums
-                ;
+                ; */
 
 assign_op       : ASSIGN_OP
                 | '='
                 ;
 
-assignment      : var assign_op expression
-                | array_access assign_op expression
+assignment      : expression assign_op expression
+                //| array_access assign_op expression
                 ;
 
 constant        : LIT_CHAR
@@ -116,9 +115,13 @@ constant        : LIT_CHAR
                 ;
 
 expression      : '(' expression ')'
-                | expression array_index      %prec '['
+                | array_access
                 | '!' expression
-                | '-' expression              %prec '!'  // Unary minus has precedence of '!', not subtraction.
+                | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
+                | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
+                | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
+                | expression '.' IDENT
+                | IDENT VARIANT IDENT
                 | expression KW_AS '(' type ')'
                 | expression '@' expression
                 | expression '*' expression
@@ -129,9 +132,10 @@ expression      : '(' expression ')'
                 | expression '>' expression
                 | expression '<' expression
                 | expression rel_op expression
+                | expression KW_IN expression
                 | expression AND expression 
                 | expression OR expression
-                | var | constant | unary_operation | call 
+                | IDENT | constant | unary_operation | call 
                 | array_decl // array value
                 | cart_value // tuple value
                 ;
@@ -154,8 +158,8 @@ expr_list       : expression ',' expr_list
                 | epsilon
                 ;
 
-unary_operation : var INCR
-                | var DECR
+unary_operation : expression INCR
+                | expression DECR
                 ;
 
 array_access    : expression array_index
@@ -165,7 +169,7 @@ array_decl      : '[' expr_list ']'
                 ;
 
 array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
-                | '['expression SLICE expression ']' // subarray access
+                | '[' expression SLICE expression ']' // subarray access
                 ;
 
 conditional     : KW_IF '(' expression ')' if_body
@@ -183,6 +187,7 @@ loop_stmt       : KW_WHILE '(' expression ')' body
                 ;
 
 loop_mut        : unary_operation
+                | assignment
                 | epsilon
                 ;
 
@@ -192,9 +197,11 @@ switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' stat
 
 sc_blocks       : KW_CASE constant ':' statements sc_blocks
                 | epsilon
-                ;
+                ; // NOTE: Does not cascade
 
 archetype_claim : KW_CLAIM IDENT KW_IS archetype '{' type_def rule_list '}' ';'
+                | KW_CLAIM IDENT KW_IS archetype KW_WITH '(' ident_list ')' ';'
+                ;
 
 archetype       : KW_GROUP
                 | KW_RING
@@ -257,8 +264,10 @@ attr_list       : type_var_list
 enum            : KW_ENUM IDENT '{' variant_list '}'
                 ;
 
-variant_list    : IDENT
-                | variant_list ',' IDENT 
+ident_list      : ident_list ',' IDENT
+                | IDENT
+                ;
+variant_list    : ident_list
                 ;
 
 forge           : KW_FORGE '(' param_list ')' KW_AS type body

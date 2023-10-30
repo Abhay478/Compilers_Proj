@@ -40,7 +40,6 @@ fn {return KW_FN;}
 let {return KW_LET;}
 return {return KW_RETURN;}
 claim {return KW_CLAIM;}
-morph {return KW_MORPH;}
 forge {return KW_FORGE;}
 as {return KW_AS;}
 is {return KW_IS;}
@@ -54,20 +53,6 @@ default {return KW_DEFAULT;}
 switch {return KW_SWITCH;}
 case {return KW_CASE;}
 in {return KW_IN;}
-
-BigInt {return KW_BIGINT;}
-Polynomial {return KW_POLYNOMIAL;}
-Alternating {return KW_ALTERNATING;}
-Cyclic {return KW_CYCLIC;}
-Symmetric {return KW_SYMMETRIC;}
-Dihedral {return KW_DIHEDRAL;}
-Buf {return KW_BUF;}
-Vec {return KW_VEC;}
-Matrix {return KW_MATRIX;}
-InvMat {return KW_INV_MAT;}
-BigRational {return KW_BIG_RATIONAL;}
-Complex {return KW_COMPLEX;}
-
 Ring {return KW_RING;}
 Group {return KW_GROUP;}
 Field {return KW_FIELD;}

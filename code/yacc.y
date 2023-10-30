@@ -50,6 +50,7 @@ statements      : statement statements
 
 statement       : declaration ';'
                 | assignment ';'
+                | unary_operation ';'
                 | call ';'
                 | return_stmt ';' 
                 | conditional

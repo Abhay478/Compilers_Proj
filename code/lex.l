@@ -7,7 +7,7 @@ num (-?{dig}+)
 real -?{dig}+\.{dig}+
 id [[:alpha:]_][[:alnum:]_]*
 str_c \"([^"]|(\\\"))*\"
-char_c \'\\?([^']|(\\'))\'
+char_c \'([^\\']|\\.)\'
 
 rel_op (==|!=|<=|>=)
 spl [\(\)\{\}\[\]]
@@ -28,7 +28,7 @@ op ('>'|'<'|'!'|{arith_op}|\.|{misc_ops})
 {char_c} {return LIT_CHAR;}
 {str_c} {return LIT_STR;}
 {num} {return LIT_INT;}
-
+{real} {return LIT_FLOAT;}
 "//.*\n" {}
 "/\*.*\*/" {}
 
@@ -74,9 +74,6 @@ Space {return KW_SPACE;}
 {assign_op} {return ASSIGN_OP;} /* assignment operators */
 
 {spl}|{punct} {return yytext[0];} /* punctuation and special characters */
-
-
-{real} {return LIT_FLOAT;}
 
 {id} {return IDENT;} /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 

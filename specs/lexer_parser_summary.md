@@ -20,14 +20,13 @@ Where unspecified, the keyword is used in a manner identical to C.
 |`Ring`|KW_RING|Archetype name, also used in morphisms|
 |`Field`|KW_FIELD|Archetype name|
 |`Space`|KW_SPACE|Archetype name|
-|`print`|KW_PRINT|To print a variable|
 |`let`|KW_LET|To declare a variable|
 |`return`|KW_RETURN|To return a value from a function|
 |`if`|KW_IF||
 |`else`|KW_ELSE||
 |`while`|KW_WHILE||
 |`for`|KW_FOR||
-|`in`|KW_IN|To iterate over a range|
+|`in`|KW_IN|To iterate over a Buffer|
 |`switch`|KW_SWITCH||
 |`case`|KW_CASE||
 |`default`|KW_DEFAULT||

@@ -145,6 +145,7 @@ return_stmt     : KW_RETURN expression
                 ;
 
 call            : IDENT '(' expr_list ')' 
+                | expression '.' IDENT '(' expr_list ')'
                 ;
 
 expr_list       : expression ',' expr_list

@@ -142,6 +142,7 @@ cart_value_list : expression ',' cart_value_list
                 ;
 
 return_stmt     : KW_RETURN expression 
+                | KW_RETURN
                 ;
 
 call            : IDENT '(' expr_list ')' 
@@ -160,6 +161,7 @@ array_access    : expression array_index
                 ;
 
 array_decl      : '[' expr_list ']'
+                | '[' expression ';' expression ']'
                 ;
 
 array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
@@ -237,10 +239,11 @@ function        : function_header body
                 ;
 
 function_header : KW_FN IDENT '(' param_list ')' ':' type
+                | KW_FN IDENT '(' param_list ')' // return type is void
                 ;
 
 type_var_list   : type_var_list ',' type_var
-                | type_var
+                | epsilon
                 ;
 
 param_list      : type_var_list

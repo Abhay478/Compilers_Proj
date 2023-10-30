@@ -6,33 +6,50 @@ void yyerror(const char* s);
 
 %}
 
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_PRINT KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_STRUCT KW_ENUM 
+// keywords
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_PRINT KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_MORPH KW_FORGE KW_AS KW_STRUCT KW_ENUM 
+
+// builtin types
 %token KW_CYCLIC KW_BIG_RATIONAL KW_COMPLEX KW_SYMMETRIC KW_ALTERNATING KW_DIHEDRAL KW_INV_MAT KW_BIGINT KW_MATRIX KW_POLYNOMIAL KW_VEC KW_BUF 
-%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR log_op rel_op KW_TRUE KW_FALSE
-%token INCR DECR ARROW VARIANT SLICE // Two character operators.
-%left log_op 
-%left rel_op '>' '<'
-%right '!'
-%left '+' '-' 
-%left '*' '/' '%' 
+
+// other
+%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE
+%token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
+
+%right '!' // Also unary minus, see `expression` definition.
+%left KW_AS
 %left '@'
-%right '.'
+%left '*' '/' '%' 
+%left '+' '-' 
+%left rel_op '>' '<'
+%left AND
+%left OR
+%left '.'
+
 %start P
 
 %%
-P               : statements
+P               : declarations // globals
                 | P function
                 | P struct
                 | P forge
                 | P enum
                 ;
+
+declarations    : declaration ';' declarations
+                | epsilon
+                ;
+
+body            : '{' statements '}'
+                ;
+
 statements      : statement statements
                 | epsilon
                 ;
 
 statement       : declaration ';'
                 | assignment ';'
-                | call_stmt
+                | call ';'
                 | return_stmt ';' 
                 | conditional
                 | switch_case
@@ -41,14 +58,6 @@ statement       : declaration ';'
                 | KW_BREAK ';'
                 | KW_CONTINUE ';' 
                 | archetype_claim              
-                ;
-
-body            : '{' statements '}'
-                ;
-              
-var             : IDENT
-                | var '.' IDENT // Nested structs
-                | IDENT VARIANT IDENT // No nested enums
                 ;
 
 field_data_type : KW_BIG_RATIONAL
@@ -67,14 +76,18 @@ ring_data_type  : KW_BIGINT
                 | KW_POLYNOMIAL '<' type '>' // Second generic should be a field.
                 ;
 
-space_data_type : KW_VEC '<' type '>'
-                /* | KW_VEC '<' PRIMITIVE_DTYPE '>' ALREADY IN TYPE */
+space_data_type : KW_VEC '<' type '>' // Second generic should be a field.
                 ;
 
-declaration     : KW_LET decl_tail
+declaration     : KW_LET decl_list
                 ;
 
-decl_tail       : typ_var decl_cntd
+decl_list       : decl_item
+                | decl_item ',' decl_list
+                ;
+
+decl_item       : typ_var
+                | typ_var '=' expression
                 ;
 
 type            : PRIMITIVE_DTYPE
@@ -87,15 +100,12 @@ type            : PRIMITIVE_DTYPE
                 | '&' type
                 | cart
                 ; 
-
-decl_cntd       : '=' RHS
-                | ',' decl_tail
-                | epsilon
-                ;
-
-RHS             : expression
-                | '&' RHS
-                | '*' RHS
+              
+var             : IDENT
+                | var '.' IDENT // Nested structs
+                | '*' var
+                | '*' '(' expression ')'
+                | IDENT VARIANT IDENT // No nested enums
                 ;
 
 assignment      : var '=' expression
@@ -106,38 +116,37 @@ constant        : LIT_CHAR
                 | LIT_FLOAT
                 | LIT_INT
                 | LIT_STR
+                | KW_TRUE
+                | KW_FALSE
                 ;
 
-expression      : expression '+' expression
-                | expression '-' expression
+expression      : '(' expression ')'
+                | '!' expression
+                | '-' expression              %prec '!'  // Unary minus has precedence of '!', not subtraction.
+                | expression KW_AS type
+                | expression '@' expression
                 | expression '*' expression
                 | expression '/' expression
                 | expression '%' expression
-                | '(' expression ')'
-                | expression log_op expression 
-                | '!' expression
-                | expression rel_op expression
+                | expression '+' expression
+                | expression '-' expression
                 | expression '>' expression
                 | expression '<' expression
+                | expression rel_op expression
+                | expression AND expression 
+                | expression OR expression
                 | var | constant | unary_operation | array_access | call 
-                | KW_TRUE | KW_FALSE
-                | expression '@' expression
                 | array_decl
                 ;
 
 return_stmt     : KW_RETURN expression 
                 ;
 
-call_stmt       : type '(' pass_param_list ')' ';'
-                | type '(' ')' ';'
-                ;
-
-call            : type '(' pass_param_list ')' 
-                | type '(' ')'
+call            : IDENT '(' pass_param_list ')' 
                 ;
 
 pass_param_list : expression ',' pass_param_list
-                | expression
+                | epsilon
                 ;
 
 unary_operation : var INCR
@@ -217,7 +226,7 @@ parameter_list  : typ_var
                 | parameter_list ',' typ_var 
                 ;
 
-typ_var         : var ':' type
+typ_var         : IDENT ':' type
                 ;
 
 struct          : KW_STRUCT IDENT '{' attr_list '}'

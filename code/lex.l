@@ -10,7 +10,7 @@ str_c \"([^"]|(\\\"))*\"
 char_c \'\\?([^']|(\\'))\'
 
 rel_op (==|!=|<=|>=)
-log_op (&&|"||"|!)
+log_op (&&|"||")
 spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
 aug_op {arith_op}=
@@ -43,6 +43,7 @@ return {return KW_RETURN;}
 claim {return KW_CLAIM;}
 morph {return KW_MORPH;}
 forge {return KW_FORGE;}
+as {return KW_AS;}
 is {return KW_IS;}
 struct {return KW_STRUCT;}
 enum {return KW_ENUM;}
@@ -81,11 +82,12 @@ Space {return KW_SPACE;}
 "::" {return VARIANT;}
 ".." {return SLICE;}
 {rel_op} {return rel_op;}
-{log_op} {return log_op;}
+"&&" {return AND;}
+"||" {return OR;}
 
 {pdt} {return PRIMITIVE_DTYPE;} 
 
-{op} {return yytext[0];} /* operators */
+{op} {return yytext[0];} /* single character operators */
 
 {spl}|{punct} {return yytext[0];} /* punctuation and special characters */
 

@@ -76,6 +76,7 @@ declaration     : KW_LET decl_tail
                 ;
 
 decl_tail       : typ_var decl_cntd
+                ;
 
 type            : PRIMITIVE_DTYPE
                 | KW_BUF '<' PRIMITIVE_DTYPE '>'
@@ -92,6 +93,7 @@ decl_cntd       : '=' RHS
                 | ',' decl_tail
                 | epsilon
                 ;
+
 RHS             : expression
                 | '&' RHS
                 | '*' RHS
@@ -185,7 +187,7 @@ sc_blocks       : KW_CASE LIT_CHAR ':' statements sc_blocks
 archetype_claim : KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' {printf("Group claim rule\n");}
                 | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
                 | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule'}' ';'
+                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule'}' ';'
                 ;
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body {printf("Group_closure_rule\n");}
@@ -229,7 +231,7 @@ enum            : KW_ENUM IDENT '{' variant_list '}'
 variant_list    : IDENT
                 | variant_list ',' IDENT 
                 ;
-forge           : KW_FORGE type '(' parameter_list ')' '{' statements '}'
+forge           : KW_FORGE type '(' parameter_list   '{' statements '}'
                 ;
 cart            : '(' typ_list ')'
                 ;

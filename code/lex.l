@@ -41,8 +41,6 @@ fn {return KW_FN;}
 let {return KW_LET;}
 return {return KW_RETURN;}
 claim {return KW_CLAIM;}
-ring {return KW_RING;}
-group {return KW_GROUP;}
 morph {return KW_MORPH;}
 forge {return KW_FORGE;}
 is {return KW_IS;}
@@ -50,6 +48,32 @@ struct {return KW_STRUCT;}
 enum {return KW_ENUM;}
 true {return KW_TRUE;}
 false {return KW_FALSE;}
+break {return KW_BREAK;}
+continue {return KW_CONTINUE;}
+default {return KW_DEFAULT;}
+switch {return KW_SWITCH;}
+case {return KW_CASE;}
+in {return KW_IN;}
+as {return KW_AS;}
+print {return KW_PRINT;}
+
+BigInt {return KW_BIGINT;}
+Polynomial {return KW_POLYNOMIAL;}
+Alternating {return KW_ALTERNATING;}
+Cyclic {return KW_CYCLIC;}
+Symmetric {return KW_SYMMETRIC;}
+Dihedral {return KW_DIHEDRAL;}
+Buf {return KW_BUF;}
+Vec {return KW_VEC;}
+Matrix {return KW_MATRIX;}
+InvMat {return KW_INV_MAT;}
+BigRational {return KW_BIG_RATIONAL;}
+Complex {return KW_COMPLEX;}
+
+Ring {return KW_RING;}
+Group {return KW_GROUP;}
+Field {return KW_FIELD;}
+Space {return KW_SPACE;}
 
 "++" {return INCR;}
 "--" {return DECR;}
@@ -60,10 +84,6 @@ false {return KW_FALSE;}
 {log_op} {return log_op;}
 
 {pdt} {return PRIMITIVE_DTYPE;} 
-Group {return GROUP;}
-Ring {return RING;}
-Field {return FIELD;}
-Space {return SPACE;}
 
 {op} {return yytext[0];} /* operators */
 

@@ -155,7 +155,7 @@ Grammar
   107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
   108                | KW_CLAIM IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
   109                | KW_CLAIM IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110                | KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
   111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body
 
@@ -188,7 +188,7 @@ Grammar
   126 variant_list: IDENT
   127             | variant_list ',' IDENT
 
-  128 forge: KW_FORGE type '(' parameter_list ')' '{' statements '}'
+  128 forge: KW_FORGE type '(' parameter_list '{' statements '}'
 
   129 cart: '(' typ_list ')'
 
@@ -207,7 +207,7 @@ $end (0) 0
 '(' (40) 15 62 78 79 80 81 91 95 96 97 101 102 110 111 112 113 114
     115 117 128 129
 ')' (41) 15 62 78 79 80 81 91 95 96 97 101 102 110 111 112 113 114
-    115 117 128 129
+    115 117 129
 '*' (42) 50 59 112
 '+' (43) 57 111
 ',' (44) 29 31 46 82 89 120 124 127 130
@@ -312,7 +312,7 @@ decl_tail (91)
     on left: 35, on right: 34 46
 type (92)
     on left: 36 37 38 39 40 41 42 43 44, on right: 29 31 32 33 43 78
-    79 80 81 117 121 128 130 131
+    79 80 81 110 117 121 128 130 131
 decl_cntd (93)
     on left: 45 46 47, on right: 35
 RHS (94)
@@ -453,7 +453,7 @@ state 1
   107 archetype_claim: KW_CLAIM . IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
   108                | KW_CLAIM . IDENT KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
   109                | KW_CLAIM . IDENT KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM . IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110                | KW_CLAIM . IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     IDENT  shift, and go to state 47
 
@@ -945,7 +945,7 @@ state 47
   107 archetype_claim: KW_CLAIM IDENT . KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
   108                | KW_CLAIM IDENT . KW_IS KW_RING '{' mult_rule identity_rule '}' ';'
   109                | KW_CLAIM IDENT . KW_IS KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT . KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110                | KW_CLAIM IDENT . KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     KW_IS  shift, and go to state 110
 
@@ -1629,7 +1629,7 @@ state 92
 
 state 93
 
-  128 forge: KW_FORGE . type '(' parameter_list ')' '{' statements '}'
+  128 forge: KW_FORGE . type '(' parameter_list '{' statements '}'
 
     KW_CYCLIC        shift, and go to state 11
     KW_BIG_RATIONAL  shift, and go to state 12
@@ -1887,7 +1887,7 @@ state 110
   107 archetype_claim: KW_CLAIM IDENT KW_IS . KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';'
   108                | KW_CLAIM IDENT KW_IS . KW_RING '{' mult_rule identity_rule '}' ';'
   109                | KW_CLAIM IDENT KW_IS . KW_FIELD '{' inverse_rule '}' ';'
-  110                | KW_CLAIM IDENT KW_IS . KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110                | KW_CLAIM IDENT KW_IS . KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     KW_GROUP  shift, and go to state 165
     KW_RING   shift, and go to state 166
@@ -2859,7 +2859,7 @@ state 155
 
 state 156
 
-  128 forge: KW_FORGE type . '(' parameter_list ')' '{' statements '}'
+  128 forge: KW_FORGE type . '(' parameter_list '{' statements '}'
 
     '('  shift, and go to state 210
 
@@ -3033,7 +3033,7 @@ state 167
 
 state 168
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE . '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE . '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     '{'  shift, and go to state 220
 
@@ -3785,7 +3785,7 @@ state 209
 
 state 210
 
-  128 forge: KW_FORGE type '(' . parameter_list ')' '{' statements '}'
+  128 forge: KW_FORGE type '(' . parameter_list '{' statements '}'
 
     IDENT  shift, and go to state 49
 
@@ -3871,7 +3871,7 @@ state 219
 
 state 220
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' . KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' . KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     KW_FIELD  shift, and go to state 256
 
@@ -4152,9 +4152,9 @@ state 241
 state 242
 
   120 parameter_list: parameter_list . ',' typ_var
-  128 forge: KW_FORGE type '(' parameter_list . ')' '{' statements '}'
+  128 forge: KW_FORGE type '(' parameter_list . '{' statements '}'
 
-    ')'  shift, and go to state 269
+    '{'  shift, and go to state 269
     ','  shift, and go to state 268
 
 
@@ -4262,7 +4262,7 @@ state 255
 
 state 256
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD . '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD . '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     '='  shift, and go to state 281
 
@@ -4381,9 +4381,56 @@ state 268
 
 state 269
 
-  128 forge: KW_FORGE type '(' parameter_list ')' . '{' statements '}'
+  128 forge: KW_FORGE type '(' parameter_list '{' . statements '}'
 
-    '{'  shift, and go to state 297
+    KW_CLAIM         shift, and go to state 1
+    KW_PRINT         shift, and go to state 2
+    KW_LET           shift, and go to state 3
+    KW_RETURN        shift, and go to state 4
+    KW_IF            shift, and go to state 5
+    KW_WHILE         shift, and go to state 6
+    KW_FOR           shift, and go to state 7
+    KW_SWITCH        shift, and go to state 8
+    KW_BREAK         shift, and go to state 9
+    KW_CONTINUE      shift, and go to state 10
+    KW_CYCLIC        shift, and go to state 11
+    KW_BIG_RATIONAL  shift, and go to state 12
+    KW_COMPLEX       shift, and go to state 13
+    KW_SYMMETRIC     shift, and go to state 14
+    KW_ALTERNATING   shift, and go to state 15
+    KW_DIHEDRAL      shift, and go to state 16
+    KW_INV_MAT       shift, and go to state 17
+    KW_BIGINT        shift, and go to state 18
+    KW_MATRIX        shift, and go to state 19
+    KW_POLYNOMIAL    shift, and go to state 20
+    KW_VEC           shift, and go to state 21
+    KW_BUF           shift, and go to state 22
+    IDENT            shift, and go to state 23
+    PRIMITIVE_DTYPE  shift, and go to state 24
+    '('              shift, and go to state 25
+    '&'              shift, and go to state 26
+
+    $default  reduce using rule 132 (epsilon)
+
+    statements       go to state 297
+    statement        go to state 29
+    var              go to state 30
+    field_data_type  go to state 31
+    group_data_type  go to state 32
+    ring_data_type   go to state 33
+    space_data_type  go to state 34
+    declaration      go to state 35
+    type             go to state 36
+    assignment       go to state 37
+    return_stmt      go to state 38
+    call_stmt        go to state 39
+    array_access     go to state 40
+    conditional      go to state 41
+    loop_stmt        go to state 42
+    switch_case      go to state 43
+    archetype_claim  go to state 44
+    cart             go to state 45
+    epsilon          go to state 46
 
 
 state 270
@@ -4467,7 +4514,7 @@ state 280
 
 state 281
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' . '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' . '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
     '('  shift, and go to state 308
 
@@ -4605,56 +4652,9 @@ state 296
 
 state 297
 
-  128 forge: KW_FORGE type '(' parameter_list ')' '{' . statements '}'
+  128 forge: KW_FORGE type '(' parameter_list '{' statements . '}'
 
-    KW_CLAIM         shift, and go to state 1
-    KW_PRINT         shift, and go to state 2
-    KW_LET           shift, and go to state 3
-    KW_RETURN        shift, and go to state 4
-    KW_IF            shift, and go to state 5
-    KW_WHILE         shift, and go to state 6
-    KW_FOR           shift, and go to state 7
-    KW_SWITCH        shift, and go to state 8
-    KW_BREAK         shift, and go to state 9
-    KW_CONTINUE      shift, and go to state 10
-    KW_CYCLIC        shift, and go to state 11
-    KW_BIG_RATIONAL  shift, and go to state 12
-    KW_COMPLEX       shift, and go to state 13
-    KW_SYMMETRIC     shift, and go to state 14
-    KW_ALTERNATING   shift, and go to state 15
-    KW_DIHEDRAL      shift, and go to state 16
-    KW_INV_MAT       shift, and go to state 17
-    KW_BIGINT        shift, and go to state 18
-    KW_MATRIX        shift, and go to state 19
-    KW_POLYNOMIAL    shift, and go to state 20
-    KW_VEC           shift, and go to state 21
-    KW_BUF           shift, and go to state 22
-    IDENT            shift, and go to state 23
-    PRIMITIVE_DTYPE  shift, and go to state 24
-    '('              shift, and go to state 25
-    '&'              shift, and go to state 26
-
-    $default  reduce using rule 132 (epsilon)
-
-    statements       go to state 316
-    statement        go to state 29
-    var              go to state 30
-    field_data_type  go to state 31
-    group_data_type  go to state 32
-    ring_data_type   go to state 33
-    space_data_type  go to state 34
-    declaration      go to state 35
-    type             go to state 36
-    assignment       go to state 37
-    return_stmt      go to state 38
-    call_stmt        go to state 39
-    array_access     go to state 40
-    conditional      go to state 41
-    loop_stmt        go to state 42
-    switch_case      go to state 43
-    archetype_claim  go to state 44
-    cart             go to state 45
-    epsilon          go to state 46
+    '}'  shift, and go to state 316
 
 
 state 298
@@ -4729,9 +4729,31 @@ state 307
 
 state 308
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' . IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' . type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    IDENT  shift, and go to state 324
+    KW_CYCLIC        shift, and go to state 11
+    KW_BIG_RATIONAL  shift, and go to state 12
+    KW_COMPLEX       shift, and go to state 13
+    KW_SYMMETRIC     shift, and go to state 14
+    KW_ALTERNATING   shift, and go to state 15
+    KW_DIHEDRAL      shift, and go to state 16
+    KW_INV_MAT       shift, and go to state 17
+    KW_BIGINT        shift, and go to state 18
+    KW_MATRIX        shift, and go to state 19
+    KW_POLYNOMIAL    shift, and go to state 20
+    KW_VEC           shift, and go to state 21
+    KW_BUF           shift, and go to state 22
+    IDENT            shift, and go to state 87
+    PRIMITIVE_DTYPE  shift, and go to state 24
+    '('              shift, and go to state 25
+    '&'              shift, and go to state 26
+
+    field_data_type  go to state 31
+    group_data_type  go to state 32
+    ring_data_type   go to state 33
+    space_data_type  go to state 34
+    type             go to state 324
+    cart             go to state 45
 
 
 state 309
@@ -4977,44 +4999,44 @@ state 315
 
 state 316
 
-  128 forge: KW_FORGE type '(' parameter_list ')' '{' statements . '}'
+  128 forge: KW_FORGE type '(' parameter_list '{' statements '}' .
 
-    '}'  shift, and go to state 331
+    $default  reduce using rule 128 (forge)
 
 
 state 317
 
   111 additive_rule: '(' IDENT '=' IDENT . '+' IDENT ')' ARROW body
 
-    '+'  shift, and go to state 332
+    '+'  shift, and go to state 331
 
 
 state 318
 
   113 identity_rule: '(' IDENT '=' . LIT_INT ')' ARROW body
 
-    LIT_INT  shift, and go to state 333
+    LIT_INT  shift, and go to state 332
 
 
 state 319
 
   114 negation_rule: '(' IDENT . '=' '-' IDENT ')' ARROW body
 
-    '='  shift, and go to state 334
+    '='  shift, and go to state 333
 
 
 state 320
 
   107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' . ';'
 
-    ';'  shift, and go to state 335
+    ';'  shift, and go to state 334
 
 
 state 321
 
   112 mult_rule: '(' IDENT '=' IDENT . '*' IDENT ')' ARROW body
 
-    '*'  shift, and go to state 336
+    '*'  shift, and go to state 335
 
 
 state 322
@@ -5028,14 +5050,14 @@ state 323
 
   115 inverse_rule: '(' IDENT '=' '~' . IDENT ')' ARROW body
 
-    IDENT  shift, and go to state 337
+    IDENT  shift, and go to state 336
 
 
 state 324
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT . ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type . ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    ')'  shift, and go to state 338
+    ')'  shift, and go to state 337
 
 
 state 325
@@ -5060,7 +5082,7 @@ state 327
 
     $default  reduce using rule 132 (epsilon)
 
-    sc_blocks  go to state 339
+    sc_blocks  go to state 338
     epsilon    go to state 264
 
 
@@ -5072,7 +5094,7 @@ state 328
 
     $default  reduce using rule 132 (epsilon)
 
-    sc_blocks  go to state 340
+    sc_blocks  go to state 339
     epsilon    go to state 264
 
 
@@ -5084,7 +5106,7 @@ state 329
 
     $default  reduce using rule 132 (epsilon)
 
-    sc_blocks  go to state 341
+    sc_blocks  go to state 340
     epsilon    go to state 264
 
 
@@ -5092,288 +5114,281 @@ state 330
 
   101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements . '}'
 
-    '}'  shift, and go to state 342
+    '}'  shift, and go to state 341
 
 
 state 331
 
-  128 forge: KW_FORGE type '(' parameter_list ')' '{' statements '}' .
+  111 additive_rule: '(' IDENT '=' IDENT '+' . IDENT ')' ARROW body
 
-    $default  reduce using rule 128 (forge)
+    IDENT  shift, and go to state 342
 
 
 state 332
 
-  111 additive_rule: '(' IDENT '=' IDENT '+' . IDENT ')' ARROW body
+  113 identity_rule: '(' IDENT '=' LIT_INT . ')' ARROW body
 
-    IDENT  shift, and go to state 343
+    ')'  shift, and go to state 343
 
 
 state 333
 
-  113 identity_rule: '(' IDENT '=' LIT_INT . ')' ARROW body
+  114 negation_rule: '(' IDENT '=' . '-' IDENT ')' ARROW body
 
-    ')'  shift, and go to state 344
+    '-'  shift, and go to state 344
 
 
 state 334
-
-  114 negation_rule: '(' IDENT '=' . '-' IDENT ')' ARROW body
-
-    '-'  shift, and go to state 345
-
-
-state 335
 
   107 archetype_claim: KW_CLAIM IDENT KW_IS KW_GROUP '{' additive_rule identity_rule negation_rule '}' ';' .
 
     $default  reduce using rule 107 (archetype_claim)
 
 
-state 336
+state 335
 
   112 mult_rule: '(' IDENT '=' IDENT '*' . IDENT ')' ARROW body
 
-    IDENT  shift, and go to state 346
+    IDENT  shift, and go to state 345
+
+
+state 336
+
+  115 inverse_rule: '(' IDENT '=' '~' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 346
 
 
 state 337
 
-  115 inverse_rule: '(' IDENT '=' '~' IDENT . ')' ARROW body
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' . ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    ')'  shift, and go to state 347
+    ';'  shift, and go to state 347
 
 
 state 338
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' . ';' additive_rule negation_rule identity_rule mult_rule '}' ';'
-
-    ';'  shift, and go to state 348
-
-
-state 339
 
   104 sc_blocks: KW_CASE LIT_INT ':' statements sc_blocks .
 
     $default  reduce using rule 104 (sc_blocks)
 
 
-state 340
+state 339
 
   105 sc_blocks: KW_CASE LIT_FLOAT ':' statements sc_blocks .
 
     $default  reduce using rule 105 (sc_blocks)
 
 
-state 341
+state 340
 
   103 sc_blocks: KW_CASE LIT_CHAR ':' statements sc_blocks .
 
     $default  reduce using rule 103 (sc_blocks)
 
 
-state 342
+state 341
 
   101 switch_case: KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}' .
 
     $default  reduce using rule 101 (switch_case)
 
 
-state 343
+state 342
 
   111 additive_rule: '(' IDENT '=' IDENT '+' IDENT . ')' ARROW body
 
-    ')'  shift, and go to state 349
+    ')'  shift, and go to state 348
+
+
+state 343
+
+  113 identity_rule: '(' IDENT '=' LIT_INT ')' . ARROW body
+
+    ARROW  shift, and go to state 349
 
 
 state 344
 
-  113 identity_rule: '(' IDENT '=' LIT_INT ')' . ARROW body
+  114 negation_rule: '(' IDENT '=' '-' . IDENT ')' ARROW body
 
-    ARROW  shift, and go to state 350
+    IDENT  shift, and go to state 350
 
 
 state 345
 
-  114 negation_rule: '(' IDENT '=' '-' . IDENT ')' ARROW body
+  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT . ')' ARROW body
 
-    IDENT  shift, and go to state 351
+    ')'  shift, and go to state 351
 
 
 state 346
 
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT . ')' ARROW body
+  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' . ARROW body
 
-    ')'  shift, and go to state 352
+    ARROW  shift, and go to state 352
 
 
 state 347
 
-  115 inverse_rule: '(' IDENT '=' '~' IDENT ')' . ARROW body
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' . additive_rule negation_rule identity_rule mult_rule '}' ';'
 
-    ARROW  shift, and go to state 353
+    '('  shift, and go to state 250
+
+    additive_rule  go to state 353
 
 
 state 348
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' . additive_rule negation_rule identity_rule mult_rule '}' ';'
+  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' . ARROW body
 
-    '('  shift, and go to state 250
-
-    additive_rule  go to state 354
+    ARROW  shift, and go to state 354
 
 
 state 349
-
-  111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' . ARROW body
-
-    ARROW  shift, and go to state 355
-
-
-state 350
 
   113 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW . body
 
     '{'  shift, and go to state 230
 
-    body  go to state 356
+    body  go to state 355
+
+
+state 350
+
+  114 negation_rule: '(' IDENT '=' '-' IDENT . ')' ARROW body
+
+    ')'  shift, and go to state 356
 
 
 state 351
 
-  114 negation_rule: '(' IDENT '=' '-' IDENT . ')' ARROW body
+  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' . ARROW body
 
-    ')'  shift, and go to state 357
+    ARROW  shift, and go to state 357
 
 
 state 352
-
-  112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' . ARROW body
-
-    ARROW  shift, and go to state 358
-
-
-state 353
 
   115 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW . body
 
     '{'  shift, and go to state 230
 
-    body  go to state 359
+    body  go to state 358
 
 
-state 354
+state 353
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule . negation_rule identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule . negation_rule identity_rule mult_rule '}' ';'
 
     '('  shift, and go to state 302
 
-    negation_rule  go to state 360
+    negation_rule  go to state 359
 
 
-state 355
+state 354
 
   111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW . body
 
     '{'  shift, and go to state 230
 
-    body  go to state 361
+    body  go to state 360
 
 
-state 356
+state 355
 
   113 identity_rule: '(' IDENT '=' LIT_INT ')' ARROW body .
 
     $default  reduce using rule 113 (identity_rule)
 
 
-state 357
+state 356
 
   114 negation_rule: '(' IDENT '=' '-' IDENT ')' . ARROW body
 
-    ARROW  shift, and go to state 362
+    ARROW  shift, and go to state 361
 
 
-state 358
+state 357
 
   112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW . body
 
     '{'  shift, and go to state 230
 
-    body  go to state 363
+    body  go to state 362
 
 
-state 359
+state 358
 
   115 inverse_rule: '(' IDENT '=' '~' IDENT ')' ARROW body .
 
     $default  reduce using rule 115 (inverse_rule)
 
 
-state 360
+state 359
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule . identity_rule mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule . identity_rule mult_rule '}' ';'
 
     '('  shift, and go to state 275
 
-    identity_rule  go to state 364
+    identity_rule  go to state 363
 
 
-state 361
+state 360
 
   111 additive_rule: '(' IDENT '=' IDENT '+' IDENT ')' ARROW body .
 
     $default  reduce using rule 111 (additive_rule)
 
 
-state 362
+state 361
 
   114 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW . body
 
     '{'  shift, and go to state 230
 
-    body  go to state 365
+    body  go to state 364
 
 
-state 363
+state 362
 
   112 mult_rule: '(' IDENT '=' IDENT '*' IDENT ')' ARROW body .
 
     $default  reduce using rule 112 (mult_rule)
 
 
-state 364
+state 363
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule . mult_rule '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule . mult_rule '}' ';'
 
     '('  shift, and go to state 252
 
-    mult_rule  go to state 366
+    mult_rule  go to state 365
 
 
-state 365
+state 364
 
   114 negation_rule: '(' IDENT '=' '-' IDENT ')' ARROW body .
 
     $default  reduce using rule 114 (negation_rule)
 
 
+state 365
+
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule . '}' ';'
+
+    '}'  shift, and go to state 366
+
+
 state 366
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule . '}' ';'
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' . ';'
 
-    '}'  shift, and go to state 367
+    ';'  shift, and go to state 367
 
 
 state 367
 
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' . ';'
-
-    ';'  shift, and go to state 368
-
-
-state 368
-
-  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' IDENT ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';' .
+  110 archetype_claim: KW_CLAIM IDENT KW_IS KW_SPACE '{' KW_FIELD '=' '(' type ')' ';' additive_rule negation_rule identity_rule mult_rule '}' ';' .
 
     $default  reduce using rule 110 (archetype_claim)

@@ -14,26 +14,26 @@ We seek to make a language which can be used to represent and manipulate algebra
 
 # Syntax
 
-## Statements
-
 - The language is case sensitive.
 - All statements end with a semicolon.
-- Examples:
-  ```
-  let a: u32 ; // declaration  
-  a = 1; // assignment
-  a = func(2); // function call
-  ```
 
-### Types of statements:
+## Comments
+
+- Single line comments begin with `//`.
+- Multi-line comments begin with `/*` and end with `*/`.
+- Comments cannot be nested.
+
+## Statement types
 
 - Declaration: Must begin with the `let` keyword. The type of the variable must be specified after the variable name, with colon as the separator.
   ```
   let a: u32;
+  let b: str, c: bool, d: float;
   ```
-- Assignment: Assigning a value (expression) to a variable requires no keyword.
+- Assignment: Assigning a value (expression) to an existing variable requires no keyword.
   ```
   a = 1;
+  foo.bar = 2; // Accessing a field of a struct
   ```
 - Initialisation: Does both declaration and assignment, requires a `let` keyword.
   ```
@@ -44,31 +44,30 @@ We seek to make a language which can be used to represent and manipulate algebra
 - Function call:
   ```
   print(2);
+  foo(bar, baz);
   ```
 - Return: Can only be used within a function.
   ```
   return 2;
   ```
 
-An assignment or initialisation statement can also include function calls, as in `let a: u32 = func(2);`. 
-
-## Comments
-
-- Single line comments begin with `//`.
-- Multi-line comments begin with `/*` and end with `*/`.
-- Comments cannot be nested.
-
 ## Operators
 
-- Relational `(<, <=, >, >=, ==, !=)`: For the integer types, `BigRational`, and `float` only.
-- Logical `(&&, ||, !)`: For booleans only. 
-- Arithmetic `(+, *, -, /)`: Can be overridden through Archetypes, and so must follow the rules.
-  - For integers and `float`, the operators are defined as usual.
-  - `%` is the modulo operator, only for integer types.
-  - `(+=, *=, -=, /=, %=)`: When relevant
-- The dot `(.)` operator: For accessing struct fields.
-- The slice operator `(..)`: For creating slices of buffers or strings (similar to `:` in Python).
-- The `@` operator: This operator is used to compute the inner product of two vectors.
+- Binary operators:
+  - Relational `(<, <=, >, >=, ==, !=)`: For the integer types, `BigRational`, and `float` only.
+  - Logical `(&&, ||)`: For booleans only. 
+  - Arithmetic `(+, *, -, /)`: Can be overridden through Archetypes, and so must follow the rules.
+    - For integers and `float`, the operators are defined as usual.
+    - `%` is the modulo operator, only for integer types.
+    - `(+=, *=, -=, /=, %=)`: When relevant
+  - The dot `(.)` operator: For accessing struct fields.
+  - The slice operator `(..)`: For creating slices of buffers or strings (similar to `:` in Python).
+  - The `@` operator: This operator is used to compute the inner product of two vectors.
+- Unary operators:
+  - `!`: Logical negation
+  - `-`: Arithmetic negation
+  - `&`: Reference operator
+  - `*`: Dereference operator
 
 All the operators have the same meaning as in C, with enhanced functionality for non-C types (matrices, for example).
 
@@ -82,11 +81,9 @@ All the operators have the same meaning as in C, with enhanced functionality for
   let max: u32;
   if (a > b && a > c) {
     max = a;
-  } 
-  else if (b > c) {
+  } else if (b > c) {
     max = b;
-  }
-  else {
+  } else {
     max = c;
   }
   ```
@@ -102,7 +99,7 @@ All the operators have the same meaning as in C, with enhanced functionality for
     ```
   - Similar to Python, but only to iterate over the members of a `Buf`:
     ```
-    let list: Buf<u32> = [1, 2, 3];
+    let list: [u32] = [1, 2, 3];
     for member in list {
       ...
     }
@@ -117,42 +114,61 @@ All the operators have the same meaning as in C, with enhanced functionality for
 ## Functions
 
 - Function prototypes begin with the `fn` keyword, followed by the function name, the arguments within parentheses, and then the return type. 
+- Functions calls are identical to C. Functions can be returned from using the `return` keyword, which is again identical to C.
   ```
-  fn foo(a: u32, b: Buf<float>): u32 {
+  fn foo(a: u32, b: [float]): u32 {
     return a;
   }
+  let b: u32 = foo(1, [1.0, 2.0, 3.0]);
   ```
-- Functions calls are identical to C: `foo(bar, baz)`. Functions can be returned from using the `return` keyword, which is again identical to C.
 
-## Builtins
+  ### Builtins
 
-'Functions' like `print` are offered directly by the language, much like in Python.
-```
-print("Hello world\n");
-```
+  - Functions like `print` are offered directly by the language, much like in Python. They are called in the same way as user-defined functions.
+    ```
+    print("Hello world\n");
+    ```
 
 ## Forges
 
 Functions provided by the language to convert between types (similar to Python's `int('123')` and `str(123)`)
 
-- Forges such as `float()` and `u32()` are used to cast between types.
+Forges are Archetypes' equivalent to constructors. They are defined using the `forge` keyword, similar to functions, and casting can be done using the `as` keyword.
+
+```
+enum Parity {
+  Even,
+  Odd
+}
+
+forge (a: u8) as Parity {
+  if (a % 2 == 0) {
+    return Parity::Even;
+  } else {
+    return Parity::Odd;
+  }
+}
+
+forge (a: u8, b: u8) as Parity {
+  if (a % 2 == 0 && b % 2 == 0) {
+    return Parity::Even;
+  } else {
+    return Parity::Odd;
+  }
+}
+
+fn main() {
+  let a: Parity = 1 as (Parity);
+    // a is now Parity::Odd
+  let b: Parity = (1, 2) as (Parity);
+    // b is now Parity::Odd
+}
+```
+
+- Forges like `(Buf<Buf<T>>) as (Matrix)` are used for more complex type conversion.
   ```
-  let a: u32 = 1;
-  let b: float = float(a);
+  let b: Matrix<u32> = ([[1, 2, 3], [4, 5, 6]]) as (Matrix<u32>); // 2x3 matrix
   ```
-- Forges like `Matrix(Buf<Buf<T>>)` are used for more complex type conversion.
-  ```
-  let b: Matrix<u32> = matrix([[1, 2, 3], [4, 5, 6]]); // 2x3 matrix
-  ```
-- Forges accept multiple kinds of arguments.
-  ```
-  let a: u8 = 1;
-  let b: str = "123";
-  let c1: u32 = u32(a);
-  let c2: u32 = u32(b);
-  ```
-  
-See the sample code for examples on how to define your own forges.
 
 # Type system
 
@@ -247,9 +263,27 @@ claim Foo is Group {
 While in the above example Foo is a `struct`, `claim` can also accept `enum`s. Archetypes cannot be
 implemented for system types, but some default implementations are provided.
 
+An alternate way to claim an archetype is through an isomorphism. If there is an existing type that
+implements the Archetype, and there is an isomorphism between the two types, then the Archetype can
+be claimed using the `claim ... with ...` syntax:
+
+```
+struct Foo { ... }
+struct Bar { ... }
+
+claim Bar is Group { ... }
+
+fn foo_to_bar(foo: Foo): Bar { ... }
+fn bar_to_foo(bar: Bar): Foo { ... }
+
+claim Foo is Group with (foo_to_bar, bar_to_foo);
+```
+
+Both `foo_to_bar` and `bar_to_foo` must be isomorphisms, and should be inverses of each other.
+
 ## Group
 
-A group is defined as a set $S$ and an operation $f(a, b) = a + b$ which satisfies the following
+A group is defined as a set $S$ and an operation $+$ which satisfies the following
 bounds:
 
 - Closure: $∀ a, b ∈ S$, $a + b ∈ S$.
@@ -272,8 +306,8 @@ Some examples of `Group`s are:
 | $D_{2n}$    | `Dihedral<n>`                | Dihedral group                                    |
 | $GL_{n}[F]$ | `InvMat<n, F: claims Field>` | Invertible $n \times n$ matrices over a field $F$ |
 
-Note that `claims` is not a keyword. It simply used within this document to indicate that the type
-`F` must be `claim`ed to be a `Field`.
+Note that `claims` is not a keyword. It is simply used within this document to indicate that the
+type argument `F` must be a `Field`.
 
 #### To `claim`
 
@@ -293,9 +327,10 @@ Note that `claims` is not a keyword. It simply used within this document to indi
 
 ## Ring
 
-A ring is an abelian group with operation $+$ with another operation, $*$. Using the same notation
-as before, the additional properties of a ring are:
+A ring is a group with operation $+$ with another operation, $*$. Using the same notation as before,
+the additional properties of a ring are:
 
+- Abelian (commutative) group over $+$: $a + b = b + a$
 - Closure over $*$: $∀ a, b ∈ S, a*b ∈ S$
 - Associativity over $*$: $a*(b*c) = (a*b)*c$
 - Distributivity of $*$ over $+$:
@@ -353,7 +388,7 @@ To `claim` the `Field` Archetype, a type must first `claim` the `Ring` Archetype
 following operations must be implemented:
 
 ```
-(c = ~a) => {
+(c = 1 / a) => {
   ...
 }
 ```

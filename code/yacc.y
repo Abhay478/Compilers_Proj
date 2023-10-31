@@ -3,6 +3,7 @@
 
 int yylex();
 void yyerror(const char* s);
+FILE *token_stream;
 
 %}
 
@@ -116,6 +117,7 @@ expression      : '(' expression ')'
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 | expression '.' IDENT
+                | expression '.' LIT_INT               // tuple access
                 | expression KW_AS '(' type ')'
                 | expression '@' expression
                 | expression '*' expression
@@ -148,6 +150,7 @@ return_stmt     : KW_RETURN expression
 
 call            : IDENT '(' expr_list ')' 
                 | expression '.' IDENT '(' expr_list ')'
+                | expression '.' LIT_INT '(' expr_list ')'
                 ;
 
 expr_list       : expression ',' expr_list
@@ -167,6 +170,7 @@ array_decl      : '[' expr_list ']'
                 ;
 
 array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
+                | '[' expression ']'
                 | '[' expression SLICE expression ']' // subarray access
                 ;
 
@@ -268,10 +272,11 @@ ident_list      : ident_list ',' IDENT
                 | IDENT
                 | epsilon
                 ;
+
 variant_list    : ident_list
                 ;
 
-forge           : KW_FORGE '(' param_list ')' KW_AS type body
+forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body
                 ;
 
 cart            : '(' type ',' ')'
@@ -287,6 +292,7 @@ epsilon         : ;
 %%
 
 int main() {
+    token_stream = fopen("seq_tokens.txt", "w");
     yyparse();
     return 0;
 }

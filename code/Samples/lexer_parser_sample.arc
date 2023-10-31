@@ -1,9 +1,8 @@
-
-fn fib(n: u32) : Buf<u32> {
+fn fib(n: u32) : [BigInt] {
     let a: BigInt = 0;
     let b: BigInt = 1;
-    let out: Buf<BigInt> = [a, b];
-    for (i: u32 = 2; i < n; i++) {
+    let out: [BigInt] = [a, b];
+    for (let i: u32 = 2; i < n; i++) {
         let c: u32 = a + b;
         a = b;
         b = c;
@@ -31,22 +30,22 @@ claim two_tup is Group {
 
     (b = -a) => {
         c.val = -a.val;
-        c.aux = -a.aux
+        c.aux = -a.aux;
     }
 }
 
-forge (a: two_tup) as (b: (BigInt, BigInt)) {
+forge (a: two_tup) as ((BigInt, BigInt)) {
     b = (a.val, a.aux);
     print("We are forging here.");
 }
 
-forge (a: (BigInt, BigInt)) as (b: two_tup) {
+forge (a: (BigInt, BigInt)) as (two_tup) {
     b.val = a.0;
     b.aux = a.1;
     print("We are forging here also.");
 }
 
-forge (a: Buf<BigInt>) as (b: two_tup) {
+forge (a: [BigInt]) as (two_tup) {
     b.val = a[0];
     b.aux = a[1];
     print("We are forging here again.");
@@ -54,12 +53,12 @@ forge (a: Buf<BigInt>) as (b: two_tup) {
 
 fn main() {
     print("This is main.");
-    let b: Buf<BigInt> = fib(30);
+    let b: [BigInt] = fib(30);
     print(b);
 
-    let a: two_tup = [1, 2] as two_tup;
+    let a: two_tup = [1, 2] as (two_tup);
     print(a);
-    let tup: (BigInt, BigInt) = a as (BigInt, BigInt);
+    let tup: (BigInt, BigInt) = a as ((BigInt, BigInt));
     print(tup);
 
     

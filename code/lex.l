@@ -1,6 +1,8 @@
 %option yylineno
 %{
     #include "y.tab.h"
+    #define seq_token(a) fprintf(token_stream, "%s%s\n", (a), yytext)
+    extern FILE *token_stream;
 %}
 dig [0-9]
 num (-?{dig}+)
@@ -21,62 +23,66 @@ sint (i8|i16|i32|i64)
 
 pdt ({uint}|{sint}|float|bool|char|str)
 
-op ('>'|'<'|'!'|{arith_op}|\.|{misc_ops})
+op (>|<|!|{arith_op}|\.|{misc_ops})
+
+ws [\r\n\t ]
 
 %%
 
-{char_c} {return LIT_CHAR;}
-{str_c} {return LIT_STR;}
-{num} {return LIT_INT;}
-{real} {return LIT_FLOAT;}
+{char_c} { seq_token("constant: "); return LIT_CHAR; }
+{str_c} { seq_token("constant: "); return LIT_STR; }
+{num} { seq_token("constant: "); return LIT_INT; }
+{real} { seq_token("constant: "); return LIT_FLOAT; }
 "//.*\n" {}
 "/\*.*\*/" {}
 
-if {return KW_IF;}
-else {return KW_ELSE;}
-for {return KW_FOR;}
-while {return KW_WHILE;}
-fn {return KW_FN;}
-let {return KW_LET;}
-return {return KW_RETURN;}
-claim {return KW_CLAIM;}
-forge {return KW_FORGE;}
-as {return KW_AS;}
-is {return KW_IS;}
-struct {return KW_STRUCT;}
-enum {return KW_ENUM;}
-true {return KW_TRUE;}
-false {return KW_FALSE;}
-break {return KW_BREAK;}
-continue {return KW_CONTINUE;}
-default {return KW_DEFAULT;}
-switch {return KW_SWITCH;}
-case {return KW_CASE;}
-in {return KW_IN;}
-Ring {return KW_RING;}
-Group {return KW_GROUP;}
-Field {return KW_FIELD;}
-Space {return KW_SPACE;}
+if { seq_token("reserved keyword: "); return KW_IF; }
+else { seq_token("reserved keyword: "); return KW_ELSE; }
+for { seq_token("reserved keyword: "); return KW_FOR; }
+while { seq_token("reserved keyword: "); return KW_WHILE; }
+fn { seq_token("reserved keyword: "); return KW_FN; }
+let { seq_token("reserved keyword: "); return KW_LET; }
+return { seq_token("reserved keyword: "); return KW_RETURN; }
+claim { seq_token("reserved keyword: "); return KW_CLAIM; }
+forge { seq_token("reserved keyword: "); return KW_FORGE; }
+as { seq_token("reserved keyword: "); return KW_AS; }
+is { seq_token("reserved keyword: "); return KW_IS; }
+struct { seq_token("reserved keyword: "); return KW_STRUCT; }
+enum { seq_token("reserved keyword: "); return KW_ENUM; }
+true { seq_token("reserved keyword: "); return KW_TRUE; }
+false { seq_token("reserved keyword: "); return KW_FALSE; }
+break { seq_token("reserved keyword: "); return KW_BREAK; }
+continue { seq_token("reserved keyword: "); return KW_CONTINUE; }
+default { seq_token("reserved keyword: "); return KW_DEFAULT; }
+switch { seq_token("reserved keyword: "); return KW_SWITCH; }
+case { seq_token("reserved keyword: "); return KW_CASE; }
+in { seq_token("reserved keyword: "); return KW_IN; }
+Ring { seq_token("reserved keyword: "); return KW_RING; }
+Group { seq_token("reserved keyword: "); return KW_GROUP; }
+Field { seq_token("areserved keyword: "); return KW_FIELD; }
+Space { seq_token("areserved keyword: "); return KW_SPACE; }
 
-"++" {return INCR;}
-"--" {return DECR;}
-"=>" {return ARROW;}
-"::" {return VARIANT;}
-".." {return SLICE;}
-{rel_op} {return rel_op;}
-"&&" {return AND;}
-"||" {return OR;}
+"++" { seq_token("operator: "); return INCR; }
+"--" { seq_token("operator: "); return DECR; }
+"=>" { seq_token("operator: "); return ARROW; }
+"::" { seq_token("operator: "); return VARIANT; }
+".." { seq_token("aoperator: "); return SLICE; }
+{rel_op} { seq_token("operator: "); return rel_op; }
+"&&" { seq_token("aoperator: "); return AND; }
+"||" { seq_token("aoperator: "); return OR; }
 
-{pdt} {return PRIMITIVE_DTYPE;} 
+{pdt} { seq_token("data type: "); return PRIMITIVE_DTYPE; } 
 
-{op} {return yytext[0];} /* single character operators */
+{op} { seq_token("operator: "); return yytext[0]; } /* single character operator: s */
 
-{assign_op} {return ASSIGN_OP;} /* assignment operators */
+{assign_op} { seq_token("operator: "); return ASSIGN_OP; } /* assignment operator: s */
 
-{spl}|{punct} {return yytext[0];} /* punctuation and special characters */
+{spl} { seq_token("special characters: "); return yytext[0];} /* special characters */
+{punct} { seq_token("punctuation: "); return yytext[0];} /* punctuation */
 
-{id} {return IDENT;} /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
+{id} { seq_token("ID: "); return IDENT;} /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 
+{ws} {}
 
 %%
 

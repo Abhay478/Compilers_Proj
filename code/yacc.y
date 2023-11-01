@@ -5,6 +5,11 @@ int yylex();
 void yyerror(const char* s);
 FILE *token_stream;
 
+// flags
+int in_func = 0;
+int in_loop = 0;
+int in_func = 0;
+
 %}
 
 // keywords
@@ -57,13 +62,12 @@ statement       : declaration ';'
                 | conditional
                 | switch_case
                 | loop_stmt
-                /* | PRINT '(' pass_param_list ')' ';' */
-                | KW_BREAK ';'
-                | KW_CONTINUE ';' 
+                | KW_BREAK ';' {if(!in_loop) yyerror("break statement outside of loop");}
+                | KW_CONTINUE ';' {if(!in_loop) yyerror("continue statement outside of loop");}
                 | ';'
                 ;
 
-generic         : IDENT '<' type_args '>'
+generic         : IDENT '<' type_args '>' // someone write a list of allowed generics.
                 ;
 
 type_args       : type_arg ',' type_args
@@ -86,8 +90,8 @@ decl_item       : type_var
                 | type_var '=' expression
                 ;
 
-type            : PRIMITIVE_DTYPE
-                | '[' type ']'
+type            : PRIMITIVE_DTYPE {}
+                | '[' type ']' 
                 | IDENT
                 | generic
                 | '&' type

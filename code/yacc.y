@@ -296,7 +296,7 @@ epsilon         : ;
 %%
 
 int main() {
-    token_stream = fopen("seq_tokens.txt", "w");
+    token_stream = fopen("code/seq_tokens.txt", "w");
     yyparse();
     return 0;
 }

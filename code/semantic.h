@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-/// @brief No clue how to implement multiple refernces. That's a tomorrow problem.
+/// @brief No clue how to implement multiple refernces. 
 typedef enum VarTypes {
     INT,
     FLOAT,
@@ -15,17 +15,30 @@ typedef enum VarTypes {
     ENUM,
 } VarTypes;
 
+typedef enum Archetypes {
+    GROUP,
+    RING,
+    FIELD,
+    SPACE
+} Archetypes;
+
+typedef struct AllType {
+    VarTypes core_type; // Yay types.
+    int offset;
+    int size;
+    void * aux; // Pointer to symbol table entry for struct or enum. Integer value for ref of buf. NULL for everything else.
+} AllType;
+
+
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tre out of those.
 typedef struct VarSymbolTableEntry {
     char *name;
     void *value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
-    VarTypes type; // Yay types.
-    int offset;
-    int size;
-    void * aux; // Pointer to symbol table entry for struct or enum. Integer value for ref of buf. NULL for everything else.
+    AllType type;
+    
 } VarSymbolTableEntry;
 
-VarSymbolTableEntry make_vste(char * name, void * value, VarTypes type, int offset, int size, void * aux);
+VarSymbolTableEntry make_vste(char * name, void * value, AllType type, int offset, int size, void * aux);
 
 /// @brief Contains all the variables in the current scope.
 typedef struct VarSymbolTable {
@@ -62,9 +75,10 @@ typedef struct FunctionSymbolTableEntry {
     VarSymbolTable * params;
     // VarSymbolTable * locals; // Why do we need this? We don't.
     ScopeTree * locals;
+    AllType return_type;
 } FunctionSymbolTableEntry;
 
-FunctionSymbolTableEntry make_fste(char * name, int numParams, VarSymbolTable * params, ScopeTree * locals);
+FunctionSymbolTableEntry make_fste(char * name, int numParams, VarSymbolTable * params);
 
 /// @brief Contains all the functions. There's only one of these. 
 typedef struct FunctionSymbolTable {
@@ -73,9 +87,10 @@ typedef struct FunctionSymbolTable {
     int capacity;
 } FunctionSymbolTable;
 
-FunctionSymbolTable make_fst();
+FunctionSymbolTable make_func_st();
 
 int fst_insert(FunctionSymbolTable * fst, FunctionSymbolTableEntry fste);
+FunctionSymbolTableEntry * fst_lookup(FunctionSymbolTable * fst, char * name);
 
 typedef struct StructField {
     char * name;
@@ -120,3 +135,32 @@ typedef struct EnumSymbolTable {
 EnumSymbolTable make_enum_st();
 int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este);
 EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name);
+
+/// @brief We do not need an entry struct, because a forge is a function.
+/// Only one of these.
+typedef struct ForgeSymbolTable {
+    FunctionSymbolTable inner;
+} ForgeSymbolTable;
+
+ForgeSymbolTable make_forge_st();
+int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry fste);
+FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name);
+
+typedef struct ClaimSymbolTableEntry {
+    char * name;
+    AllType type;
+    Archetypes archetype;
+    // We don't need more, ig?
+} ClaimSymbolTableEntry;
+
+ClaimSymbolTableEntry make_claim_ste(char * name, AllType type, Archetypes archetype);
+
+typedef struct ClaimSymbolTable {
+    ClaimSymbolTableEntry * entries;
+    int size;
+    int capacity;
+} ClaimSymbolTable;
+
+ClaimSymbolTable make_claim_st();
+int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste);
+ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, AllType type, Archetypes archetype); 

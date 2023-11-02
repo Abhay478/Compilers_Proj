@@ -5,17 +5,17 @@
 //! note: All symbol table lookups should be preceded with a lookup to the global symbol table. 
 //! this means we don't have to put pointers to the thing everywhere. Phew.
 
+//! No idea how to implement multiple references or further type-nesting (like an invertible matrix of invertible matrices?).
+//! AllType has to be greatly enhanced.
+//! Similarly, once that is done, we need to be able to compare more complex types.
 
 
 
-VarSymbolTableEntry make_vste(char * name, void * value, VarTypes type, int offset, int size, void * aux) {
+VarSymbolTableEntry make_vste(char * name, void * value, AllType type, int offset, int size, void * aux) {
     VarSymbolTableEntry vste;
     vste.name = name;
     vste.value = value;
     vste.type = type;
-    vste.offset = offset;
-    vste.size = size;
-    vste.aux = aux;
     return vste;
 }
 
@@ -23,7 +23,7 @@ int vst_insert(VarSymbolTable * st, VarSymbolTableEntry vste) {
     for (int i = 0; i < st->size; i++) {
         if (!strcmp(st->entries[i].name, vste.name)) {
             // Same type fine.
-            if(st->entries[i].type == vste.type) {
+            if(st->entries[i].type.core_type == vste.type.core_type) {
                 return 0;
             }
             return 1;
@@ -67,7 +67,7 @@ FunctionSymbolTableEntry make_fste(char * name, int numParams, VarSymbolTable * 
     return fste;
 }
 
-FunctionSymbolTable make_fst() {
+FunctionSymbolTable make_func_st() {
     FunctionSymbolTable fst;
     fst.size = 0;
     fst.capacity = 69;
@@ -91,6 +91,14 @@ int fst_insert(FunctionSymbolTable * fst, FunctionSymbolTableEntry fste) {
     return 0;
 }
 
+FunctionSymbolTableEntry * fst_lookup(FunctionSymbolTable * fst, char * name) {
+    for (int i = 0; i < fst->size; i++) {
+        if (!strcmp(fst->entries[i].name, name)) {
+            return &fst->entries[i];
+        }
+    }
+    return NULL;
+}
 Scope make_scope() {
     Scope s;
     s.vars = (VarSymbolTable *)malloc(sizeof(VarSymbolTable));
@@ -194,6 +202,67 @@ EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name) {
     for (int i = 0; i < est->size; i++) {
         if (!strcmp(est->entries[i].name, name)) {
             return &est->entries[i];
+        }
+    }
+    return NULL;
+}
+
+// typedef struct ForgeSymbolTableEntry {
+//     VarSymbolTable * from; // Not just a single type. A forge is a function too.
+//     AllType to;
+
+// } ForgeSymbolTableEntry;
+
+ForgeSymbolTable make_forge_st() {
+    ForgeSymbolTable fst;
+    fst.inner = make_func_st();
+    return fst;
+}
+
+int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry fste) {
+    return fst_insert(&fst->inner, fste);
+}
+
+FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name) {
+    return fst_lookup(&fst->inner, name);
+}
+
+ClaimSymbolTableEntry make_claim_ste(char * name, AllType type, Archetypes archetype) {
+    ClaimSymbolTableEntry cste;
+    cste.name = name;
+    cste.type = type;
+    cste.archetype = archetype;
+    return cste;
+}
+
+ClaimSymbolTable make_claim_st() {
+    ClaimSymbolTable cst;
+    cst.size = 0;
+    cst.capacity = 69;
+    cst.entries = (ClaimSymbolTableEntry *)malloc(cst.capacity * sizeof(ClaimSymbolTableEntry));
+    return cst;
+}
+
+int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste) {
+    for (int i = 0; i < cst->size; i++) {
+        if (!strcmp(cst->entries[i].name, cste.name)) {
+            return 1;
+        }
+    }
+
+    if (cst->size == cst->capacity) {
+        cst->capacity = (int)(1.618 * cst->capacity);
+        cst->entries = (ClaimSymbolTableEntry *)realloc(cst->entries, cst->capacity * sizeof(ClaimSymbolTableEntry));
+    }
+    cst->entries[cst->size++] = cste;
+    
+    return 0;
+}
+
+ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, AllType type, Archetypes archetype) {
+    for (int i = 0; i < cst->size; i++) {
+        if(cst->entries[i].type.core_type == type.core_type && cst->entries[i].archetype == archetype) {
+            return &cst->entries[i];
         }
     }
     return NULL;

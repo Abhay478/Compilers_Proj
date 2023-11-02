@@ -2,6 +2,16 @@
 #include <string.h>
 #include <stdlib.h>
 
+/***********************************************
+ * Structs and functions for %union and yylval.
+************************************************/
+
+
+
+/***********************************************
+ * Symbol table for the compiler.
+************************************************/
+
 /// @brief No clue how to implement multiple refernces. 
 typedef enum VarTypes {
     INT,
@@ -70,7 +80,7 @@ typedef struct Scope {
     struct Scope * parent; 
     struct Scope ** children; // Non-binary tree. Very queer.
     int nch; // Number of children.
-    
+
 } Scope;
 
 typedef struct ScopeTree {

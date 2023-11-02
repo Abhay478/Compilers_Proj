@@ -5,13 +5,46 @@
 //! note: All symbol table lookups should be preceded with a lookup to the global symbol table. 
 //! this means we don't have to put pointers to the thing everywhere. Phew.
 
-//! No idea how to implement multiple references or further type-nesting (like an invertible matrix of invertible matrices?).
-//! AllType has to be greatly enhanced.
-//! Similarly, once that is done, we need to be able to compare more complex types.
 
+Type make_type() {
+    Type t;
+    t.head = NULL;
+    return t;
+}
 
+int push_type(Type * t, VarTypes core_type, int offset, int size, void * aux) {
+    InnerType * it = (InnerType *)malloc(sizeof(InnerType));
+    it->core_type = core_type;
+    it->offset = offset;
+    it->size = size;
+    it->aux = aux;
+    it->next = t->head;
+    t->head = it;
+    return 0;
+}
 
-VarSymbolTableEntry make_vste(char * name, void * value, AllType type, int offset, int size, void * aux) {
+int typecmp(Type * t1, Type * t2) {
+    InnerType * current1 = t1->head;
+    InnerType * current2 = t2->head;
+    while (current1 && current2) {
+        if (current1->core_type != current2->core_type) {
+            return 1;
+        }
+        if(current1->core_type == STRUCT || current1->core_type == ENUM) {
+            if(current1->aux != current2->aux) {
+                return 1;
+            } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
+        }
+        current1 = current1->next;
+        current2 = current2->next;
+    }
+    if (current1 || current2) {
+        return 1;
+    }
+    return 0;
+}
+
+VarSymbolTableEntry make_vste(char * name, void * value, Type type, int offset, int size, void * aux) {
     VarSymbolTableEntry vste;
     vste.name = name;
     vste.value = value;
@@ -23,7 +56,7 @@ int vst_insert(VarSymbolTable * st, VarSymbolTableEntry vste) {
     for (int i = 0; i < st->size; i++) {
         if (!strcmp(st->entries[i].name, vste.name)) {
             // Same type fine.
-            if(st->entries[i].type.core_type == vste.type.core_type) {
+            if(!typecmp(&st->entries[i].type, &vste.type)) {
                 return 0;
             }
             return 1;
@@ -99,6 +132,7 @@ FunctionSymbolTableEntry * fst_lookup(FunctionSymbolTable * fst, char * name) {
     }
     return NULL;
 }
+
 Scope make_scope() {
     Scope s;
     s.vars = (VarSymbolTable *)malloc(sizeof(VarSymbolTable));
@@ -114,6 +148,12 @@ ScopeTree make_scope_tree() {
     st.root = (Scope *)malloc(sizeof(Scope));
     *st.root = make_scope();
     return st;
+}
+
+void add_child(Scope * parent, Scope * child) {
+    parent->children = (Scope **)realloc(parent->children, (parent->nch + 1) * sizeof(Scope *));
+    parent->children[parent->nch++] = child;
+    child->parent = parent;
 }
 
 /// @brief Provide the current scope and the current function.
@@ -209,7 +249,7 @@ EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name) {
 
 // typedef struct ForgeSymbolTableEntry {
 //     VarSymbolTable * from; // Not just a single type. A forge is a function too.
-//     AllType to;
+//     Type to;
 
 // } ForgeSymbolTableEntry;
 
@@ -227,7 +267,7 @@ FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name) {
     return fst_lookup(&fst->inner, name);
 }
 
-ClaimSymbolTableEntry make_claim_ste(char * name, AllType type, Archetypes archetype) {
+ClaimSymbolTableEntry make_claim_ste(char * name, Type type, Archetypes archetype) {
     ClaimSymbolTableEntry cste;
     cste.name = name;
     cste.type = type;
@@ -259,9 +299,9 @@ int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste) {
     return 0;
 }
 
-ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, AllType type, Archetypes archetype) {
+ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type type, Archetypes archetype) {
     for (int i = 0; i < cst->size; i++) {
-        if(cst->entries[i].type.core_type == type.core_type && cst->entries[i].archetype == archetype) {
+        if(!typecmp(&cst->entries[i].type, &type) && cst->entries[i].archetype == archetype) {
             return &cst->entries[i];
         }
     }

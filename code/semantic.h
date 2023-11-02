@@ -22,23 +22,32 @@ typedef enum Archetypes {
     SPACE
 } Archetypes;
 
-typedef struct AllType {
+typedef struct InnerType {
     VarTypes core_type; // Yay types.
     int offset;
     int size;
-    void * aux; // Pointer to symbol table entry for struct or enum. Integer value for ref of buf. NULL for everything else.
-} AllType;
+    void * aux; // Pointer to symbol table entry for struct or enum. NULL for everything else.
+    struct InnerType * next; // For big types. So, if you have &&&u32, is a stack of three REFs and a u32. 
+    // If [u32], then a two level stack of buf, u32.
+    // Unlike previously imagined, REF DOES NOT INVOLVE THE AUX POINTER. REF PUSHES ONTO THE STACK.
+} InnerType;
 
+typedef struct Type {
+    InnerType * head; // stack of types, 
+} Type;
+
+Type make_type();
+int typecmp(Type * t1, Type * t2);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tre out of those.
 typedef struct VarSymbolTableEntry {
     char *name;
     void *value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
-    AllType type;
+    Type type;
     
 } VarSymbolTableEntry;
 
-VarSymbolTableEntry make_vste(char * name, void * value, AllType type, int offset, int size, void * aux);
+VarSymbolTableEntry make_vste(char * name, void * value, Type type, int offset, int size, void * aux);
 
 /// @brief Contains all the variables in the current scope.
 typedef struct VarSymbolTable {
@@ -54,11 +63,14 @@ VarSymbolTable make_vst();
 
 /// @brief Contains the symbol table for the current scope, and the current function. Tree structure. 
 /// Each time a scope is entered, a new Scope is created, and the ScopeTree is updated.
+/// Tree-like insertion not implemented, because you'll have the pointer to the current scope while parsing, so just use the add_child function.
 typedef struct Scope {
     VarSymbolTable * vars; // Locals.
     FunctionSymbolTableEntry * current; // Maybe we need this, maybe we don't. Two way pointer still cleaner.
     struct Scope * parent; 
     struct Scope ** children; // Non-binary tree. Very queer.
+    int nch; // Number of children.
+    
 } Scope;
 
 typedef struct ScopeTree {
@@ -67,6 +79,7 @@ typedef struct ScopeTree {
 
 Scope make_scope();
 ScopeTree make_scope_tree();
+void add_child(Scope * parent, Scope * child);
 
 /// @brief A single function.
 typedef struct FunctionSymbolTableEntry {
@@ -75,7 +88,7 @@ typedef struct FunctionSymbolTableEntry {
     VarSymbolTable * params;
     // VarSymbolTable * locals; // Why do we need this? We don't.
     ScopeTree * locals;
-    AllType return_type;
+    Type return_type;
 } FunctionSymbolTableEntry;
 
 FunctionSymbolTableEntry make_fste(char * name, int numParams, VarSymbolTable * params);
@@ -148,12 +161,12 @@ FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name);
 
 typedef struct ClaimSymbolTableEntry {
     char * name;
-    AllType type;
+    Type type;
     Archetypes archetype;
     // We don't need more, ig?
 } ClaimSymbolTableEntry;
 
-ClaimSymbolTableEntry make_claim_ste(char * name, AllType type, Archetypes archetype);
+ClaimSymbolTableEntry make_claim_ste(char * name, Type type, Archetypes archetype);
 
 typedef struct ClaimSymbolTable {
     ClaimSymbolTableEntry * entries;
@@ -163,4 +176,4 @@ typedef struct ClaimSymbolTable {
 
 ClaimSymbolTable make_claim_st();
 int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste);
-ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, AllType type, Archetypes archetype); 
+ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type type, Archetypes archetype); 

@@ -2,7 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-
+#ifndef _SEMANTIC_H
+#define _SEMANTIC_H
 /***********************************************
  * Structs and functions for %union and yylval.
 ************************************************/
@@ -31,9 +32,12 @@ typedef enum CType {
     CT_VAR
 } CType;
 
+typedef struct EnumSymbolTableEntry EnumSymbolTableEntry;
+
 typedef struct Variant {
     char * tag;
     char * val;
+    EnumSymbolTableEntry * este;
 } Variant;
 
 PDT get_pdt(char * s);
@@ -52,6 +56,7 @@ typedef enum VarTypes {
     REF,
     STRUCT,
     ENUM,
+    CART,
 } VarTypes;
 
 typedef enum Archetypes {
@@ -66,6 +71,9 @@ typedef struct InnerType {
     int offset;
     int size;
     void * aux; // Pointer to symbol table entry for struct or enum. NULL for everything else.
+    // IMPORTANT: ARRAY OF `InnerTypes` FOR CARTESIAN PRODUCT. 
+    // CARTESIAN PRODUCT DOES NOT STACK.
+    // LENGTH OF ARRAY CAN BE STORED IN SIZE.
     struct InnerType * next; // For big types. So, if you have &&&u32, is a stack of three REFs and a u32. 
     // If [u32], then a two level stack of buf, u32.
     // Unlike previously imagined, REF DOES NOT INVOLVE THE AUX POINTER. REF PUSHES ONTO THE STACK.
@@ -73,12 +81,13 @@ typedef struct InnerType {
 
 typedef struct Type {
     InnerType * head; // stack of types, 
+    int claimd[4]; // Claimed by group, ring, field, space.
 } Type;
 
 Type make_type();
 int typecmp(Type * t1, Type * t2);
 
-/// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tre out of those.
+/// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 typedef struct VarSymbolTableEntry {
     char *name;
     void *value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
@@ -188,7 +197,7 @@ typedef struct EnumSymbolTable {
 
 EnumSymbolTable make_enum_st();
 int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este);
-EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name);
+EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name, char * var);
 
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
@@ -218,3 +227,17 @@ typedef struct ClaimSymbolTable {
 ClaimSymbolTable make_claim_st();
 int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste);
 ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type type, Archetypes archetype); 
+
+
+/***********************************************
+ * Globals
+*/
+
+StructSymbolTable struct_st;
+EnumSymbolTable enum_st;
+ForgeSymbolTable forge_st;
+ClaimSymbolTable claim_st;
+FunctionSymbolTable func_st;
+VarSymbolTable var_st; // global variables only.
+
+#endif

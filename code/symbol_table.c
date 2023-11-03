@@ -238,7 +238,7 @@ int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este) {
     return 0;
 }
 
-EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name) {
+EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name, char * var) {
     for (int i = 0; i < est->size; i++) {
         if (!strcmp(est->entries[i].name, name)) {
             return &est->entries[i];

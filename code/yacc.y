@@ -9,7 +9,7 @@ FILE * token_stream;
 int in_func = 0;
 int in_loop = 0;
 int in_cond = 0;
-
+#include "semantic.h"
 %}
 %code requires {
     #include "semantic.h"
@@ -25,6 +25,7 @@ int in_cond = 0;
         void * val;
         CType type;
     } cons;
+    Type expr; // Not a pointer because maybe overlap stack nodes? No one will ever pop the stack, so safe.
 }
 
 // keywords
@@ -56,7 +57,8 @@ int in_cond = 0;
 %left OR
 
 %type <cons> constant
-
+%type <lit_int> identity_rule // is it 0 or 1? Check inside claim body.
+%type <expr> expression
 %start P
 
 %%
@@ -137,11 +139,23 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
                 | KW_TRUE {$$.val = (void *)1; $$.type = CT_BOOL;}
                 | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
                 | IDENT VARIANT IDENT  {
-                    $$.type = CT_VAR; 
-                    $$.val = (Variant *)malloc(sizeof(Variant));
-                    ((Variant *)$$.val)->tag = strdup($1);
-                    ((Variant *)$$.val)->val = strdup($3);
-                } // Enum variant: needs a symbol table lookup. will be pointer to symbol table entry.
+                    $$.val = 0;
+                    EnumSymbolTableEntry * entry = est_lookup(enum_st, $1, $3);
+                    if(!entry) yyerror("Enum not found in symbol table.");
+                    else {
+                        for(int i = 0; i < entry->numFields; i++) {
+                            if(!strcmp(entry->fields[i], $3)) {
+                                $$.val = (Variant *)malloc(sizeof(Variant));
+                                ((Variant *)$$.val)->tag = strdup($1);
+                                ((Variant *)$$.val)->val = strdup($3);
+                                ((Variant *)$$.val)->este = entry;
+                                $$.type = CT_VAR; 
+                                break;
+                            }
+                        }
+                        if(!$$.val) yyerror("Variant not found in enum.");
+                    }
+                } // Enum variant: needs a symbol table lookup. Added it.
                 ;
 
 expression      : '(' expression ')'
@@ -151,7 +165,17 @@ expression      : '(' expression ')'
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 | expression '.' IDENT
-                | expression '.' LIT_INT               // tuple access
+                | expression '.' LIT_INT {
+                    if($1.head->core_type != CART) {
+                        yyerror("Tuple access on non-tuple type.");
+                    } else {
+                        if($3 < 0 || $3 >= $1.head->size) {
+                            yyerror("Tuple access out of bounds.");
+                        } else {
+                            // TODO: That struct Type construction.
+                        }
+                    }
+                }               // tuple access 
                 | expression KW_AS '(' type ')'
                 | expression '@' expression
                 | expression '*' expression
@@ -182,12 +206,21 @@ return_stmt     : KW_RETURN expression
                 | KW_RETURN
                 ;
 
-call            : IDENT '(' expr_list ')' 
-                | expression '.' IDENT '(' expr_list ')'
-                | expression '.' LIT_INT '(' expr_list ')'
+call            : IDENT '(' expr_list ')' {
+                    FunctionSymbolTableEntry * entry = fst_lookup(func_st, $1);
+                    if(!entry) yyerror("Function not found in symbol table.");
+                    else {
+                        if(entry->numParams != $3.numParams) yyerror("Function call has wrong number of parameters.");
+                        for(int i = 0; i < entry->numParams; i++) {
+                            // TODO: Check if the types are compatible.
+                        }
+                    }
+                }
+                | expression {/* WAIT SINCE WHEN DO WE HAVE MEMBER FUNCTIONS */} '.' IDENT '(' expr_list ')'
+                | expression {/* ARE WE ALLOWING TUPLES TO CONTAIN FUNCTIONS */} '.' LIT_INT '(' expr_list ')'
                 ;
 
-expr_list       : expression ',' expr_list
+expr_list       : expression ',' expr_list // TODO: get the list of types. Need no more information.
                 | expression
                 | epsilon
                 ;
@@ -266,14 +299,14 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
                 ;
 
-identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body // LIT_INT should be 0 or 1, depending on the archetype
-                ;
+identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body {$$ = $4;}// LIT_INT should be 0 or 1, depending on the archetype
+                ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
 
 negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
                 ;
 
-inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body // LIT_INT must be 1
-                ;
+inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
+                ; // LIT_INT must be 1
 
 function        : function_header body 
                 ;
@@ -290,7 +323,9 @@ type_var_list   : type_var ',' type_var_list
 param_list      : type_var_list
                 ;
 
-type_var        : IDENT ':' type
+type_var        : IDENT ':' type {
+                    
+                }
                 ;
 
 struct          : KW_STRUCT IDENT '{' attr_list '}'

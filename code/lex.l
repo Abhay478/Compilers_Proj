@@ -1,8 +1,11 @@
 %option yylineno
 %{
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
     #include "y.tab.h"
-    #define seq_token(a) fprintf(token_stream, "%s%s\n", (a), yytext)
-    extern FILE *token_stream;
+    #define seq_token(a) fprintf(token_stream, "%s: %s\n", (a), yytext)
+    extern FILE * token_stream;
 %}
 dig [0-9]
 num (-?{dig}+)
@@ -29,58 +32,83 @@ ws [\r\n\t ]
 
 %%
 
-{char_c} { seq_token("constant: "); return LIT_CHAR; }
-{str_c} { seq_token("constant: "); return LIT_STR; }
-{num} { seq_token("constant: "); return LIT_INT; }
-{real} { seq_token("constant: "); return LIT_FLOAT; }
+{char_c} { 
+        seq_token("literal"); 
+        yylval.lit_char = yytext[1]; 
+        return LIT_CHAR; 
+    }
+{str_c} {
+        seq_token("literal"); 
+        yylval.lit_str = strndup(yytext+1, strlen(yytext)-2);
+        return LIT_STR; 
+    }
+{num} { 
+        seq_token("literal"); 
+        yylval.lit_int = atoi(yytext);
+        return LIT_INT; 
+    }
+{real} { 
+        seq_token("literal"); 
+        yylval.lit_float = atof(yytext);
+        return LIT_FLOAT; 
+    }
+
 "//.*\n" {}
 "/\*.*\*/" {}
 
-if { seq_token("reserved keyword: "); return KW_IF; }
-else { seq_token("reserved keyword: "); return KW_ELSE; }
-for { seq_token("reserved keyword: "); return KW_FOR; }
-while { seq_token("reserved keyword: "); return KW_WHILE; }
-fn { seq_token("reserved keyword: "); return KW_FN; }
-let { seq_token("reserved keyword: "); return KW_LET; }
-return { seq_token("reserved keyword: "); return KW_RETURN; }
-claim { seq_token("reserved keyword: "); return KW_CLAIM; }
-forge { seq_token("reserved keyword: "); return KW_FORGE; }
-as { seq_token("reserved keyword: "); return KW_AS; }
-is { seq_token("reserved keyword: "); return KW_IS; }
-struct { seq_token("reserved keyword: "); return KW_STRUCT; }
-enum { seq_token("reserved keyword: "); return KW_ENUM; }
-true { seq_token("reserved keyword: "); return KW_TRUE; }
-false { seq_token("reserved keyword: "); return KW_FALSE; }
-break { seq_token("reserved keyword: "); return KW_BREAK; }
-continue { seq_token("reserved keyword: "); return KW_CONTINUE; }
-default { seq_token("reserved keyword: "); return KW_DEFAULT; }
-switch { seq_token("reserved keyword: "); return KW_SWITCH; }
-case { seq_token("reserved keyword: "); return KW_CASE; }
-in { seq_token("reserved keyword: "); return KW_IN; }
-Ring { seq_token("reserved keyword: "); return KW_RING; }
-Group { seq_token("reserved keyword: "); return KW_GROUP; }
-Field { seq_token("areserved keyword: "); return KW_FIELD; }
-Space { seq_token("areserved keyword: "); return KW_SPACE; }
+if          { seq_token("reserved keyword"); return KW_IF; }
+else        { seq_token("reserved keyword"); return KW_ELSE; }
+for         { seq_token("reserved keyword"); return KW_FOR; }
+while       { seq_token("reserved keyword"); return KW_WHILE; }
+fn          { seq_token("reserved keyword"); return KW_FN; }
+let         { seq_token("reserved keyword"); return KW_LET; }
+return      { seq_token("reserved keyword"); return KW_RETURN; }
+claim       { seq_token("reserved keyword"); return KW_CLAIM; }
+forge       { seq_token("reserved keyword"); return KW_FORGE; }
+as          { seq_token("reserved keyword"); return KW_AS; }
+is          { seq_token("reserved keyword"); return KW_IS; }
+struct      { seq_token("reserved keyword"); return KW_STRUCT; }
+enum        { seq_token("reserved keyword"); return KW_ENUM; }
+true        { seq_token("reserved keyword"); return KW_TRUE; }
+false       { seq_token("reserved keyword"); return KW_FALSE; }
+break       { seq_token("reserved keyword"); return KW_BREAK; }
+continue    { seq_token("reserved keyword"); return KW_CONTINUE; }
+default     { seq_token("reserved keyword"); return KW_DEFAULT; }
+switch      { seq_token("reserved keyword"); return KW_SWITCH; }
+case        { seq_token("reserved keyword"); return KW_CASE; }
+in          { seq_token("reserved keyword"); return KW_IN; }
+Ring        { seq_token("reserved keyword"); return KW_RING; }
+Group       { seq_token("reserved keyword"); return KW_GROUP; }
+Field       { seq_token("reserved keyword"); return KW_FIELD; }
+Space       { seq_token("reserved keyword"); return KW_SPACE; }
 
-"++" { seq_token("operator: "); return INCR; }
-"--" { seq_token("operator: "); return DECR; }
-"=>" { seq_token("operator: "); return ARROW; }
-"::" { seq_token("operator: "); return VARIANT; }
-".." { seq_token("aoperator: "); return SLICE; }
-{rel_op} { seq_token("operator: "); return rel_op; }
-"&&" { seq_token("aoperator: "); return AND; }
-"||" { seq_token("aoperator: "); return OR; }
+{pdt} { 
+        seq_token("data type"); 
+        yylval.prim_type = get_pdt(yytext);
+        return PRIMITIVE_DTYPE; 
+    }
 
-{pdt} { seq_token("data type: "); return PRIMITIVE_DTYPE; } 
+"++"        { seq_token("operator"); return INCR; }
+"--"        { seq_token("operator"); return DECR; }
+"=>"        { seq_token("operator"); return ARROW; }
+"::"        { seq_token("operator"); return VARIANT; }
+".."        { seq_token("operator"); return SLICE; }
+{rel_op}    { seq_token("operator"); return rel_op; }
+"&&"        { seq_token("operator"); return AND; }
+"||"        { seq_token("operator"); return OR; }
 
-{op} { seq_token("operator: "); return yytext[0]; } /* single character operator: s */
+{op}        { seq_token("operator"); return yytext[0]; } /* single character operators */
 
-{assign_op} { seq_token("operator: "); return ASSIGN_OP; } /* assignment operator: s */
+{assign_op} { seq_token("operator"); return ASSIGN_OP; } /* assignment operators */
 
-{spl} { seq_token("special characters: "); return yytext[0];} /* special characters */
-{punct} { seq_token("punctuation: "); return yytext[0];} /* punctuation */
+{spl}       { seq_token("special characters"); return yytext[0];} /* special characters */
+{punct}     { seq_token("punctuation"); return yytext[0];} /* punctuation */
 
-{id} { seq_token("ID: "); return IDENT;} /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
+{id} { 
+        seq_token("ID"); 
+        yylval.ident = strdup(yytext);
+        return IDENT;
+    } /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 
 {ws} {}
 

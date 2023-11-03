@@ -3,20 +3,43 @@
 
 int yylex();
 void yyerror(const char* s);
-FILE *token_stream;
+FILE * token_stream;
 
 // flags
 int in_func = 0;
 int in_loop = 0;
-int in_func = 0;
+int in_cond = 0;
 
 %}
+%code requires {
+    #include "semantic.h"
+}
+%union {
+    char * ident;
+    int lit_int;
+    float lit_float;
+    char * lit_str;
+    char lit_char;
+    PDT prim_type;
+    struct {
+        void * val;
+        CType type;
+    } cons;
+}
 
 // keywords
 %token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_WITH
 
-// other
-%token IDENT PRIMITIVE_DTYPE LIT_INT LIT_FLOAT LIT_STR LIT_CHAR rel_op KW_TRUE KW_FALSE ASSIGN_OP
+// Types
+%token <ident> IDENT 
+%token <prim_type> PRIMITIVE_DTYPE 
+%token <lit_int> LIT_INT 
+%token <lit_float> LIT_FLOAT 
+%token <lit_str> LIT_STR 
+%token <lit_char> LIT_CHAR 
+
+%token rel_op KW_TRUE KW_FALSE ASSIGN_OP
+
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
 %left '['
@@ -31,6 +54,8 @@ int in_func = 0;
 %left KW_IN
 %left AND
 %left OR
+
+%type <cons> constant
 
 %start P
 
@@ -105,13 +130,18 @@ assign_op       : ASSIGN_OP
 assignment      : expression assign_op expression // expression must be an lvalue
                 ;
 
-constant        : LIT_CHAR
-                | LIT_FLOAT
-                | LIT_INT
-                | LIT_STR
-                | KW_TRUE
-                | KW_FALSE
-                | IDENT VARIANT IDENT // Enum variant
+constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
+                | LIT_FLOAT {$$.val = (void *)*(int *)(float *)&$1; $$.type = CT_FLOAT;}
+                | LIT_INT {$$.val = (void *)$1; $$.type = CT_INT;}
+                | LIT_STR {$$.val = (void *)$1; $$.type = CT_STR;}
+                | KW_TRUE {$$.val = (void *)1; $$.type = CT_BOOL;}
+                | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
+                | IDENT VARIANT IDENT  {
+                    $$.type = CT_VAR; 
+                    $$.val = (Variant *)malloc(sizeof(Variant));
+                    ((Variant *)$$.val)->tag = strdup($1);
+                    ((Variant *)$$.val)->val = strdup($3);
+                } // Enum variant: needs a symbol table lookup. will be pointer to symbol table entry.
                 ;
 
 expression      : '(' expression ')'

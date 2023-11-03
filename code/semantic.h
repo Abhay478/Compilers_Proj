@@ -2,17 +2,46 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 /***********************************************
  * Structs and functions for %union and yylval.
 ************************************************/
 
+typedef enum PDT {
+    U8,
+    U16,
+    U32,
+    U64,
+    I8,
+    I16,
+    I32,
+    I64,
+    PDT_FLOAT,
+    PDT_CHAR,
+    PDT_BOOL,
+    PDT_STR,
+} PDT;
 
+typedef enum CType {
+    CT_INT,
+    CT_FLOAT,
+    CT_CHAR,
+    CT_BOOL,
+    CT_STR,
+    CT_VAR
+} CType;
+
+typedef struct Variant {
+    char * tag;
+    char * val;
+} Variant;
+
+PDT get_pdt(char * s);
 
 /***********************************************
  * Symbol table for the compiler.
 ************************************************/
 
-/// @brief No clue how to implement multiple refernces. 
 typedef enum VarTypes {
     INT,
     FLOAT,
@@ -70,6 +99,7 @@ int vst_insert(VarSymbolTable * st, VarSymbolTableEntry vste);
 VarSymbolTableEntry * vst_lookup(VarSymbolTable * st, char * name);
 VarSymbolTable make_vst();
 
+typedef struct FunctionSymbolTableEntry FunctionSymbolTableEntry;
 
 /// @brief Contains the symbol table for the current scope, and the current function. Tree structure. 
 /// Each time a scope is entered, a new Scope is created, and the ScopeTree is updated.
@@ -143,6 +173,7 @@ StructSymbolTableEntry * sst_lookup(StructSymbolTable * sst, char * name);
 typedef struct EnumSymbolTableEntry {
     char * name;
     char ** fields;
+    int * values; // Corresponding ints.
     int numFields;
 } EnumSymbolTableEntry;
 

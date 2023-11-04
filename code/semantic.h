@@ -86,29 +86,29 @@ typedef struct Type {
     // UH< SHOULD WE DO THIS? |^
 } Type;
 
-Type make_type();
+Type * make_type();
 int typecmp(Type * t1, Type * t2);
 int push_type(Type * t, VarTypes core_type, int offset, int size, void * aux);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 typedef struct VarSymbolTableEntry {
-    char *name;
-    void *value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
-    Type type;
+    char * name;
+    void * value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
+    Type * type;
 } VarSymbolTableEntry;
 
-VarSymbolTableEntry make_vste(char * name, void * value, Type type, int offset, int size, void * aux);
+VarSymbolTableEntry * make_vste(char * name, void * value, Type * type, int offset, int size, void * aux);
 
 /// @brief Contains all the variables in the current scope.
 typedef struct VarSymbolTable {
-    VarSymbolTableEntry *entries;
+    VarSymbolTableEntry ** entries;
     int size;
     int capacity;
 } VarSymbolTable;
 
-int vst_insert(VarSymbolTable * st, VarSymbolTableEntry vste);
+int vst_insert(VarSymbolTable * st, VarSymbolTableEntry * vste);
 VarSymbolTableEntry * vst_lookup(VarSymbolTable * st, char * name);
-VarSymbolTable make_vst();
+VarSymbolTable * make_vst();
 
 typedef struct FunctionSymbolTableEntry FunctionSymbolTableEntry;
 
@@ -128,8 +128,8 @@ typedef struct ScopeTree {
     Scope * root;
 } ScopeTree;
 
-Scope make_scope();
-ScopeTree make_scope_tree();
+Scope * make_scope();
+ScopeTree * make_scope_tree();
 void add_child(Scope * parent, Scope * child);
 
 /// @brief A single function.
@@ -139,26 +139,26 @@ typedef struct FunctionSymbolTableEntry {
     VarSymbolTable * params;
     // VarSymbolTable * locals; // Why do we need this? We don't.
     ScopeTree * locals;
-    Type return_type;
+    Type * return_type;
 } FunctionSymbolTableEntry;
 
-FunctionSymbolTableEntry make_fste(char * name, int numParams, VarSymbolTable * params);
+FunctionSymbolTableEntry * make_fste(char * name, int numParams, VarSymbolTable * params);
 
 /// @brief Contains all the functions. There's only one of these. 
 typedef struct FunctionSymbolTable {
-    FunctionSymbolTableEntry * entries;
+    FunctionSymbolTableEntry ** entries;
     int size;
     int capacity;
 } FunctionSymbolTable;
 
-FunctionSymbolTable make_func_st();
+FunctionSymbolTable * make_func_st();
 
-int fst_insert(FunctionSymbolTable * fst, FunctionSymbolTableEntry fste);
+int fst_insert(FunctionSymbolTable * fst, FunctionSymbolTableEntry * fste);
 FunctionSymbolTableEntry * fst_lookup(FunctionSymbolTable * fst, char * name);
 
 typedef struct StructField {
     char * name;
-    VarTypes type;
+    Type * type;
     int offset;
     int size;
 } StructField;
@@ -167,18 +167,22 @@ typedef struct StructField {
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 typedef struct StructSymbolTableEntry {
     char * name;
-    StructField * fields; //
+    StructField * fields; 
+    int numFields;
 } StructSymbolTableEntry;
+
+StructSymbolTableEntry * make_struct_ste(char * name, StructField * fields, int numFields);
+Type * make_struct_type(StructSymbolTableEntry * sste);
 
 
 typedef struct StructSymbolTable {
-    StructSymbolTableEntry * entries;
+    StructSymbolTableEntry ** entries;
     int size;
     int capacity;
 } StructSymbolTable;
 
-StructSymbolTable make_struct_st();
-int sst_insert(StructSymbolTable * sst, StructSymbolTableEntry sste);
+StructSymbolTable * make_struct_st();
+int sst_insert(StructSymbolTable * sst, StructSymbolTableEntry * sste);
 StructSymbolTableEntry * sst_lookup(StructSymbolTable * sst, char * name);
 
 typedef struct EnumSymbolTableEntry {
@@ -188,46 +192,46 @@ typedef struct EnumSymbolTableEntry {
     int numFields;
 } EnumSymbolTableEntry;
 
-EnumSymbolTableEntry make_enum_ste(char * name, char ** fields, int numFields);
+EnumSymbolTableEntry * make_enum_ste(char * name, char ** fields, int numFields);
 
 /// @brief Only one of these.
 typedef struct EnumSymbolTable {
-    EnumSymbolTableEntry * entries;
+    EnumSymbolTableEntry ** entries;
     int size;
     int capacity;
 } EnumSymbolTable;
 
-EnumSymbolTable make_enum_st();
-int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este);
+EnumSymbolTable * make_enum_st();
+int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry * este);
 EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name);
 
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
 typedef struct ForgeSymbolTable {
-    FunctionSymbolTable inner;
+    FunctionSymbolTable * inner;
 } ForgeSymbolTable;
 
-ForgeSymbolTable make_forge_st();
-int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry fste);
-FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name);
+ForgeSymbolTable * make_forge_st();
+int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry * fste);
+FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, Type * t1, Type * t2);
 
 typedef struct ClaimSymbolTableEntry {
-    Type type;
+    Type * type;
     Archetypes archetype;
     // We don't need more, ig?
 } ClaimSymbolTableEntry;
 
-ClaimSymbolTableEntry make_claim_ste(Type type, Archetypes archetype);
+ClaimSymbolTableEntry * make_claim_ste(Type * type, Archetypes archetype);
 
 typedef struct ClaimSymbolTable {
-    ClaimSymbolTableEntry * entries;
+    ClaimSymbolTableEntry ** entries;
     int size;
     int capacity;
 } ClaimSymbolTable;
 
-ClaimSymbolTable make_claim_st();
-int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste);
-ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type type, Archetypes archetype); 
+ClaimSymbolTable * make_claim_st();
+int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry * cste);
+ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type * type, Archetypes archetype); 
 
 
 /***********************************************

@@ -25,11 +25,11 @@ int in_cond = 0;
         void * val;
         CType type;
     } cons;
-    Type expr; // Not a pointer because maybe overlap stack nodes? No one will ever pop the stack, so safe.
-    Archetype archetype; 
+    Type * expr;
+    Archetypes archetype; 
     struct {
-        Archetype archetype;
-        Type type;
+        Archetypes archetype;
+        Type * type;
     } claim_stub_type;
 }
 
@@ -66,6 +66,7 @@ int in_cond = 0;
 %type <expr> expression
 %type <archetype> archetype
 %type <claim_stub_type> claim_stub
+%type <expr> type
 %start P
 
 %%
@@ -91,8 +92,8 @@ statements      : statement statements
 statement       : declaration ';'
                 | assignment ';'
                 | unary_operation ';'
-                | call ';'
-                | return_stmt ';' 
+                | call ';' // check if exists.
+                | return_stmt {if(!in_func) yyerror("Returning outside function.");}';' 
                 | conditional
                 | switch_case
                 | loop_stmt
@@ -116,7 +117,7 @@ type_arg        : type
 declaration     : KW_LET decl_list
                 ;
 
-decl_list       : decl_item
+decl_list       : decl_item // check whether lval and rval have same type.
                 | decl_item ',' decl_list
                 ;
 
@@ -124,7 +125,15 @@ decl_item       : type_var
                 | type_var '=' expression
                 ;
 
-type            : PRIMITIVE_DTYPE {}
+type            : PRIMITIVE_DTYPE {
+                    Type * t = make_type(); 
+                    // push_type(t, $1, $1, 0, NULL); 
+
+                    // Do a switch-case to convert PDT to VarType.
+
+                    // $$ = t;
+
+                }
                 | '[' type ']' 
                 | IDENT
                 | generic
@@ -167,16 +176,18 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
 
 expression      : '(' expression ')'
                 | array_access
-                | '!' expression
+                | '!' expression // bool
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
+                // claim group
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
+                // should be deref-able (i.e. stack head be REF)
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
-                | expression '.' IDENT
+                | expression '.' IDENT // struct access, lookup in table
                 | expression '.' LIT_INT {
-                    if($1.head->core_type != CART) {
+                    if($1->head->core_type != CART) {
                         yyerror("Tuple access on non-tuple type.");
                     } else {
-                        if($3 < 0 || $3 >= $1.head->size) {
+                        if($3 < 0 || $3 >= $1->head->size) {
                             yyerror("Tuple access out of bounds.");
                         } else {
                             // TODO: That struct Type construction.
@@ -186,18 +197,18 @@ expression      : '(' expression ')'
                     $$ = make_type();
                 }               // tuple access 
                 | expression KW_AS '(' type ')'
-                | expression '@' expression
-                | expression '*' expression
-                | expression '/' expression
-                | expression '%' expression
-                | expression '+' expression
-                | expression '-' expression
-                | expression '>' expression
-                | expression '<' expression
-                | expression rel_op expression
-                | expression KW_IN expression
-                | expression AND expression 
-                | expression OR expression
+                | expression '@' expression // claim space
+                | expression '*' expression // int, float, forgeable, claim ring
+                | expression '/' expression // int, float, forgeable, claim field
+                | expression '%' expression // int, float
+                | expression '+' expression // int, float, forgeable, claim group
+                | expression '-' expression // int, float, forgeable, claim group
+                | expression '>' expression // int, float
+                | expression '<' expression // int, float
+                | expression rel_op expression // int, float
+                | expression KW_IN expression // second buf over first.
+                | expression AND expression // bool
+                | expression OR expression // bool
                 | IDENT | constant | unary_operation | call 
                 | array_decl // array value
                 | cart_value // tuple value
@@ -211,7 +222,7 @@ cart_value_list : expression ',' cart_value_list
                 | epsilon
                 ;
 
-return_stmt     : KW_RETURN expression 
+return_stmt     : KW_RETURN expression // Check if compatible with current function return type.
                 | KW_RETURN
                 ;
 
@@ -275,22 +286,21 @@ sc_blocks       : KW_CASE constant ':' statements sc_blocks
                 ; // NOTE: Does not cascade
 
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
-                    $$.type = (Type)(void *)-1;
+                    $$.type = (Type *)(void *)-1;
                     StructSymbolTableEntry * entry = sst_lookup(&struct_st, $2);
                     if(!entry) {
-                        EnumSymbolTableEntry * entry = est_lookup(&struct_st, $2);
+                        EnumSymbolTableEntry * entry = est_lookup(&enum_st, $2);
                         if(!entry) yyerror("No such type.");
                         else {
-                            Type t = make_type();
-                            push_type(&t, ENUM, 0, 1, entry);
+                            Type * t = make_type();
+                            push_type(t, ENUM, 0, 1, entry);
                             ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
                             if(!claim) $$.type = t; // Can copy Type, as InnerType is malloc'd.
                         }
                     } 
                     else {
-                        $$.which = 0;
-                        Type t = make_type();
-                        push_type(&t, STRUCT, 0, 1, entry);
+                        Type * t = make_type();
+                        push_type(t, STRUCT, 0, 1, entry);
                         ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
                         if(!claim) $$.type = t;
                     }
@@ -303,7 +313,7 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
 archetype_claim : claim_stub '{' type_def {
                     if($1.archetype != SPACE) yyerror("Cannot add inner types for flat archetypes."); 
                 } rule_list '}' {
-                    if($1.type == (Type)(void *)-1)) {
+                    if($1.type == (Type *)(void *)-1) {
                         yyerror("Claim unsuccesful.");
                     }
                     else {

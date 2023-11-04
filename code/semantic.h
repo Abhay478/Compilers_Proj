@@ -170,7 +170,7 @@ typedef struct Var {
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 typedef struct StructSymbolTableEntry {
     char * name;
-    Var * fields; 
+    Var ** fields; 
     int numFields;
 } StructSymbolTableEntry;
 

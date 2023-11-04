@@ -26,6 +26,11 @@ int in_cond = 0;
         CType type;
     } cons;
     Type expr; // Not a pointer because maybe overlap stack nodes? No one will ever pop the stack, so safe.
+    Archetype archetype; 
+    struct {
+        Archetype archetype;
+        Type type;
+    } claim_stub_type;
 }
 
 // keywords
@@ -43,9 +48,9 @@ int in_cond = 0;
 
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
-%left '['
-%left INCR DECR
 %left '.'
+%left '[' '('
+%left INCR DECR
 %right '!' // Also unary minus, ref, and deref - see `expression` definition.
 %left KW_AS 
 %left '@'
@@ -59,6 +64,8 @@ int in_cond = 0;
 %type <cons> constant
 %type <lit_int> identity_rule // is it 0 or 1? Check inside claim body.
 %type <expr> expression
+%type <archetype> archetype
+%type <claim_stub_type> claim_stub
 %start P
 
 %%
@@ -140,7 +147,7 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
                 | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
                 | IDENT VARIANT IDENT  {
                     $$.val = 0;
-                    EnumSymbolTableEntry * entry = est_lookup(enum_st, $1, $3);
+                    EnumSymbolTableEntry * entry = est_lookup(&enum_st, $1);
                     if(!entry) yyerror("Enum not found in symbol table.");
                     else {
                         for(int i = 0; i < entry->numFields; i++) {
@@ -175,6 +182,8 @@ expression      : '(' expression ')'
                             // TODO: That struct Type construction.
                         }
                     }
+
+                    $$ = make_type();
                 }               // tuple access 
                 | expression KW_AS '(' type ')'
                 | expression '@' expression
@@ -207,17 +216,14 @@ return_stmt     : KW_RETURN expression
                 ;
 
 call            : IDENT '(' expr_list ')' {
-                    FunctionSymbolTableEntry * entry = fst_lookup(func_st, $1);
+                    FunctionSymbolTableEntry * entry = fst_lookup(&func_st, $1);
                     if(!entry) yyerror("Function not found in symbol table.");
                     else {
-                        if(entry->numParams != $3.numParams) yyerror("Function call has wrong number of parameters.");
-                        for(int i = 0; i < entry->numParams; i++) {
-                            // TODO: Check if the types are compatible.
-                        }
+                        // TODO: Check if the types are compatible.
                     }
                 }
-                | expression {/* WAIT SINCE WHEN DO WE HAVE MEMBER FUNCTIONS */} '.' IDENT '(' expr_list ')'
-                | expression {/* ARE WE ALLOWING TUPLES TO CONTAIN FUNCTIONS */} '.' LIT_INT '(' expr_list ')'
+                | expression '.' IDENT '(' expr_list ')'
+                /* | expression '.' LIT_INT '(' expr_list ')' */
                 ;
 
 expr_list       : expression ',' expr_list // TODO: get the list of types. Need no more information.
@@ -241,18 +247,18 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                 | '[' expression SLICE expression ']' // subarray access
                 ;
 
-conditional     : KW_IF '(' expression ')' if_body
+conditional     : KW_IF '(' expression ')' {in_cond = 1;} if_body 
                 ;
 
-if_body         : body 
+if_body         : body {in_cond = 0;}
                 | body KW_ELSE conditional
-                | body KW_ELSE body
+                | body KW_ELSE body {in_cond = 0;}
                 ;
 
-loop_stmt       : KW_WHILE '(' expression ')' body
-                | KW_FOR '(' assignment ';' expression ';' loop_mut ')' body
-                | KW_FOR '(' declaration ';' expression ';' loop_mut ')' body
-                | KW_FOR IDENT KW_IN IDENT body
+loop_stmt       : KW_WHILE '(' expression ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR '(' assignment ';' expression ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR '(' declaration ';' expression ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR IDENT KW_IN IDENT {in_loop = 0;} body {in_loop = 0;}
                 ;
 
 loop_mut        : unary_operation
@@ -268,17 +274,58 @@ sc_blocks       : KW_CASE constant ':' statements sc_blocks
                 | epsilon
                 ; // NOTE: Does not cascade
 
-archetype_claim : KW_CLAIM IDENT KW_IS archetype '{' type_def rule_list '}'
-                | KW_CLAIM IDENT KW_IS archetype KW_WITH '(' ident_list ')' ';'
+claim_stub      : KW_CLAIM IDENT KW_IS archetype {
+                    $$.type = (Type)(void *)-1;
+                    StructSymbolTableEntry * entry = sst_lookup(&struct_st, $2);
+                    if(!entry) {
+                        EnumSymbolTableEntry * entry = est_lookup(&struct_st, $2);
+                        if(!entry) yyerror("No such type.");
+                        else {
+                            Type t = make_type();
+                            push_type(&t, ENUM, 0, 1, entry);
+                            ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
+                            if(!claim) $$.type = t; // Can copy Type, as InnerType is malloc'd.
+                        }
+                    } 
+                    else {
+                        $$.which = 0;
+                        Type t = make_type();
+                        push_type(&t, STRUCT, 0, 1, entry);
+                        ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
+                        if(!claim) $$.type = t;
+                    }
+
+                    $$.archetype = $4;
+                    
+                }
+                ; // Avoids redundant code.
+
+archetype_claim : claim_stub '{' type_def {
+                    if($1.archetype != SPACE) yyerror("Cannot add inner types for flat archetypes."); 
+                } rule_list '}' {
+                    if($1.type == (Type)(void *)-1)) {
+                        yyerror("Claim unsuccesful.");
+                    }
+                    else {
+                        ClaimSymbolTableEntry * claim = make_claim_ste($1.type, $1.archetype);
+                        cst_insert(&claim_st, claim);
+                    }
+                }
+                // PROBLEM: We need the ?SymbolTableEntry again to insert into claim_st. Another lookup is bad, moving the midrule to the end is unsavoury 
+                // (error reported at the wrong place), and I know of no way to transport that entry pointer barring globals, which are, again, unsavoury. 
+                // SOLUTION: Returning the pointer from claim_stub. Yay.
+                | claim_stub KW_WITH '(' ident_list ')' ';'
                 ;
 
-archetype       : KW_GROUP
-                | KW_RING
-                | KW_FIELD
-                | KW_SPACE
+archetype       : KW_GROUP {$$ = GROUP;}
+                | KW_RING {$$ = RING;}
+                | KW_FIELD {$$ = FIELD;}
+                | KW_SPACE {$$ = SPACE;}
                 ;
 
-type_def        : archetype '=' type ';'
+type_def        : archetype {
+                    if($1 != FIELD) yyerror("Faulty inner type.");
+                } '=' type ';' {}
                 | epsilon
                 ;
 

@@ -238,7 +238,7 @@ int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este) {
     return 0;
 }
 
-EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name, char * var) {
+EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name) {
     for (int i = 0; i < est->size; i++) {
         if (!strcmp(est->entries[i].name, name)) {
             return &est->entries[i];
@@ -267,9 +267,8 @@ FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name) {
     return fst_lookup(&fst->inner, name);
 }
 
-ClaimSymbolTableEntry make_claim_ste(char * name, Type type, Archetypes archetype) {
+ClaimSymbolTableEntry make_claim_ste(Type type, Archetypes archetype) {
     ClaimSymbolTableEntry cste;
-    cste.name = name;
     cste.type = type;
     cste.archetype = archetype;
     return cste;
@@ -285,7 +284,7 @@ ClaimSymbolTable make_claim_st() {
 
 int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry cste) {
     for (int i = 0; i < cst->size; i++) {
-        if (!strcmp(cst->entries[i].name, cste.name)) {
+        if (!typecmp(&cst->entries[i].type, &cste.type) && cst->entries[i].archetype == cste.archetype) {
             return 1;
         }
     }

@@ -81,18 +81,20 @@ typedef struct InnerType {
 
 typedef struct Type {
     InnerType * head; // stack of types, 
-    int claimd[4]; // Claimed by group, ring, field, space.
+    // int claimd[4]; // Claimed by group, ring, field, space. 
+
+    // UH< SHOULD WE DO THIS? |^
 } Type;
 
 Type make_type();
 int typecmp(Type * t1, Type * t2);
+int push_type(Type * t, VarTypes core_type, int offset, int size, void * aux);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 typedef struct VarSymbolTableEntry {
     char *name;
     void *value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
     Type type;
-    
 } VarSymbolTableEntry;
 
 VarSymbolTableEntry make_vste(char * name, void * value, Type type, int offset, int size, void * aux);
@@ -197,7 +199,7 @@ typedef struct EnumSymbolTable {
 
 EnumSymbolTable make_enum_st();
 int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry este);
-EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name, char * var);
+EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name);
 
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
@@ -210,13 +212,12 @@ int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry fste);
 FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, char * name);
 
 typedef struct ClaimSymbolTableEntry {
-    char * name;
     Type type;
     Archetypes archetype;
     // We don't need more, ig?
 } ClaimSymbolTableEntry;
 
-ClaimSymbolTableEntry make_claim_ste(char * name, Type type, Archetypes archetype);
+ClaimSymbolTableEntry make_claim_ste(Type type, Archetypes archetype);
 
 typedef struct ClaimSymbolTable {
     ClaimSymbolTableEntry * entries;

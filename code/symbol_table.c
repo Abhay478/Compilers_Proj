@@ -199,7 +199,7 @@ VarSymbolTableEntry * scoped_lookup(FunctionSymbolTableEntry * func, Scope * s, 
  * STRUCT
 ********************/
 
-StructSymbolTableEntry * make_struct_ste(char * name, StructField * fields, int numFields) {
+StructSymbolTableEntry * make_struct_ste(char * name, Var ** fields, int numFields) {
     StructSymbolTableEntry * sste = (StructSymbolTableEntry *)malloc(sizeof(StructSymbolTableEntry));
     sste->name = name;
     sste->fields = fields;
@@ -222,6 +222,7 @@ StructSymbolTable * make_struct_st() {
 
 Type * make_struct_type(StructSymbolTableEntry * sste) {
     Type * t = (Type *)malloc(sizeof(Type));
+    t->head = (InnerType *)malloc(sizeof(InnerType));
     t->head->core_type = STRUCT;
     t->head->aux = sste;
     return t;
@@ -257,11 +258,6 @@ StructSymbolTableEntry * sst_lookup(StructSymbolTable * sst, char * name) {
 ********************/
 
 EnumSymbolTableEntry * make_enum_ste(char * name, char ** fields, int numFields) {
-    // EnumSymbolTableEntry este;
-    // este.name = name;
-    // este.fields = fields;
-    // este.numFields = numFields;
-    // return este;
     EnumSymbolTableEntry * este = (EnumSymbolTableEntry *)malloc(sizeof(EnumSymbolTableEntry));
     este->name = name;
     este->fields = fields;
@@ -319,13 +315,15 @@ int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry * fste) {
     return fst_insert(fst->inner, fste);
 }
 
-Type * type_from_params(VarSymbolTable * params) {
+Type * get_param_type(FunctionSymbolTableEntry * f) {
+    VarSymbolTable * params = f->params;
     if(params->size == 1) {
         // Only one parameter, just return it's type->
         return params->entries[0]->type;
     }
 
     Type * t = (Type *)malloc(sizeof(Type));
+    t->head = (InnerType *)malloc(sizeof(InnerType));
     t->head->core_type = CART; // This is literally what multi-arg forges are for.
 
     // POTENTIAL TODO: Make claim statements use only forges.
@@ -344,7 +342,7 @@ Type * type_from_params(VarSymbolTable * params) {
 FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, Type * t1, Type * t2) {
     FunctionSymbolTable * f = fst->inner;
     for(int i = 0; i < f->size; i++) {
-        Type * t = type_from_params(f->entries[i]->params);
+        Type * t = get_param_type(f->entries[i]);
         if((!typecmp(t, t1) && !typecmp(f->entries[i]->return_type, t2)) || (!typecmp(t, t2) && !typecmp(f->entries[i]->return_type, t1))) {
             return f->entries[i]; // A forge !
         }

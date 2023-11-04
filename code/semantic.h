@@ -59,6 +59,8 @@ typedef enum VarTypes {
     CART,
 } VarTypes;
 
+VarTypes get_vt(PDT pdt);
+
 typedef enum Archetypes {
     GROUP,
     RING,
@@ -111,6 +113,7 @@ VarSymbolTableEntry * vst_lookup(VarSymbolTable * st, char * name);
 VarSymbolTable * make_vst();
 
 typedef struct FunctionSymbolTableEntry FunctionSymbolTableEntry;
+Type * get_param_type(FunctionSymbolTableEntry * f);
 
 /// @brief Contains the symbol table for the current scope, and the current function. Tree structure. 
 /// Each time a scope is entered, a new Scope is created, and the ScopeTree is updated.
@@ -156,22 +159,22 @@ FunctionSymbolTable * make_func_st();
 int fst_insert(FunctionSymbolTable * fst, FunctionSymbolTableEntry * fste);
 FunctionSymbolTableEntry * fst_lookup(FunctionSymbolTable * fst, char * name);
 
-typedef struct StructField {
+typedef struct Var {
     char * name;
     Type * type;
     int offset;
     int size;
-} StructField;
+} Var;
 
 /// @brief Not used for instances of a struct. This is used for the definition.
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 typedef struct StructSymbolTableEntry {
     char * name;
-    StructField * fields; 
+    Var * fields; 
     int numFields;
 } StructSymbolTableEntry;
 
-StructSymbolTableEntry * make_struct_ste(char * name, StructField * fields, int numFields);
+StructSymbolTableEntry * make_struct_ste(char * name, Var ** fields, int numFields);
 Type * make_struct_type(StructSymbolTableEntry * sste);
 
 

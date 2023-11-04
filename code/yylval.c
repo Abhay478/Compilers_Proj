@@ -23,3 +23,26 @@ PDT get_pdt(char * s) {
     }
     return I32;
 }
+
+VarTypes get_vt(PDT pdt) {
+    switch(pdt) {
+        case U8:
+        case U16:
+        case U32:
+        case U64:
+        case I8:
+        case I16:
+        case I32:
+        case I64:
+            return INT;
+        case PDT_FLOAT:
+            return FLOAT;
+        case PDT_CHAR:
+            return CHAR;
+        case PDT_BOOL:
+            return BOOL;
+        case PDT_STR:
+            return STR;
+    }
+    return INT;
+}

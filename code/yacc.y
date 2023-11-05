@@ -1,4 +1,4 @@
-%option yylineno
+
 %{
 #include <stdio.h>
 
@@ -92,6 +92,7 @@ int tdef = 0;
 %type <type> cart_value
 %type <type_list> cart_value_list
 %type <type> unary_operation
+%type <ident_list_type> variant_list
 
 %start P
 
@@ -270,13 +271,13 @@ expression      : '(' expression ')'
 
 cart_value      : '(' expression ',' cart_value_list ')' {
                     Type * t = make_type();
-                    push_type(t, CART, 0, $3.num + 1, NULL);
-                    InnerType ** arr = (InnerType **)calloc($3.num + 1, sizeof(InnerType *));
+                    push_type(t, CART, 0, $4.num + 1, NULL);
+                    InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
                     arr[0] = $2->head;
-                    for(int i = 1; i <= $3.num; i++) {
-                        arr[i] = $3.arr[i]->head;
+                    for(int i = 1; i <= $4.num; i++) {
+                        arr[i] = $4.arr[i]->head;
                     }
-                    t->aux = arr;
+                    t->head->aux = arr;
                     $$ = t;
                 }
                 ;
@@ -478,9 +479,7 @@ archetype       : KW_GROUP {$$ = GROUP;}
                 | KW_SPACE {$$ = SPACE;}
                 ;
 
-type_def        : archetype {
-                    if($1 != FIELD) yyerror("Faulty inner type.");
-                } '=' type ';' {
+type_def        : KW_FIELD '=' type ';' {
                     if(!cst_lookup(&claim_st, $3, FIELD)) yyerror("Type is not a field.");
                     tdef = 1;
                 }
@@ -556,7 +555,7 @@ attr_list       : type_var_list
 
 enum            : KW_ENUM IDENT '{' variant_list '}' {
                     // Enum insert
-                    EnumSymbolTableEntry * entry = make_enum_ste($2, $4.arr, $4.num);
+                    EnumSymbolTableEntry * entry = make_enum_ste($2, $3.arr, $3.num);
                     est_insert(&enum_st, entry);
                 }
                 ;
@@ -585,19 +584,19 @@ cart            : '(' type ',' ')' {
                     push_type(t, CART, 0, 1, NULL);
                     InnerType ** arr = (InnerType **)malloc(sizeof(InnerType *));
                     arr[0] = $2->head;
-                    t->aux = arr;
+                    t->head->aux = arr;
                     $$ = t;
                 }
                 | '(' type ',' type_list ')' {
                     Type * t = make_type();
-                    push_type(t, CART, 0, $3.num + 1, NULL);
-                    InnerType ** arr = (InnerType **)calloc($3.num + 1, sizeof(InnerType *));
+                    push_type(t, CART, 0, $4.num + 1, NULL);
+                    InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
                     arr[0] = $2->head;
 
-                    for(int i = 1; i <= $3.num; i++) {
-                        arr[i] = $3.arr[i]->head;
+                    for(int i = 1; i <= $4.num; i++) {
+                        arr[i] = $4.arr[i]->head;
                     }
-                    t->aux = arr;
+                    t->head->aux = arr;
                     $$ = t;
                 }
                 ;

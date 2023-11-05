@@ -3,7 +3,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
-    #include "y.tab.h"
+    #include "y.tab.hpp"
     #define seq_token(a) fprintf(token_stream, "%s: %s\n", (a), yytext)
     extern FILE * token_stream;
 %}
@@ -43,7 +43,7 @@ ws [\r\n\t ]
     }
 {str_c} {
         seq_token("literal"); 
-        yylval.lit_str = strndup(yytext+1, strlen(yytext)-2);
+        yylval.lit_str = new std::string(strndup(yytext+1, strlen(yytext)-2));
         return LIT_STR; 
     }
 {num} { 
@@ -107,7 +107,7 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
 
 {id} { 
         seq_token("ID"); 
-        yylval.ident = strdup(yytext);
+        yylval.ident = new std::string(strdup(yytext));
         return IDENT;
     } /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 

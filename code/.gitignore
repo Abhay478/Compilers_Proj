@@ -1,5 +1,6 @@
-lex.yy.c
-y.tab.h
-y.tab.c
+lex.yy.c*
+y.tab.h*
+y.tab.c*
 y.output
 seq_tokens.txt
+old_*

@@ -1,26 +1,28 @@
 
 %{
-#include <stdio.h>
+// #include <stdio.h>
 
+#include "semantic.hpp"
 int yylex();
 void yyerror(const char* s);
 FILE * token_stream;
-
 // flags
 int in_func = 0;
 int in_loop = 0;
 int in_cond = 0;
 int tdef = 0;
-#include "semantic.h"
+// #include "semantic.h"
+using namespace std;
 %}
 %code requires {
-    #include "semantic.h"
+    // #include "semantic.h"
+    #include "semantic.hpp"
 }
 %union {
-    char * ident;
+    std::string * ident;
     int lit_int;
     float lit_float;
-    char * lit_str;
+    std::string * lit_str;
     char lit_char;
     PDT prim_type;
     struct {
@@ -33,19 +35,12 @@ int tdef = 0;
         Archetypes archetype;
         Type * type;
     } claim_stub_type;
-    struct {
-        Var ** arr; 
-        int num;
-    } var_list;
+
+    std::deque<Var> * var_list;
     Var * var;
-    struct {
-        char ** arr;
-        int num;
-    } ident_list_type;
-    struct {
-        Type ** arr;
-        int num;
-    } type_list;
+    // std::string * eh;
+    std::deque<std::string> * ident_list_type;
+    std::deque<Type *> * type_list;
 }
 
 // keywords
@@ -156,41 +151,42 @@ decl_item       : type_var {
                 ;
 
 type            : PRIMITIVE_DTYPE {
-                    Type * t = make_type(); 
-                    push_type(t, get_vt($1), 0, 0, NULL);
+                    Type * t = new Type(); 
+                    t->push_type(get_vt($1), 0, 0, NULL);
                     $$ = t;
 
                 }
                 | '[' type ']' {
-                    Type * t = make_type();
+                    Type * t = new Type();
                     t->head = $2->head;
-                    push_type(t, BUF, 0, 1, $2);
+                    t->push_type(BUF, 0, 1, NULL);
                     $$ = t;
                 }
                 | IDENT {
                     // struct lookup
-                    StructSymbolTableEntry * entry = sst_lookup(&struct_st, $1);
+                    StructSymbolTableEntry * entry = struct_st.lookup(*$1);
                     if(!entry) {
                         // enum lookup
-                        EnumSymbolTableEntry * entry = est_lookup(&enum_st, $1);
+                        EnumSymbolTableEntry * entry = enum_st.lookup(*$1);
                         if(!entry) yyerror("No such type.");
                         else {
-                            Type * t = make_type();
-                            push_type(t, ENUM, 0, 1, entry); // aux is the symbol table entry.
+                            Type * t = new Type();
+                            t->push_type(ENUM, 0, 1, new AuxESTE(entry)); // aux is the symbol table entry.
                             $$ = t;
                         }
                     }
                     else {
-                        Type * t = make_type();
-                        push_type(t, STRUCT, 0, 1, entry); // aux is the symbol table entry.
+                        Type * t = new Type();
+
+                        t->push_type(STRUCT, 0, 1, new AuxSSTE(entry)); // aux is the symbol table entry.
                         $$ = t;
                     }
                 }
                 | generic 
                 | '&' type {
-                    Type * t = make_type();
+                    Type * t = new Type();
                     t->head = $2->head; // Reference to this.
-                    push_type(t, REF, 0, 1, NULL); // Push the reference.
+                    t->push_type(REF, 0, 1, NULL); // Push the reference.
                     $$ = t;
                 }
                 | cart 
@@ -211,15 +207,13 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
                 | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
                 | IDENT VARIANT IDENT  {
                     $$.val = 0;
-                    EnumSymbolTableEntry * entry = est_lookup(&enum_st, $1);
+                    EnumSymbolTableEntry * entry = enum_st.lookup(*$1);
                     if(!entry) yyerror("Enum not found in symbol table.");
                     else {
-                        for(int i = 0; i < entry->numFields; i++) {
-                            if(!strcmp(entry->fields[i], $3)) {
-                                $$.val = (Variant *)malloc(sizeof(Variant));
-                                ((Variant *)$$.val)->tag = strdup($1);
-                                ((Variant *)$$.val)->val = strdup($3);
-                                ((Variant *)$$.val)->este = entry;
+                        for(auto i: entry->fields) {
+                            if(i == *$3) {
+                                Variant * var = new Variant(*$1, *$3, entry);
+                                $$.val = var;
                                 $$.type = CT_VAR; 
                                 break;
                             }
@@ -249,7 +243,7 @@ expression      : '(' expression ')'
                         }
                     }
 
-                    $$ = make_type();
+                    $$ = new Type();
                 }               // tuple access 
                 | expression KW_AS '(' type ')' 
                 | expression '@' expression // claim space
@@ -270,29 +264,29 @@ expression      : '(' expression ')'
                 ; // semantic check: check if lvalue
 
 cart_value      : '(' expression ',' cart_value_list ')' {
-                    Type * t = make_type();
-                    push_type(t, CART, 0, $4.num + 1, NULL);
-                    InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
+                    Type * t = new Type();
+                    deque<InnerType *> arr($4->size() + 1, NULL);
                     arr[0] = $2->head;
-                    for(int i = 1; i <= $4.num; i++) {
-                        arr[i] = $4.arr[i]->head;
+                    for(int i = 1; i <= $4->size(); i++) {
+                        arr[i] = (*$4)[i]->head;
                     }
-                    t->head->aux = arr;
+                    t->push_type(CART, 0, arr.size(), new AuxCART(arr));
                     $$ = t;
                 }
                 ;
 
 cart_value_list : expression ',' cart_value_list {
-                    $$.arr = (Type **)realloc($3.arr, sizeof(Type *) * ($3.num + 1));
-                    $$[$3.num] = $1;
-                    $$.num = $3.num + 1;
+                    $$ = $3;
+                    $$->push_front($1);
                 }
                 | expression {
-                    $$ = (Type **)malloc(sizeof(Type *));
-                    $$[0] = $1;
-                    $$.num = 1;
+                    deque<Type *> arr(1, $1);
+                    $$ = &arr; // TODO: Check if this works.
                 }
-                | epsilon { $$.arr = NULL; $$.num = 0;}
+                | epsilon { 
+                    deque<Type *> arr(0, NULL);
+                    $$ = &arr;
+                }
                 ;
 
 return_stmt     : KW_RETURN expression // Check if compatible with current function return type.
@@ -300,7 +294,7 @@ return_stmt     : KW_RETURN expression // Check if compatible with current funct
                 ;
 
 call            : IDENT '(' expr_list ')' {
-                    FunctionSymbolTableEntry * entry = fst_lookup(&func_st, $1);
+                    FunctionSymbolTableEntry * entry = func_st.lookup(*$1);
                     if(!entry) yyerror("Function not found in symbol table.");
                     else {
                         // TODO: Check if the types are compatible.
@@ -311,16 +305,17 @@ call            : IDENT '(' expr_list ')' {
                 ;
 
 expr_list       : expression ',' expr_list {
-                    $$.arr = (Type **)realloc($3.arr, sizeof(Type *) * ($3.num + 1));
-                    $$[$3.num] = $1;
-                    $$.num = $3.num + 1;
+                    $$ = $3;
+                    $$->push_front($1); 
                 }
                 | expression {
-                    $$ = (Type **)malloc(sizeof(Type *));
-                    $$[0] = $1;
-                    $$.num = 1;
+                    deque<Type *> arr(1, $1);
+                    $$ = &arr;
                 }
-                | epsilon { $$.arr = NULL; $$.num = 0;}
+                | epsilon {
+                    deque<Type *> arr(0, NULL);
+                    $$ = &arr;
+                }
                 ;
 
 unary_op        : INCR
@@ -337,9 +332,9 @@ array_access    : expression array_index
 
 array_decl      : '[' expr_list ']' {
                     // All expressions should have the same type
-                    Type * t = $2.arr[0];
-                    for(int i = 1; i < $2.num; i++) {
-                        if(typecmp(t, $2.arr[i])) {
+                    Type * t = (*$2)[0];
+                    for(int i = 1; i < $2->size(); i++) {
+                        if(typecmp(t, (*$2)[i])) {
                             yyerror("Array elements must have the same type.");
                             break;
                         }
@@ -358,8 +353,8 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                     if($2->head->core_type != INT) {
                         yyerror("Array index must be an integer.");
                     }
-                    for(int i = 0; i < $4.num; i++) {
-                        if($4.arr[i]->head->core_type != INT) {
+                    for(auto i: (*$4)) {
+                        if(i->head->core_type != INT) {
                             yyerror("Array index must be an integer.");
                             break;
                         }
@@ -372,7 +367,7 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
-                    if($4->head->core_type != INT || $2->head->core_type != INT) {
+                    if($2->head->core_type != INT || $4->head->core_type != INT) {
                         yyerror("Slice operands must be integers.");
                     }
                 }
@@ -409,21 +404,21 @@ sc_blocks       : sc_blocks KW_CASE constant ':' statements {}
 
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     $$.type = (Type *)(void *)-1;
-                    StructSymbolTableEntry * entry = sst_lookup(&struct_st, $2);
+                    StructSymbolTableEntry * entry = struct_st.lookup(*$2);
                     if(!entry) {
-                        EnumSymbolTableEntry * entry = est_lookup(&enum_st, $2);
+                        EnumSymbolTableEntry * entry = enum_st.lookup(*$2);
                         if(!entry) yyerror("No such type.");
                         else {
-                            Type * t = make_type();
-                            push_type(t, ENUM, 0, 1, entry);
-                            ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
+                            Type * t = new Type();
+                            t->push_type(ENUM, 0, 1, new AuxESTE(entry));
+                            ClaimSymbolTableEntry * claim = claim_st.lookup(t, $4);
                             if(!claim) $$.type = t; // Can copy Type, as InnerType is malloc'd.
                         }
                     } 
                     else {
-                        Type * t = make_type();
-                        push_type(t, STRUCT, 0, 1, entry);
-                        ClaimSymbolTableEntry * claim = cst_lookup(&claim_st, t, $4);
+                        Type * t = new Type();
+                        t->push_type(STRUCT, 0, 1, new AuxSSTE(entry));
+                        ClaimSymbolTableEntry * claim = claim_st.lookup(t, $4);
                         if(!claim) $$.type = t;
                     }
 
@@ -445,8 +440,8 @@ archetype_claim : claim_stub '{' type_def {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        ClaimSymbolTableEntry * claim = make_claim_ste($1.type, $1.archetype);
-                        cst_insert(&claim_st, claim);
+                        ClaimSymbolTableEntry * claim = new ClaimSymbolTableEntry($1.type, $1.archetype);
+                        claim_st.insert(claim);
                     }
                 }
                 // PROBLEM: We need the ?SymbolTableEntry again to insert into claim_st. Another lookup is bad, moving the midrule to the end is unsavoury 
@@ -457,16 +452,16 @@ archetype_claim : claim_stub '{' type_def {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        FunctionSymbolTableEntry * entry1 = fst_lookup(&func_st, $4.arr[0]);
-                        FunctionSymbolTableEntry * entry2 = fst_lookup(&func_st, $4.arr[1]);
+                        FunctionSymbolTableEntry * entry1 = func_st.lookup((*$4)[0]);
+                        FunctionSymbolTableEntry * entry2 = func_st.lookup((*$4)[1]);
                         if(!entry1 || !entry2) yyerror("Function not found in symbol table.");
                         else {
                             if(typecmp(entry1->return_type, get_param_type(entry2)) || typecmp(entry2->return_type, get_param_type(entry1))) {
                                 yyerror("Functions are not inverses.");
                             }
                             else {
-                                ClaimSymbolTableEntry * claim = make_claim_ste($1.type, $1.archetype);
-                                cst_insert(&claim_st, claim);
+                                ClaimSymbolTableEntry * claim = new ClaimSymbolTableEntry($1.type, $1.archetype);
+                                claim_st.insert(claim);
                             }
                         }
                     }
@@ -480,7 +475,7 @@ archetype       : KW_GROUP {$$ = GROUP;}
                 ;
 
 type_def        : KW_FIELD '=' type ';' {
-                    if(!cst_lookup(&claim_st, $3, FIELD)) yyerror("Type is not a field.");
+                    if(!claim_st.lookup($3, FIELD)) yyerror("Type is not a field.");
                     tdef = 1;
                 }
                 | epsilon
@@ -519,34 +514,32 @@ function_header : KW_FN IDENT '(' param_list ')' ':' type
                 | KW_FN IDENT '(' param_list ')' // return type is void
                 ;
 
-type_var_list   : type_var_list ',' type_var {
-                    $$.arr = (Var **)realloc($1.arr, sizeof(Var *) * ($1.num + 1));
-                    $$[$1.num] = $3;
-                    $$.num = $1.num + 1;
+type_var_list   : type_var ',' type_var_list {
+                    $$ = $3;
+                    $$->push_front(*$1);
                 }
                 | type_var {
-                    $$ = (Var **)malloc(sizeof(Var *));
-                    $$[0] = $1;
-                    $$.num = 1;
+                    deque<Var> arr(1, *$1);
+                    $$ = &arr;
+
                 }
-                | epsilon { $$.arr = NULL; $$.num = 0; }
+                | epsilon { 
+                   deque<Var> arr(0, Var());
+                   $$ = &arr;
+                }
                 ;
 
 param_list      : type_var_list 
                 ;
 
 type_var        : IDENT ':' type {
-                    // Var
-                    Var * cur = (Var *)malloc(sizeof(Var));
-                    cur->name = $1;
-                    cur->type = $3;
-                    $$ = cur;
+                    $$ = new Var(*$1, $3, 0, 0);
                 }
                 ;
 
 struct          : KW_STRUCT IDENT '{' attr_list '}' {
-                    StructSymbolTableEntry * entry = make_struct_ste($2, $4.arr, $4.num);
-                    sst_insert(&struct_st, entry);
+                    StructSymbolTableEntry * entry = new StructSymbolTableEntry(*$2, *$4);
+                    struct_st.insert(entry);
                 }
                 ;
 
@@ -555,22 +548,23 @@ attr_list       : type_var_list
 
 enum            : KW_ENUM IDENT '{' variant_list '}' {
                     // Enum insert
-                    EnumSymbolTableEntry * entry = make_enum_ste($2, $3.arr, $3.num);
-                    est_insert(&enum_st, entry);
+                    EnumSymbolTableEntry * entry = new EnumSymbolTableEntry(*$2, *$4);
+                    enum_st.insert(entry);
                 }
                 ;
 
 ident_list      : ident_list ',' IDENT {
-                    $$.arr = (char **)realloc($1.arr, sizeof(char *) * ($1.num + 1));
-                    $$[$1.num] = $3;
-                    $$.num = $1.num + 1;
+                    $$ = $1;
+                    $$->push_front(*$3);
                 }
                 | IDENT {
-                    $$ = (char **)malloc(sizeof(char *));
-                    $$[0] = $1;
-                    $$.num = 1;
+                    deque<string> arr(1, *$1);
+                    $$ = &arr;
                 }
-                | epsilon { $$.arr = NULL; $$.num = 0;}
+                | epsilon { 
+                    deque<string> arr(0, string());
+                    $$ = &arr;
+                }
                 ;
 
 variant_list    : ident_list
@@ -580,36 +574,38 @@ forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body
                 ;
 
 cart            : '(' type ',' ')' {
-                    Type * t = make_type();
-                    push_type(t, CART, 0, 1, NULL);
-                    InnerType ** arr = (InnerType **)malloc(sizeof(InnerType *));
-                    arr[0] = $2->head;
-                    t->head->aux = arr;
+                    Type * t = new Type();
+                    // InnerType ** arr = (InnerType **)malloc(sizeof(InnerType *));
+                    deque<InnerType *> arr(1, $2->head);
+                    t->push_type(CART, 0, 1, new AuxCART(arr));
                     $$ = t;
                 }
                 | '(' type ',' type_list ')' {
-                    Type * t = make_type();
-                    push_type(t, CART, 0, $4.num + 1, NULL);
-                    InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
+                    Type * t = new Type();
+                    // InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
+                    deque<InnerType *> arr($4->size() + 1, NULL);
                     arr[0] = $2->head;
-
-                    for(int i = 1; i <= $4.num; i++) {
-                        arr[i] = $4.arr[i]->head;
+                    for(int i = 1; i <= $4->size(); i++) {
+                        arr[i] = (*$4)[i - 1]->head;
                     }
-                    t->head->aux = arr;
+                    t->push_type(CART, 0, arr.size(), new AuxCART(arr));
                     $$ = t;
                 }
                 ;
 
 type_list       : type_list ',' type {
-                    $$.arr = (Type **)realloc($1.arr, sizeof(Type *) * ($1.num + 1));
-                    $$[$1.num] = $3;
-                    $$.num = $1.num + 1;
+                    // $$.arr = (Type **)realloc($1.arr, sizeof(Type *) * ($1.num + 1));
+                    // $$.arr[$1.num] = $3;
+                    // $$.num = $1.num + 1;
+                    $$ = $1;
+                    $$->push_front($3);
                 }
                 | type {
-                    $$ = (Type **)malloc(sizeof(Type *));
-                    $$[0] = $1;
-                    $$.num = 1;
+                    // $$.arr = (Type **)malloc(sizeof(Type *));
+                    // $$.arr[0] = $1;
+                    // $$.num = 1;
+                    deque<Type *> arr(1, $1);   
+                    $$ = &arr;
                 }
                 ;
 
@@ -624,5 +620,5 @@ int main() {
 }
 
 void yyerror(const char* s) {
-    fprintf(stderr, "Error at line %d: %s\n", yylineno, s);
+    fprintf(stderr, "Error: %s\n", s);
 }

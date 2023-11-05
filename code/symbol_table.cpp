@@ -161,14 +161,6 @@ FunctionSymbolTableEntry::FunctionSymbolTableEntry(char * name, int numParams, V
     this->locals = NULL;
 }
 
-// FunctionSymbolTable * make_func_st() {
-//     FunctionSymbolTable * fst = (FunctionSymbolTable *)malloc(sizeof(FunctionSymbolTable));
-//     fst->size = 0;
-//     fst->capacity = 69;
-//     fst->entries = (FunctionSymbolTableEntry **)malloc(fst->capacity * sizeof(FunctionSymbolTableEntry *));
-//     return fst;
-// }
-
 int FunctionSymbolTable::insert(FunctionSymbolTableEntry * fste) {
     for (int i = 0; i < this->entries.size(); i++) {
         if (this->entries[i]->name == fste->name) {
@@ -189,25 +181,9 @@ FunctionSymbolTableEntry * FunctionSymbolTable::lookup(string name) {
     return NULL;
 }
 
-Scope * make_scope() {
-    Scope * s = (Scope *)malloc(sizeof(Scope));
-    s->vars = new VarSymbolTable();
-    s->current = NULL;
-    s->parent = NULL;
-    s->children = (Scope **)calloc(1, sizeof(Scope *));
-    return s;
-}
-
-ScopeTree * make_scope_tree() {
-    ScopeTree * st = (ScopeTree *)malloc(sizeof(ScopeTree));
-    st->root = make_scope();
-    return st;
-}
-
-void add_child(Scope * parent, Scope * child) {
-    parent->children = (Scope **)realloc(parent->children, (parent->nch + 1) * sizeof(Scope *));
-    parent->children[parent->nch++] = child;
-    child->parent = parent;
+void Scope::add_child(Scope * child) {
+    this->children.push_back(child);
+    child->parent = this;
 }
 
 /// @brief Provide the current scope and the current function.
@@ -244,19 +220,6 @@ StructSymbolTableEntry::StructSymbolTableEntry(string name, deque<Var> fields) {
     this->fields = fields;
 }
 
-// StructSymbolTable * make_struct_st() {
-//     // StructSymbolTable sst;
-//     // sst.size = 0;
-//     // sst.capacity = 69;
-//     // sst.entries = (StructSymbolTableEntry *)malloc(sst.capacity * sizeof(StructSymbolTableEntry));
-//     // return sst;
-//     StructSymbolTable * sst = (StructSymbolTable *)malloc(sizeof(StructSymbolTable));
-//     sst->size = 0;
-//     sst->capacity = 69;
-//     sst->entries = (StructSymbolTableEntry **)malloc(sst->capacity * sizeof(StructSymbolTableEntry *));
-//     return sst;
-// }
-
 Type * StructSymbolTableEntry::make_struct_type() {
     Type * t = new Type();
 
@@ -272,11 +235,6 @@ int StructSymbolTable::insert(StructSymbolTableEntry * sste) {
         }
     }
 
-    // if (sst->size == sst->capacity) {
-    //     sst->capacity = (int)(1.618 * sst->capacity);
-    //     sst->entries = (StructSymbolTableEntry **)realloc(sst->entries, sst->capacity * sizeof(StructSymbolTableEntry *));
-    // }
-    // sst->entries[sst->size++] = sste;
     this->entries.push_back(sste);
     
     return 0;
@@ -299,14 +257,6 @@ EnumSymbolTableEntry::EnumSymbolTableEntry(string name, deque<string> fields) {
     this->name = name;
     this->fields = fields;
 }
-
-// EnumSymbolTable * make_enum_st() {
-//     EnumSymbolTable * est = (EnumSymbolTable *)malloc(sizeof(EnumSymbolTable));
-//     est->size = 0;
-//     est->capacity = 69;
-//     est->entries = (EnumSymbolTableEntry **)malloc(est->capacity * sizeof(EnumSymbolTableEntry *));
-//     return est;
-// }
 
 int EnumSymbolTable::insert(EnumSymbolTableEntry * este) {
     for (auto i: this->entries) {

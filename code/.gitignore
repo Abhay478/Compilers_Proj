@@ -4,3 +4,4 @@ y.tab.c*
 y.output
 seq_tokens.txt
 old_*
+stack.hh

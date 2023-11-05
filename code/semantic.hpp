@@ -106,35 +106,39 @@ struct AuxCART : public Aux {
 struct InnerType {
     VarTypes core_type; // Yay types.
     int offset;
-    int size;
-    Aux * aux; // Pointer to symbol table entry for struct or enum. NULL for everything else.
-    // IMPORTANT: ARRAY OF `InnerTypes` FOR CARTESIAN PRODUCT. 
-    // CARTESIAN PRODUCT DOES NOT STACK.
-    // LENGTH OF ARRAY CAN BE STORED IN SIZE.
-    struct InnerType * next; // For big types. So, if you have &&&u32, is a stack of three REFs and a u32. 
-    // If [u32], then a two level stack of buf, u32.
-    // Unlike previously imagined, REF DOES NOT INVOLVE THE AUX POINTER. REF PUSHES ONTO THE STACK.
+    int size; 
+    /**
+     * For cartesian product (i.e. tuple), stores the tuple length.
+     * For SPACE types, stores the dimension. Is 1 for BUF.
+     * So, a Matrix would be two, and a Vector would be one. This would be created in generic.
+    */
+    Aux * aux; 
+    /**
+     * Pointer to symbol table entry for struct or enum.
+     * For cartesian product, stores the list of types, i.e. vector<InnerType *>.
+     * NULL for everything else.
+    */
+    struct InnerType * next; 
+    /**
+     * For references, Bufs and generics. Because you can have [InvMat<InvMat<InvMat<...>>>].
+     * Pointer to next type in the list. NULL for the last type.
+    */
     InnerType(VarTypes core_type, int offset, int size);
 };
 
 struct Type {
     InnerType * head; // stack of types,  
-    // int claimd[4]; // Claimed by group, ring, field, space. 
     int push_type(VarTypes core_type, int offset, int size, Aux * aux);
 };
 
-// Type * make_type();
 int typecmp(Type * t1, Type * t2);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 struct VarSymbolTableEntry {
     std::string name;
-    // void * value; // Do we need this? Maybe useful for finite types: let q: Cyclic<10> = 20 as (Cyclic<10>); 
     Type * type;
     VarSymbolTableEntry(std::string name, Type * type);
 };
-
-// VarSymbolTableEntry * make_vste(char * name, void * value, Type * type);
 
 /// @brief Contains all the variables in the current scope.
 struct VarSymbolTable {
@@ -144,8 +148,6 @@ struct VarSymbolTable {
     // VarSymbolTable();
 };
 
-// VarSymbolTable * make_vst();
-
 Type * get_param_type(FunctionSymbolTableEntry * f);
 
 /// @brief Contains the symbol table for the current scope, and the current function. Tree structure. 
@@ -154,19 +156,18 @@ Type * get_param_type(FunctionSymbolTableEntry * f);
 struct Scope {
     VarSymbolTable * vars; // Locals.
     FunctionSymbolTableEntry * current; // Maybe we need this, maybe we don't. Two way pointer still cleaner.
-    struct Scope * parent; 
-    struct Scope ** children; // Non-binary tree. Very queer.
-    int nch; // Number of children.
-
+    Scope * parent; 
+    std::vector<Scope *> children; // Non-binary tree. Very queer.
+    void add_child(Scope * child);
 };
 
 struct ScopeTree {
     Scope * root;
 };
 
-Scope * make_scope();
-ScopeTree * make_scope_tree();
-void add_child(Scope * parent, Scope * child);
+// Scope * make_scope();
+// ScopeTree * make_scope_tree();
+
 
 /// @brief A single function.
 struct FunctionSymbolTableEntry {
@@ -210,6 +211,7 @@ struct Var {
 struct StructSymbolTableEntry {
     std::string name;
     std::deque<Var> fields; 
+    FunctionSymbolTable * methods;
     StructSymbolTableEntry(std::string name, std::deque<Var> fields);
     Type * make_struct_type();
 };

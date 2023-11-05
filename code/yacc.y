@@ -3,7 +3,7 @@
 // #include <stdio.h>
 
 #include "semantic.hpp"
-int yylex();
+extern int yylex();
 void yyerror(const char* s);
 FILE * token_stream;
 // flags
@@ -41,6 +41,7 @@ using namespace std;
     // std::string * eh;
     std::deque<std::string> * ident_list_type;
     std::deque<Type *> * type_list;
+    int count;
 }
 
 // keywords
@@ -85,9 +86,12 @@ using namespace std;
 %type <type_list> expr_list
 %type <type> cart
 %type <type> cart_value
+%type <type> array_access
+%type <type> call
 %type <type_list> cart_value_list
 %type <type> unary_operation
 %type <ident_list_type> variant_list
+%type <count> array_index
 
 %start P
 
@@ -258,7 +262,9 @@ expression      : '(' expression ')'
                 | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
                 | expression OR expression // bool
-                | IDENT | constant | unary_operation | call 
+                | IDENT 
+                | constant | unary_operation 
+                | call 
                 | array_decl // array value
                 | cart_value // tuple value
                 ; // semantic check: check if lvalue
@@ -298,10 +304,22 @@ call            : IDENT '(' expr_list ')' {
                     if(!entry) yyerror("Function not found in symbol table.");
                     else {
                         // TODO: Check if the types are compatible.
+                        $$ = entry->return_type;
                     }
                 }
-                | expression '.' IDENT '(' expr_list ')'
-                /* | expression '.' LIT_INT '(' expr_list ')' */
+                | expression '.' IDENT '(' expr_list ')' {
+                    if($1->head->core_type != STRUCT) {
+                        yyerror("Method call on non-struct type.");
+                    } else {
+                        FunctionSymbolTableEntry * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
+                        if(!meth) yyerror("Method not found in symbol table.");
+                        else {
+                            // TODO: Check if the types are compatible.
+                            $$ = meth->return_type;
+                        }
+                    }
+                    
+                }// member functions 
                 ;
 
 expr_list       : expression ',' expr_list {
@@ -327,7 +345,27 @@ unary_operation : expression unary_op {
                 }
                 ;
 
-array_access    : expression array_index 
+array_access    : expression array_index {
+                    if($1->head->core_type != BUF) {
+                        if(!claim_st.lookup($1, SPACE))
+                            yyerror("Array access on non-array type.");
+                    }
+                    else {
+                        // Keep track of dimensions and stuff.
+                        InnerType * current = $1->head;
+                        int n = current->size;
+                        while($1->head->core_type == BUF || claim_st.lookup($1, SPACE)) {
+                            n += current->size;
+                            if($2 > n) yyerror("Array access out of bounds.");
+                            else if($2 == n) {
+                                $$ = new Type();
+                                $$->head = current;
+                                break;
+                            }
+                            current = current->next;
+                        }
+                    }
+                }
                 ;
 
 array_decl      : '[' expr_list ']' {
@@ -359,17 +397,20 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                             break;
                         }
                     }
+                    $$ = $4->size() + 1;
                 }
                 | '[' expression ']' {
                     if($2->head->core_type != INT) {
                         yyerror("Array index must be an integer.");
                     }
+                    $$ = 1;
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
                     if($2->head->core_type != INT || $4->head->core_type != INT) {
                         yyerror("Slice operands must be integers.");
                     }
+                    $$ = 1;
                 }
                 ;
 

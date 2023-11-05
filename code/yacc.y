@@ -1,4 +1,4 @@
-
+%language "C++"
 %{
 // #include <stdio.h>
 

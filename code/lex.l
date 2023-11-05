@@ -28,6 +28,10 @@ pdt ({uint}|{sint}|float|bool|char|str)
 
 op (>|<|!|{arith_op}|\.|{misc_ops})
 
+short_comment \/\/.*
+long_comment_inner [^*]|\**[^/]
+long_comment \/\*({long_comment_inner})*\*\/
+comment {short_comment}|{long_comment}
 ws [\r\n\t ]
 
 %%
@@ -52,9 +56,6 @@ ws [\r\n\t ]
         yylval.lit_float = atof(yytext);
         return LIT_FLOAT; 
     }
-
-"//.*\n" {}
-"/\*.*\*/" {}
 
 if          { seq_token("reserved keyword"); return KW_IF; }
 else        { seq_token("reserved keyword"); return KW_ELSE; }
@@ -111,6 +112,7 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
     } /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
 
 {ws} {}
+{comment} {}
 
 %%
 

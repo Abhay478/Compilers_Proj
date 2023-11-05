@@ -1,3 +1,4 @@
+%option yylineno
 %{
 #include <stdio.h>
 
@@ -76,7 +77,7 @@ int tdef = 0;
 %left OR
 
 %type <cons> constant
-%type <lit_int> identity_rule // is it 0 or 1? Check inside claim body.
+%type <lit_int> identity_rule
 %type <type> expression
 %type <archetype> archetype
 %type <claim_stub_type> claim_stub
@@ -91,7 +92,6 @@ int tdef = 0;
 %type <type> cart_value
 %type <type_list> cart_value_list
 %type <type> unary_operation
-/* %type <type_list> sc_blocks */
 
 %start P
 
@@ -175,21 +175,21 @@ type            : PRIMITIVE_DTYPE {
                         if(!entry) yyerror("No such type.");
                         else {
                             Type * t = make_type();
-                            push_type(t, ENUM, 0, 1, entry);
+                            push_type(t, ENUM, 0, 1, entry); // aux is the symbol table entry.
                             $$ = t;
                         }
                     }
                     else {
                         Type * t = make_type();
-                        push_type(t, STRUCT, 0, 1, entry);
+                        push_type(t, STRUCT, 0, 1, entry); // aux is the symbol table entry.
                         $$ = t;
                     }
                 }
                 | generic 
                 | '&' type {
                     Type * t = make_type();
-                    t->head = $2->head;
-                    push_type(t, REF, 0, 1, $2);
+                    t->head = $2->head; // Reference to this.
+                    push_type(t, REF, 0, 1, NULL); // Push the reference.
                     $$ = t;
                 }
                 | cart 
@@ -199,7 +199,7 @@ assign_op       : ASSIGN_OP
                 | '='
                 ;
 
-assignment      : expression assign_op expression // expression must be an lvalue
+assignment      : expression assign_op expression // first expression must be an lvalue
                 ;
 
 constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
@@ -268,12 +268,30 @@ expression      : '(' expression ')'
                 | cart_value // tuple value
                 ; // semantic check: check if lvalue
 
-cart_value      : '(' expression ',' cart_value_list ')'
+cart_value      : '(' expression ',' cart_value_list ')' {
+                    Type * t = make_type();
+                    push_type(t, CART, 0, $3.num + 1, NULL);
+                    InnerType ** arr = (InnerType **)calloc($3.num + 1, sizeof(InnerType *));
+                    arr[0] = $2->head;
+                    for(int i = 1; i <= $3.num; i++) {
+                        arr[i] = $3.arr[i]->head;
+                    }
+                    t->aux = arr;
+                    $$ = t;
+                }
                 ;
 
-cart_value_list : expression ',' cart_value_list
-                | expression
-                | epsilon
+cart_value_list : expression ',' cart_value_list {
+                    $$.arr = (Type **)realloc($3.arr, sizeof(Type *) * ($3.num + 1));
+                    $$[$3.num] = $1;
+                    $$.num = $3.num + 1;
+                }
+                | expression {
+                    $$ = (Type **)malloc(sizeof(Type *));
+                    $$[0] = $1;
+                    $$.num = 1;
+                }
+                | epsilon { $$.arr = NULL; $$.num = 0;}
                 ;
 
 return_stmt     : KW_RETURN expression // Check if compatible with current function return type.
@@ -316,16 +334,52 @@ unary_operation : expression unary_op {
 array_access    : expression array_index 
                 ;
 
-array_decl      : '[' expr_list ']'
-                | '[' expression ';' expression ']'
+array_decl      : '[' expr_list ']' {
+                    // All expressions should have the same type
+                    Type * t = $2.arr[0];
+                    for(int i = 1; i < $2.num; i++) {
+                        if(typecmp(t, $2.arr[i])) {
+                            yyerror("Array elements must have the same type.");
+                            break;
+                        }
+                    }
+
+                }
+                | '[' expression ';' expression ']' {
+                    if($4->head->core_type != INT) {
+                        yyerror("Array size must be an integer.");
+                    }
+                }
                 ;
 
 array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
-                | '[' expression ']'
-                | '[' expression SLICE expression ']' // subarray access
+                {
+                    if($2->head->core_type != INT) {
+                        yyerror("Array index must be an integer.");
+                    }
+                    for(int i = 0; i < $4.num; i++) {
+                        if($4.arr[i]->head->core_type != INT) {
+                            yyerror("Array index must be an integer.");
+                            break;
+                        }
+                    }
+                }
+                | '[' expression ']' {
+                    if($2->head->core_type != INT) {
+                        yyerror("Array index must be an integer.");
+                    }
+                }
+                | '[' expression SLICE expression ']' // subarray access 
+                {
+                    if($4->head->core_type != INT || $2->head->core_type != INT) {
+                        yyerror("Slice operands must be integers.");
+                    }
+                }
                 ;
 
-conditional     : KW_IF '(' expression {if($3->head->core_type != BOOL) yyerror("predicate must be boolean");} ')' {in_cond = 1;} if_body 
+conditional     : KW_IF '(' expression {
+                    if($3->head->core_type != BOOL) yyerror("predicate must be boolean");
+                } ')' {in_cond = 1;} if_body 
                 ;
 
 if_body         : body {in_cond = 0;}
@@ -571,5 +625,5 @@ int main() {
 }
 
 void yyerror(const char* s) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Error at line %d: %s\n", yylineno, s);
 }

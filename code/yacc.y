@@ -3,7 +3,7 @@
 // #include <stdio.h>
 
 #include "semantic.hpp"
-extern int yylex();
+//extern int yylex();
 void yyerror(const char* s);
 FILE * token_stream;
 // flags
@@ -656,7 +656,8 @@ epsilon         : ;
 
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
-    yyparse();
+    yy::parser parse;
+    parse();
     return 0;
 }
 

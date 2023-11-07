@@ -268,7 +268,8 @@ expression      : '(' expression ')' {
                 }
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 {
-                    $$ = $2;
+                    $$ = new Type();
+                    $$->head = $2->head;
                     $$->push_type(REF, 0, 0, NULL);
                 }
                 | expression '.' IDENT // struct access, lookup in table
@@ -289,7 +290,9 @@ expression      : '(' expression ')' {
                 {
                     if($1->core() != CART) {
                         yyerror("Tuple access on non-tuple type.");
-                    } else {
+                    } 
+                    else 
+                    {
                         if($3 < 0 || $3 >= $1->head->size) {
                             yyerror("Tuple access out of bounds.");
                         } else {
@@ -298,9 +301,7 @@ expression      : '(' expression ')' {
                             $$->head = c[$3];
                         }
                     }
-
-                    $$ = new Type();
-                }               // tuple access 
+                }         
                 | expression KW_AS '(' type ')' 
                 | expression '@' expression // claim space 
                 {

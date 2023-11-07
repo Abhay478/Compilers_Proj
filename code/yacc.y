@@ -357,17 +357,18 @@ expression      : '(' expression ')' {
                 | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
                 {
-                    if($1->core() != BOOL || $3->core() != BOOL){
-                        yyerror("Expression not bool");
-                    }
-                    else{
-                        $$ = new Type();
-                        $$->push_type(BOOL, 0, 0, NULL);
-                    }
+                    $$ = and_or_type_check($1, $3);
                 }
                 | expression OR expression // bool
+                {
+                    $$ = and_or_type_check($1, $3);
+                }
                 | IDENT // lookup in global VarST
                 | constant 
+                {
+                    $$ = new Type();
+                    $$->push_type(convert_constType_to_varType($1), 0, 0, NULL);
+                }
                 | unary_operation 
                 | call 
                 | array_decl // array value
@@ -867,6 +868,7 @@ Type *modulus_relational_type_check_arithmetic(Type *t1, Type *t2){
         yyerror("Modulus/relational_op requires expression to be an int or float type only");
     }
 }
+
 Type *add_sub_type_check_arithmetic(Type *t1, Type *t2){
     Type * t = int_float_check(t1, t2);
     if(t) return t;
@@ -875,9 +877,36 @@ Type *add_sub_type_check_arithmetic(Type *t1, Type *t2){
             yyerror("Group must be claimed.");
         }
         else{
-            return forge_check(t1, t2);
+            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+            if(!fste){
+                yyerror("Expression not forgeable");
+            }
+            else{
+                t = fste->return_type;
+                return t;
+            }
         }
     }
 
 }
+
+Type *and_or_type_check(Type *t1, Type *t2){
+    Type *t = new Type();
+    if(t1->head->core_type != BOOL || t2->head->core_type != BOOL){
+        yyerror("Expression not bool");
+    }
+    else{
+        t->push_type(BOOL, 0, 0, NULL);
+        return t;
+    }
+}
+
+VarTypes convert_constType_to_varType(CType t){
+    if(t == CT_INT) return INT;
+    else if(t == CT_FLOAT) return FLOAT;
+    else if(t == CT_CHAR) return CHAR;
+    else if(t == CT_BOOL) return BOOL;
+    else if(t == CT_STR) return STR;
+}
+
 

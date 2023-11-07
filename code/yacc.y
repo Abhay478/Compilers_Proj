@@ -1,7 +1,7 @@
-%language "C++"
+/* %language "C++" */
 %{
 // #include <stdio.h>
-
+extern int yylex();
 #include "semantic.hpp"
 //extern int yylex();
 void yyerror(const char* s);
@@ -656,8 +656,7 @@ epsilon         : ;
 
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
-    yy::parser parse;
-    parse();
+    yyparse();
     return 0;
 }
 

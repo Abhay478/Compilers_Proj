@@ -172,12 +172,12 @@ struct ScopeTree {
 /// @brief A single function.
 struct FunctionSymbolTableEntry {
     std::string name;
-    int numParams; // Redundant, but nvm.
+    // int numParams; // Redundant, but nvm.
     VarSymbolTable * params;
     ScopeTree * locals;
     Type * return_type;
 
-    FunctionSymbolTableEntry(char * name, int numParams, VarSymbolTable * params);
+    FunctionSymbolTableEntry(char * name, VarSymbolTable * params, Type * return_type);
 };
 
 // FunctionSymbolTableEntry * make_fste(char * name, int numParams, VarSymbolTable * params);
@@ -203,6 +203,9 @@ struct Var {
         this->type = NULL;
         this->offset = 0;
         this->size = 0;
+    }
+    VarSymbolTableEntry * make_entry() {
+        return new VarSymbolTableEntry(this->name, this->type);
     }
 };
 

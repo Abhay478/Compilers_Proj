@@ -75,12 +75,14 @@ using namespace std;
 %type <cons> constant
 %type <lit_int> identity_rule
 %type <type> expression
+%type <type> loop_cond
 %type <archetype> archetype
 %type <claim_stub_type> claim_stub
 %type <type> type
 %type <var> type_var
 %type <var_list> attr_list
 %type <var_list> type_var_list
+%type <var_list> param_list
 %type <ident_list_type> ident_list
 %type <type_list> type_list
 %type <type_list> expr_list
@@ -259,7 +261,23 @@ expression      : '(' expression ')'
                 | expression '>' expression // int, float
                 | expression '<' expression // int, float
                 | expression rel_op expression // int, float
-                | expression KW_IN expression // second buf over first.
+                | expression KW_IN expression {
+                    if($3->head->core_type != BUF) {
+                        if(!claim_st.lookup($4, SPACE))
+                            yyerror("Looping over non-array type.");
+                    }
+                    else {
+                        Type t;
+                        t.head = $3->head->next;
+                        if(typecmp($1, &t)) {
+                            yyerror("Incompatible types");
+                        }
+                        else {
+                            $$ = new Type();
+                            $$->push_type(BOOL, 0, 0, NULL);
+                        }
+                    }
+                }
                 | expression AND expression // bool
                 | expression OR expression // bool
                 | IDENT 
@@ -424,10 +442,23 @@ if_body         : body {in_cond = 0;}
                 | body KW_ELSE body {in_cond = 0;}
                 ;
 
-loop_stmt       : KW_WHILE '(' expression ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR '(' assignment ';' expression ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR '(' declaration ';' expression ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR IDENT KW_IN IDENT {in_loop = 0;} body {in_loop = 0;}
+loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR '(' declaration ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
+                | KW_FOR IDENT KW_IN expression {
+                    if($4->head->core_type != BUF) {
+                        if(!claim_st.lookup($4, SPACE))
+                            yyerror("Looping over non-array type.");
+                    }
+                } {in_loop = 0;} body {in_loop = 0;}
+                ;
+
+loop_cond       : expression {
+                    if($1->head->core_type != BOOL) 
+                        yyerror("Loop condition has to be boolean.");
+
+                    $$ = $1;
+                }
                 ;
 
 loop_mut        : unary_operation
@@ -466,7 +497,7 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     $$.archetype = $4;
                     
                 }
-                ; // Avoids redundant code.
+                ; 
 
 archetype_claim : claim_stub '{' type_def {
                     if($1.archetype != SPACE) yyerror("Cannot add inner types for flat archetypes."); 
@@ -485,9 +516,6 @@ archetype_claim : claim_stub '{' type_def {
                         claim_st.insert(claim);
                     }
                 }
-                // PROBLEM: We need the ?SymbolTableEntry again to insert into claim_st. Another lookup is bad, moving the midrule to the end is unsavoury 
-                // (error reported at the wrong place), and I know of no way to transport that entry pointer barring globals, which are, again, unsavoury. 
-                // SOLUTION: Returning the pointer from claim_stub. Yay.
                 | claim_stub KW_WITH '(' ident_list ')' ';' {
                     if($1.type == (Type *)(void *)-1) {
                         yyerror("Claim unsuccesful.");
@@ -588,7 +616,6 @@ attr_list       : type_var_list
                 ;
 
 enum            : KW_ENUM IDENT '{' variant_list '}' {
-                    // Enum insert
                     EnumSymbolTableEntry * entry = new EnumSymbolTableEntry(*$2, *$4);
                     enum_st.insert(entry);
                 }
@@ -611,19 +638,25 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list
                 ;
 
-forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body
+forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body {
+                    VarSymbolTable * params = new VarSymbolTable();
+                    for(auto i: *$2) {
+                        params->insert(i->make_entry());
+                    }
+
+                    FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(NULL, params, $7);
+                    forge_st.insert(entry);
+                }
                 ;
 
 cart            : '(' type ',' ')' {
                     Type * t = new Type();
-                    // InnerType ** arr = (InnerType **)malloc(sizeof(InnerType *));
                     deque<InnerType *> arr(1, $2->head);
                     t->push_type(CART, 0, 1, new AuxCART(arr));
                     $$ = t;
                 }
                 | '(' type ',' type_list ')' {
                     Type * t = new Type();
-                    // InnerType ** arr = (InnerType **)calloc($4.num + 1, sizeof(InnerType *));
                     deque<InnerType *> arr($4->size() + 1, NULL);
                     arr[0] = $2->head;
                     for(int i = 1; i <= $4->size(); i++) {
@@ -635,16 +668,10 @@ cart            : '(' type ',' ')' {
                 ;
 
 type_list       : type_list ',' type {
-                    // $$.arr = (Type **)realloc($1.arr, sizeof(Type *) * ($1.num + 1));
-                    // $$.arr[$1.num] = $3;
-                    // $$.num = $1.num + 1;
                     $$ = $1;
                     $$->push_front($3);
                 }
                 | type {
-                    // $$.arr = (Type **)malloc(sizeof(Type *));
-                    // $$.arr[0] = $1;
-                    // $$.num = 1;
                     deque<Type *> arr(1, $1);   
                     $$ = &arr;
                 }

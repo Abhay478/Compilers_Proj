@@ -324,30 +324,48 @@ expression      : '(' expression ')' {
                 }
                 | expression '*' expression // int, float, forgeable, claim group, ring
                 {
-                    if($1->head->core_type == INT && $1->head->core_type == FLOAT)
-                    if((!claim_st.lookup($1, GROUP) || !claim_st.lookup($1, RING)) && (!claim_st.lookup($3, GROUP) || !claim_st.lookup($3, RING))){
-                        yyerror("multiplication requires expression to be a Group and Ring");
-                    }
-                    else{
-                        FunctionSymbolTableEntry *fste = forge_st.lookup($1, $3);
-                        if(!fste){
-                            yyerror("Expression not forgeable");
-                        }
-                        else{
-                            $$ = fste->return_type;
-                        }
-                    }
-
+                    $$ = mult_type_check_arithmetic($1, $3);
                 }
                 | expression '/' expression // int, float, forgeable, claim group, ring, field
+                {
+                    $$ = div_type_check_arithmetic($1, $3);
+
+                }
                 | expression '%' expression // int, float
+                {
+                    $$ = modulus_relational_type_check_arithmetic($1, $3);
+                }
                 | expression '+' expression // int, float, forgeable, claim group
+                {
+                    $$ = add_sub_type_check_arithmetic($1, $3);
+                }
                 | expression '-' expression // int, float, forgeable, claim group
+                {
+                    $$ = add_sub_type_check_arithmetic($1, $3);
+                }
                 | expression '>' expression // int, float
+                {
+                    $$ = modulus_relational_type_check_arithmetic($1, $3);
+                }
                 | expression '<' expression // int, float
+                {
+                    $$ = modulus_relational_type_check_arithmetic($1, $3);
+                }
                 | expression rel_op expression // int, float
+                {
+                    $$ = modulus_relational_type_check_arithmetic($1, $3);
+                }
                 | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
+                {
+                    if($1->head->core_type != BOOL || $3->head->core_type != BOOL){
+                        yyerror("Expression not bool");
+                    }
+                    else{
+                        $$ = new Type();
+                        $$->push_type(BOOL, 0, 0, NULL);
+                    }
+                }
                 | expression OR expression // bool
                 | IDENT // lookup in global VarST
                 | constant 
@@ -788,3 +806,102 @@ int main() {
 void yyerror(const char* s) {
     fprintf(stderr, "Error: %s\n", s);
 }
+
+Type *mult_type_check_arithmetic(Type *t1, Type *t2){
+    Type *return_t = new Type();
+
+    if(t1->head->core_type == INT && t2->head->core_type == INT){
+        t->push_type(INT, 0, 0, NULL);
+        return t;
+    }
+    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
+        t->push_type(FLOAT, 0, 0, NULL);
+        return t;
+    }
+    else{
+        if((!claim_st.lookup(t1, GROUP) || !claim_st.lookup(t1, RING)) && (!claim_st.lookup(t2, GROUP) || !claim_st.lookup(t2, RING))){
+            yyerror("multiplication requires expression to be a Group and Ring");
+        }
+        else{
+            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+            if(!fste){
+                yyerror("Expression not forgeable");
+            }
+            else{
+                t = fste->return_type;
+                return t;
+            }
+        }
+    }
+}
+
+Type *div_type_check_arithmetic(Type *t1, Type *t2){
+    Type *return_t = new Type();
+    if(t1->head->core_type == INT && t2->head->core_type == INT){
+        t->push_type(INT, 0, 0, NULL);
+        return t;
+    }
+    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
+        t->push_type(FLOAT, 0, 0, NULL);
+        return t;
+    }
+    else{
+        if((!claim_st.lookup(t1, GROUP) || !claim_st.lookup(t1, RING) || !claim_st.lookup(t1, FIELD)) && (!claim_st.lookup(t2, GROUP) || !claim_st.lookup(t2, RING) || !claim_st.lookup(t2, FIELD))){
+            yyerror("division requires expression to be a Group, Ring and Field");
+        }
+        else{
+            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+            if(!fste){
+                yyerror("Expression not forgeable");
+            }
+            else{
+                t = fste->return_type;
+                return t;
+            }
+        }
+    }
+}
+
+Type *modulus_relational_type_check_arithmetic(Type *t1, Type *t2){
+    Type *return_t = new Type();
+    if(t1->head->core_type == INT && t2->head->core_type == INT){
+        t->push_type(INT, 0, 0, NULL);
+        return t;
+    }
+    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
+        t->push_type(FLOAT, 0, 0, NULL);
+        return t;
+    }
+    else{
+        yyerror("Modulus/relational_op requires expression to be an int or float type only");
+    }
+}
+Type *add_sub_type_check_arithmetic(Type *t1, Type *t2){
+    Type *return_t = new Type();
+
+    if(t1->head->core_type == INT && t2->head->core_type == INT){
+        t->push_type(INT, 0, 0, NULL);
+        return t;
+    }
+    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
+        t->push_type(FLOAT, 0, 0, NULL);
+        return t;
+    }
+    else{
+        if(!claim_st.lookup(t1, GROUP) && !claim_st.lookup(t2, GROUP)){
+            yyerror("add/sub requires expression to be a Group");
+        }
+        else{
+            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+            if(!fste){
+                yyerror("Expression not forgeable");
+            }
+            else{
+                t = fste->return_type;
+                return t;
+            }
+        }
+    }
+
+}
+

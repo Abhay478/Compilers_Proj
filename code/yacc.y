@@ -13,6 +13,15 @@ int in_cond = 0;
 int tdef = 0;
 // #include "semantic.h"
 using namespace std;
+
+    Type * int_float_check(Type * t1, Type * t2);
+    Type * forge_check(Type * t1, Type * t2);
+    Type *mult_type_check_arithmetic(Type *t1, Type *t2);
+    Type *div_type_check_arithmetic(Type *t1, Type *t2);
+    Type *modulus_relational_type_check_arithmetic(Type *t1, Type *t2);
+    Type *add_sub_type_check_arithmetic(Type *t1, Type *t2);
+    Type *and_or_type_check(Type *t1, Type *t2);
+    VarTypes convert_constType_to_varType(CType t);
 %}
 %code requires {
     // #include "semantic.h"
@@ -86,6 +95,7 @@ using namespace std;
 %type <ident_list_type> ident_list
 %type <type_list> type_list
 %type <type_list> expr_list
+%type <type> array_decl
 %type <type> cart
 %type <type> cart_value
 %type <type> array_access
@@ -367,7 +377,12 @@ expression      : '(' expression ')' {
                 | constant 
                 {
                     $$ = new Type();
-                    $$->push_type(convert_constType_to_varType($1.type), 0, 0, NULL);
+                    VarTypes vt = convert_constType_to_varType($1.type);
+
+                    if(vt == ENUM) {
+                        $$->push_type(vt, 0, 0, new AuxESTE(((Variant *)$1.val)->este));
+                    }
+                    else $$->push_type(vt, 0, 0, NULL);
                 }
                 | unary_operation 
                 | call 
@@ -505,11 +520,17 @@ array_decl      : '[' expr_list ']' {
                         }
                     }
 
+                    $$ = new Type();
+                    $$->head = t->head;
+                    $$->push_type(BUF, 0, 1, NULL);
                 }
                 | '[' expression ';' expression ']' {
                     if($4->core() != INT) {
                         yyerror("Array size must be an integer.");
                     }
+                    $$ = new Type();
+                    $$->head = $2->head;
+                    $$->push_type(BUF, 0, 1, NULL);
                 }
                 ;
 
@@ -824,7 +845,8 @@ Type * forge_check(Type * t1, Type * t2) {
     if(!typecmp(t1, t2)){
         return t1;
     }
-    FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+    FunctionSymbolTableEntry *fste = forge_st.lookup(t1, t2);
+    Type * t = new Type();
     if(!fste){
         yyerror("Type mismatch");
         return NULL;
@@ -900,6 +922,8 @@ VarTypes convert_constType_to_varType(CType t){
     else if(t == CT_CHAR) return CHAR;
     else if(t == CT_BOOL) return BOOL;
     else if(t == CT_STR) return STR;
+    else if(t == CT_VAR) return ENUM;
+    else return INT;
 }
 
 

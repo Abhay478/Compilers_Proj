@@ -229,16 +229,53 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
                 } 
                 ;
 
-expression      : '(' expression ')'
+expression      : '(' expression ')' {
+                    $$ = $2;
+                }
                 | array_access
-                | '!' expression // bool
+                | '!' expression {
+                    Type *t = $2;
+                    if(t->head->core_type != BOOL){
+                        yyerror("Can only negate bool expression!");
+                    }
+                    $$ = $2;
+                }
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
-                // claim group
+                {
+                    ClaimSymbolTableEntry *cste = claim_st.lookup($2, GROUP);
+                    if(!cste){
+                        yyerror("unary minus requires Group");
+                    }
+                    $$ = $2;
+                }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
-                // should be deref-able (i.e. stack head be REF)
+                {
+                    if($2->head->core_type != REF){
+                        yyerror("Must be reference");
+                    }
+                    $$ = $2->pop_type();
+                }
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
+                {
+                    $$ = $2;
+                    $$->push_type(REF, 0, 0, NULL);
+                }
                 | expression '.' IDENT // struct access, lookup in table
-                | expression '.' LIT_INT {
+                {
+                    if($1->head->core_type != STRUCT){
+                        yyerror("Must be struct");
+                    }
+                    else{
+                        StructSymbolTableEntry * sste = ((AuxSSTE *)$1->head->aux)->sste;
+                        Var *v = sste->fieldLookup(*($3));
+                        if(!v){
+                            yyerror("Field of struct doesn't exist");
+                        }
+                        $$ = v->type;
+                    }
+                }
+                | expression '.' LIT_INT 
+                {
                     if($1->head->core_type != CART) {
                         yyerror("Tuple access on non-tuple type.");
                     } else {
@@ -246,42 +283,56 @@ expression      : '(' expression ')'
                             yyerror("Tuple access out of bounds.");
                         } else {
                             // TODO: That struct Type construction.
+                            deque<InnerType *> c = ((AuxCART *)$1->head->aux)->cart;
+                            //..........................................
                         }
                     }
 
                     $$ = new Type();
                 }               // tuple access 
                 | expression KW_AS '(' type ')' 
-                | expression '@' expression // claim space
-                | expression '*' expression // int, float, forgeable, claim ring
-                | expression '/' expression // int, float, forgeable, claim field
+                | expression '@' expression // claim space 
+                {
+                    ClaimSymbolTableEntry *cste = claim_st.lookup($1, SPACE);
+                    if(!cste){
+                        yyerror("dot product expression to be a Space");
+                    }
+                    cste = claim_st.lookup($3, SPACE);
+                    if(!cste){
+                        yyerror("dot product expression to be a Space");
+                    }
+                    // Resultant type will be Field over which the Space is claimed
+                }
+                | expression '*' expression // int, float, forgeable, claim group, ring
+                {
+                    if($1->head->core_type == INT && $1->head->core_type == FLOAT)
+                    if((!claim_st.lookup($1, GROUP) || !claim_st.lookup($1, RING)) && (!claim_st.lookup($3, GROUP) || !claim_st.lookup($3, RING))){
+                        yyerror("multiplication requires expression to be a Group and Ring");
+                    }
+                    else{
+                        FunctionSymbolTableEntry *fste = forge_st->lookup($1, $3);
+                        if(!fste){
+                            yyerror("Expression not forgeable");
+                        }
+                        else{
+                            $$ = fste->return_type;
+                        }
+                    }
+
+                }
+                | expression '/' expression // int, float, forgeable, claim group, ring, field
                 | expression '%' expression // int, float
                 | expression '+' expression // int, float, forgeable, claim group
                 | expression '-' expression // int, float, forgeable, claim group
                 | expression '>' expression // int, float
                 | expression '<' expression // int, float
                 | expression rel_op expression // int, float
-                | expression KW_IN expression {
-                    if($3->head->core_type != BUF) {
-                        if(!claim_st.lookup($4, SPACE))
-                            yyerror("Looping over non-array type.");
-                    }
-                    else {
-                        Type t;
-                        t.head = $3->head->next;
-                        if(typecmp($1, &t)) {
-                            yyerror("Incompatible types");
-                        }
-                        else {
-                            $$ = new Type();
-                            $$->push_type(BOOL, 0, 0, NULL);
-                        }
-                    }
-                }
+                | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
                 | expression OR expression // bool
-                | IDENT 
-                | constant | unary_operation 
+                | IDENT // lookup in global VarST
+                | constant 
+                | unary_operation 
                 | call 
                 | array_decl // array value
                 | cart_value // tuple value

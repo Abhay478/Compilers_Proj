@@ -129,6 +129,7 @@ struct InnerType {
 struct Type {
     InnerType * head; // stack of types,  
     int push_type(VarTypes core_type, int offset, int size, Aux * aux);
+    Type * pop_type();
 };
 
 int typecmp(Type * t1, Type * t2);
@@ -213,10 +214,11 @@ struct Var {
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 struct StructSymbolTableEntry {
     std::string name;
-    std::deque<Var> fields; 
+    std::deque<Var *> fields; 
     FunctionSymbolTable * methods;
-    StructSymbolTableEntry(std::string name, std::deque<Var> fields);
+    StructSymbolTableEntry(std::string name, std::deque<Var *> fields);
     Type * make_struct_type();
+    Var* fieldLookup(std::string);
 };
 
 // StructSymbolTableEntry * make_struct_ste(char * name, Var ** fields, int numFields);

@@ -36,7 +36,7 @@ using namespace std;
         Type * type;
     } claim_stub_type;
 
-    std::deque<Var> * var_list;
+    std::deque<Var *> * var_list;
     Var * var;
     // std::string * eh;
     std::deque<std::string> * ident_list_type;
@@ -91,6 +91,7 @@ using namespace std;
 %type <type> array_access
 %type <type> call
 %type <type_list> cart_value_list
+%type <type_list> sc_blocks
 %type <type> unary_operation
 %type <ident_list_type> variant_list
 %type <count> array_index
@@ -282,8 +283,9 @@ expression      : '(' expression ')' {
                         if($3 < 0 || $3 >= $1->head->size) {
                             yyerror("Tuple access out of bounds.");
                         } else {
-                            // TODO: That struct Type construction.
                             deque<InnerType *> c = ((AuxCART *)$1->head->aux)->cart;
+                            $$ = new Type();
+                            $$->head = c[$3];
                             //..........................................
                         }
                     }
@@ -293,15 +295,32 @@ expression      : '(' expression ')' {
                 | expression KW_AS '(' type ')' 
                 | expression '@' expression // claim space 
                 {
-                    ClaimSymbolTableEntry *cste = claim_st.lookup($1, SPACE);
-                    if(!cste){
-                        yyerror("dot product expression to be a Space");
+                    ClaimSymbolTableEntry * cste1 = claim_st.lookup($1, SPACE);
+                    ClaimSymbolTableEntry * cste2 = claim_st.lookup($3, SPACE);
+                    if(!cste1 || !cste2){
+                        yyerror("Must be a space");
+                    } else {
+                        // check if same type
+                        if(typecmp($1, $3)){
+                            FunctionSymbolTableEntry * fste = forge_st.lookup($1, $3);
+                            if(!fste){
+                                yyerror("Type mismatch");
+                            }
+                            else{
+                                Type * temp = fste->return_type;
+                                $$ = temp->pop_type(); 
+                                /***
+                                 * IMPORTANT
+                                 * In Type *, if the head claims SPACE, the field it is a space over will be in the next pointer.
+                                 * Hence the pop_type() call.
+                                 * In a ClaimSymbolTableEntry, this is not so - there is a separate field.
+                                */
+                            }
+                        }
+                        else{
+                            $$ = cste1->over; // Aforementioned separate field.
+                        }
                     }
-                    cste = claim_st.lookup($3, SPACE);
-                    if(!cste){
-                        yyerror("dot product expression to be a Space");
-                    }
-                    // Resultant type will be Field over which the Space is claimed
                 }
                 | expression '*' expression // int, float, forgeable, claim group, ring
                 {
@@ -310,7 +329,7 @@ expression      : '(' expression ')' {
                         yyerror("multiplication requires expression to be a Group and Ring");
                     }
                     else{
-                        FunctionSymbolTableEntry *fste = forge_st->lookup($1, $3);
+                        FunctionSymbolTableEntry *fste = forge_st.lookup($1, $3);
                         if(!fste){
                             yyerror("Expression not forgeable");
                         }
@@ -370,9 +389,19 @@ return_stmt     : KW_RETURN expression // Check if compatible with current funct
 
 call            : IDENT '(' expr_list ')' {
                     FunctionSymbolTableEntry * entry = func_st.lookup(*$1);
-                    if(!entry) yyerror("Function not found in symbol table.");
+                    if(!entry) {
+                        yyerror("Function not found in symbol table."); 
+                        $$ = new Type();
+                    }
                     else {
                         // TODO: Check if the types are compatible.
+                        for(int i = 0; i < $3->size(); i++) {
+                            // Might be a better way than directly accessing the vector?
+                            if(typecmp((*$3)[i], entry->params->entries[i]->type)) {
+                                yyerror("Function call parameter type mismatch.");
+                                break;
+                            }
+                        }
                         $$ = entry->return_type;
                     }
                 }
@@ -383,11 +412,16 @@ call            : IDENT '(' expr_list ')' {
                         FunctionSymbolTableEntry * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
                         if(!meth) yyerror("Method not found in symbol table.");
                         else {
-                            // TODO: Check if the types are compatible.
+                            for(int i = 0; i < $3->size(); i++) {
+                            // Might be a better way than directly accessing the vector?
+                            if(typecmp((*$5)[i], meth->params->entries[i]->type)) {
+                                yyerror("Function call parameter type mismatch.");
+                                break;
+                            }
+                        }
                             $$ = meth->return_type;
                         }
                     }
-                    
                 }// member functions 
                 ;
 
@@ -410,7 +444,13 @@ unary_op        : INCR
                 ;
 
 unary_operation : expression unary_op {
-                    if($1->head->core_type != INT) yyerror("Unary operation on non-int type.");
+                    if($1->head->core_type != INT) {
+                        yyerror("Unary operation on non-int type.");
+                        $$ = new Type();
+                    }
+                    else {
+                        $$ = $1;
+                    }
                 }
                 ;
 
@@ -521,8 +561,15 @@ switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' stat
                 | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
                 ;
 
-sc_blocks       : sc_blocks KW_CASE constant ':' statements {}
-                | epsilon
+sc_blocks       : sc_blocks KW_CASE expression ':' statements {
+                    $$ = $1;
+                    $$->push_back($3);
+                }
+                | epsilon {
+                    // $$ = new deque<Type *>();
+                    deque<Type *> arr(0, NULL);
+                    $$ = &arr;
+                }
                 ; // NOTE: Does not cascade
 
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
@@ -636,15 +683,15 @@ function_header : KW_FN IDENT '(' param_list ')' ':' type
 
 type_var_list   : type_var ',' type_var_list {
                     $$ = $3;
-                    $$->push_front(*$1);
+                    $$->push_front($1);
                 }
                 | type_var {
-                    deque<Var> arr(1, *$1);
+                    deque<Var *> arr(1, $1);
                     $$ = &arr;
 
                 }
                 | epsilon { 
-                   deque<Var> arr(0, Var());
+                   deque<Var *> arr(0, new Var());
                    $$ = &arr;
                 }
                 ;
@@ -691,7 +738,7 @@ variant_list    : ident_list
 
 forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body {
                     VarSymbolTable * params = new VarSymbolTable();
-                    for(auto i: *$2) {
+                    for(auto i: *$3) {
                         params->insert(i->make_entry());
                     }
 

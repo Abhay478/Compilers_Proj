@@ -274,6 +274,7 @@ struct ForgeSymbolTable {
 struct ClaimSymbolTableEntry {
     Type * type;
     Archetypes archetype;
+    Type * over;
     // We don't need more, ig?
 
     ClaimSymbolTableEntry(Type * type, Archetypes archetype);

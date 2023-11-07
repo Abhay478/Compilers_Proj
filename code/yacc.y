@@ -367,7 +367,7 @@ expression      : '(' expression ')' {
                 | constant 
                 {
                     $$ = new Type();
-                    $$->push_type(convert_constType_to_varType($1), 0, 0, NULL);
+                    $$->push_type(convert_constType_to_varType($1.type), 0, 0, NULL);
                 }
                 | unary_operation 
                 | call 
@@ -877,14 +877,7 @@ Type *add_sub_type_check_arithmetic(Type *t1, Type *t2){
             yyerror("Group must be claimed.");
         }
         else{
-            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
-            if(!fste){
-                yyerror("Expression not forgeable");
-            }
-            else{
-                t = fste->return_type;
-                return t;
-            }
+            return forge_check(t1, t2);
         }
     }
 

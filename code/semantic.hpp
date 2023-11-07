@@ -130,6 +130,7 @@ struct Type {
     InnerType * head; // stack of types,  
     int push_type(VarTypes core_type, int offset, int size, Aux * aux);
     Type * pop_type();
+    VarTypes core();
 };
 
 int typecmp(Type * t1, Type * t2);

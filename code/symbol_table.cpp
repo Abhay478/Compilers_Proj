@@ -51,6 +51,10 @@ int Type::push_type(VarTypes core_type, int offset, int size, Aux *aux)
     return 0;
 }
 
+VarTypes Type::core() {
+    return this->core();
+}
+
 Type *Type::pop_type()
 {
     Type *t = new Type();

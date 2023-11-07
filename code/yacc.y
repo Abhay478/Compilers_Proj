@@ -236,7 +236,7 @@ expression      : '(' expression ')' {
                 | array_access
                 | '!' expression {
                     Type *t = $2;
-                    if(t->head->core_type != BOOL){
+                    if(t->core() != BOOL){
                         yyerror("Can only negate bool expression!");
                     }
                     $$ = $2;
@@ -251,7 +251,7 @@ expression      : '(' expression ')' {
                 }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 {
-                    if($2->head->core_type != REF){
+                    if($2->core() != REF){
                         yyerror("Must be reference");
                     }
                     $$ = $2->pop_type();
@@ -263,7 +263,7 @@ expression      : '(' expression ')' {
                 }
                 | expression '.' IDENT // struct access, lookup in table
                 {
-                    if($1->head->core_type != STRUCT){
+                    if($1->core() != STRUCT){
                         yyerror("Must be struct");
                     }
                     else{
@@ -277,7 +277,7 @@ expression      : '(' expression ')' {
                 }
                 | expression '.' LIT_INT 
                 {
-                    if($1->head->core_type != CART) {
+                    if($1->core() != CART) {
                         yyerror("Tuple access on non-tuple type.");
                     } else {
                         if($3 < 0 || $3 >= $1->head->size) {
@@ -286,7 +286,6 @@ expression      : '(' expression ')' {
                             deque<InnerType *> c = ((AuxCART *)$1->head->aux)->cart;
                             $$ = new Type();
                             $$->head = c[$3];
-                            //..........................................
                         }
                     }
 
@@ -358,7 +357,7 @@ expression      : '(' expression ')' {
                 | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
                 {
-                    if($1->head->core_type != BOOL || $3->head->core_type != BOOL){
+                    if($1->core() != BOOL || $3->core() != BOOL){
                         yyerror("Expression not bool");
                     }
                     else{
@@ -424,7 +423,7 @@ call            : IDENT '(' expr_list ')' {
                     }
                 }
                 | expression '.' IDENT '(' expr_list ')' {
-                    if($1->head->core_type != STRUCT) {
+                    if($1->core() != STRUCT) {
                         yyerror("Method call on non-struct type.");
                     } else {
                         FunctionSymbolTableEntry * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
@@ -462,7 +461,7 @@ unary_op        : INCR
                 ;
 
 unary_operation : expression unary_op {
-                    if($1->head->core_type != INT) {
+                    if($1->core() != INT) {
                         yyerror("Unary operation on non-int type.");
                         $$ = new Type();
                     }
@@ -473,7 +472,7 @@ unary_operation : expression unary_op {
                 ;
 
 array_access    : expression array_index {
-                    if($1->head->core_type != BUF) {
+                    if($1->core() != BUF) {
                         if(!claim_st.lookup($1, SPACE))
                             yyerror("Array access on non-array type.");
                     }
@@ -481,7 +480,7 @@ array_access    : expression array_index {
                         // Keep track of dimensions and stuff.
                         InnerType * current = $1->head;
                         int n = current->size;
-                        while($1->head->core_type == BUF || claim_st.lookup($1, SPACE)) {
+                        while($1->core() == BUF || claim_st.lookup($1, SPACE)) {
                             n += current->size;
                             if($2 > n) yyerror("Array access out of bounds.");
                             else if($2 == n) {
@@ -507,7 +506,7 @@ array_decl      : '[' expr_list ']' {
 
                 }
                 | '[' expression ';' expression ']' {
-                    if($4->head->core_type != INT) {
+                    if($4->core() != INT) {
                         yyerror("Array size must be an integer.");
                     }
                 }
@@ -515,11 +514,11 @@ array_decl      : '[' expr_list ']' {
 
 array_index     : '[' expression ',' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
                 {
-                    if($2->head->core_type != INT) {
+                    if($2->core() != INT) {
                         yyerror("Array index must be an integer.");
                     }
                     for(auto i: (*$4)) {
-                        if(i->head->core_type != INT) {
+                        if(i->core() != INT) {
                             yyerror("Array index must be an integer.");
                             break;
                         }
@@ -527,14 +526,14 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                     $$ = $4->size() + 1;
                 }
                 | '[' expression ']' {
-                    if($2->head->core_type != INT) {
+                    if($2->core() != INT) {
                         yyerror("Array index must be an integer.");
                     }
                     $$ = 1;
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
-                    if($2->head->core_type != INT || $4->head->core_type != INT) {
+                    if($2->core() != INT || $4->core() != INT) {
                         yyerror("Slice operands must be integers.");
                     }
                     $$ = 1;
@@ -542,7 +541,7 @@ array_index     : '[' expression ',' expr_list ']' // Access using commas, like 
                 ;
 
 conditional     : KW_IF '(' expression {
-                    if($3->head->core_type != BOOL) yyerror("predicate must be boolean");
+                    if($3->core() != BOOL) yyerror("predicate must be boolean");
                 } ')' {in_cond = 1;} if_body 
                 ;
 
@@ -555,7 +554,7 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop = 0;} body {in_loop = 0;}
                 | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
                 | KW_FOR '(' declaration ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
                 | KW_FOR IDENT KW_IN expression {
-                    if($4->head->core_type != BUF) {
+                    if($4->core() != BUF) {
                         if(!claim_st.lookup($4, SPACE))
                             yyerror("Looping over non-array type.");
                     }
@@ -563,7 +562,7 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop = 0;} body {in_loop = 0;}
                 ;
 
 loop_cond       : expression {
-                    if($1->head->core_type != BOOL) 
+                    if($1->core() != BOOL) 
                         yyerror("Loop condition has to be boolean.");
 
                     $$ = $1;
@@ -807,99 +806,76 @@ void yyerror(const char* s) {
     fprintf(stderr, "Error: %s\n", s);
 }
 
-Type *mult_type_check_arithmetic(Type *t1, Type *t2){
-    Type *return_t = new Type();
-
-    if(t1->head->core_type == INT && t2->head->core_type == INT){
+Type * int_float_check(Type * t1, Type * t2) {
+    Type * t = new Type();
+    if(t1->core() == INT && t2->core() == INT){
         t->push_type(INT, 0, 0, NULL);
         return t;
     }
-    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
+    else if(t1->core() == FLOAT && (t2->core() == INT || t2->core() == FLOAT) || (t2->core() == FLOAT && (t1->core() == INT || t1->core() == FLOAT))){
         t->push_type(FLOAT, 0, 0, NULL);
         return t;
     }
+    else return NULL;
+}
+
+Type * forge_check(Type * t1, Type * t2) {
+    if(!typecmp(t1, t2)){
+        return t1;
+    }
+    FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
+    if(!fste){
+        yyerror("Type mismatch");
+        return NULL;
+    }
     else{
-        if((!claim_st.lookup(t1, GROUP) || !claim_st.lookup(t1, RING)) && (!claim_st.lookup(t2, GROUP) || !claim_st.lookup(t2, RING))){
-            yyerror("multiplication requires expression to be a Group and Ring");
+        t = fste->return_type;
+        return t;
+    }
+}
+
+Type *mult_type_check_arithmetic(Type *t1, Type *t2){
+    Type * t = int_float_check(t1, t2);
+    if(t) return t;
+    else{
+        if(!claim_st.lookup(t1, RING) || !claim_st.lookup(t1, RING)){
+            yyerror("multiplication requires expression to be a Ring");
         }
         else{
-            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
-            if(!fste){
-                yyerror("Expression not forgeable");
-            }
-            else{
-                t = fste->return_type;
-                return t;
-            }
+            return forge_check(t1, t2);
         }
     }
 }
 
 Type *div_type_check_arithmetic(Type *t1, Type *t2){
-    Type *return_t = new Type();
-    if(t1->head->core_type == INT && t2->head->core_type == INT){
-        t->push_type(INT, 0, 0, NULL);
-        return t;
-    }
-    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
-        t->push_type(FLOAT, 0, 0, NULL);
-        return t;
-    }
+    Type * t = int_float_check(t1, t2);
+    if(t) return t;
     else{
-        if((!claim_st.lookup(t1, GROUP) || !claim_st.lookup(t1, RING) || !claim_st.lookup(t1, FIELD)) && (!claim_st.lookup(t2, GROUP) || !claim_st.lookup(t2, RING) || !claim_st.lookup(t2, FIELD))){
+        if(!claim_st.lookup(t1, FIELD) || !claim_st.lookup(t2, FIELD)){
             yyerror("division requires expression to be a Group, Ring and Field");
         }
         else{
-            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
-            if(!fste){
-                yyerror("Expression not forgeable");
-            }
-            else{
-                t = fste->return_type;
-                return t;
-            }
+            return forge_check(t1, t2);
         }
     }
 }
 
 Type *modulus_relational_type_check_arithmetic(Type *t1, Type *t2){
-    Type *return_t = new Type();
-    if(t1->head->core_type == INT && t2->head->core_type == INT){
-        t->push_type(INT, 0, 0, NULL);
-        return t;
-    }
-    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
-        t->push_type(FLOAT, 0, 0, NULL);
-        return t;
-    }
+    Type * t = int_float_check(t1, t2);
+    if(t) return t;
     else{
         yyerror("Modulus/relational_op requires expression to be an int or float type only");
     }
 }
 Type *add_sub_type_check_arithmetic(Type *t1, Type *t2){
-    Type *return_t = new Type();
-
-    if(t1->head->core_type == INT && t2->head->core_type == INT){
-        t->push_type(INT, 0, 0, NULL);
-        return t;
-    }
-    else if(t1->head->core_type == FLOAT && (t2->head->core_type == INT || t2->head->core_type == FLOAT) || (t2->head->core_type == FLOAT && (t1->head->core_type == INT || t1->head->core_type == FLOAT))){
-        t->push_type(FLOAT, 0, 0, NULL);
-        return t;
-    }
+    Type * t = int_float_check(t1, t2);
+    if(t) return t;
     else{
-        if(!claim_st.lookup(t1, GROUP) && !claim_st.lookup(t2, GROUP)){
-            yyerror("add/sub requires expression to be a Group");
+        if(!claim_st.lookup(t1, GROUP) || !claim_st.lookup(t2, GROUP)){
+            yyerror("Group must be claimed.");
         }
         else{
-            FunctionSymbolTableEntry *fste = forge_st->lookup(t1, t2);
-            if(!fste){
-                yyerror("Expression not forgeable");
-            }
-            else{
-                t = fste->return_type;
-                return t;
-            }
+            return forge_check(t1, t2);
         }
     }
 

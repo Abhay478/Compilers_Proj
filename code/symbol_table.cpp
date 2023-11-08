@@ -29,7 +29,7 @@ AuxESTE::AuxESTE(Enum *este)
     this->este = este;
 }
 
-AuxCART::AuxCART(deque<InnerType *> cart)
+AuxCART::AuxCART(vector<InnerType *> cart)
 {
     this->cart = cart;
 }
@@ -242,7 +242,7 @@ Var *scoped_lookup(Function *func, Scope *s, string name)
  * STRUCT
  ********************/
 
-Struct::Struct(string name, deque<Var *> fields)
+Struct::Struct(string name, vector<Var *> fields)
 {
     this->name = name;
     this->fields = fields;
@@ -299,7 +299,7 @@ Var *Struct::fieldLookup(string field_name)
  * ENUM
  ********************/
 
-Enum::Enum(string name, deque<string> fields)
+Enum::Enum(string name, vector<string> fields)
 {
     this->name = name;
     this->fields = fields;

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
-#include <deque>
 
 #ifndef _SEMANTIC_H
 #define _SEMANTIC_H
@@ -104,8 +103,8 @@ struct AuxESTE : public Aux {
 };
 
 struct AuxCART : public Aux {
-    std::deque<InnerType *> cart;
-    AuxCART(std::deque<InnerType *> cart);
+    std::vector<InnerType *> cart;
+    AuxCART(std::vector<InnerType *> cart);
 };
 
 
@@ -169,6 +168,10 @@ struct Scope {
     VarSymbolTable * vars; // Variables in the current scope.
     Scope * parent; 
     //std::vector<Scope *> children; // Don't need this, cuz single pass. Will revisit if needed.
+    Scope() {
+        vars = new VarSymbolTable();
+        parent = NULL;
+    }
 };
 
 struct ScopeTree {
@@ -205,9 +208,9 @@ struct FunctionSymbolTable {
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 struct Struct {
     std::string name;
-    std::deque<Var *> fields; 
+    std::vector<Var *> fields; 
     FunctionSymbolTable * methods;
-    Struct(std::string name, std::deque<Var *> fields);
+    Struct(std::string name, std::vector<Var *> fields);
     Type * make_struct_type();
     Var* fieldLookup(std::string);
 };
@@ -228,10 +231,10 @@ struct StructSymbolTable {
 
 struct Enum {
     std::string name;
-    std::deque<std::string> fields;
+    std::vector<std::string> fields;
     // int * values; // Corresponding ints.
     // int numFields;
-    Enum(std::string name, std::deque<std::string> fields);
+    Enum(std::string name, std::vector<std::string> fields);
 };
 
 // Enum * make_enum_ste(char * name, char ** fields, int numFields);

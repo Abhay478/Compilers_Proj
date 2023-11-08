@@ -293,6 +293,19 @@ struct ClaimSymbolTable {
 // int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry * cste);
 // ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type * type, Archetypes archetype); 
 
+/**********************************
+ * Typecheck functions
+*/
+
+Type * int_float_check(Type * t1, Type * t2);
+Type * forge_check(Type * t1, Type * t2);
+Type * mult_type_check_arithmetic(Type *t1, Type *t2);
+Type * div_type_check_arithmetic(Type *t1, Type *t2);
+Type * modulus_relational_type_check_arithmetic(Type *t1, Type *t2);
+Type * add_sub_type_check_arithmetic(Type *t1, Type *t2);
+Type * and_or_type_check(Type *t1, Type *t2);
+VarTypes convert_constType_to_varType(CType t);
+
 
 /***********************************************
  * Globals

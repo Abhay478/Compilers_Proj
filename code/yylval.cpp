@@ -47,7 +47,7 @@ VarTypes get_vt(PDT pdt) {
     return INT;
 }
 
-Variant::Variant(std::string tag, std::string val, EnumSymbolTableEntry * este) {
+Variant::Variant(std::string tag, std::string val, Enum * este) {
     this->tag = tag;
     this->val = val;
     this->este = este;

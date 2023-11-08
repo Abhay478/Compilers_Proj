@@ -35,13 +35,13 @@
         Type * type;
     } claim_stub_type;
 
-    std::deque<VarSymbolTableEntry *> * var_list;
-    VarSymbolTableEntry * var;
+    std::deque<Var *> * var_list;
+    Var * var;
     // std::string * eh;
     std::deque<std::string> * ident_list_type;
     std::deque<Type *> * type_list;
     int count;
-    FunctionSymbolTableEntry * func;
+    Function * func;
     GenericInner * targ;
     std::deque<GenericInner *> * targ_list;
 }
@@ -218,10 +218,10 @@ type            : PRIMITIVE_DTYPE {
                 }
                 | IDENT {
                     // struct lookup
-                    StructSymbolTableEntry * entry = struct_st.lookup(*$1);
+                    Struct * entry = struct_st.lookup(*$1);
                     if(!entry) {
                         // enum lookup
-                        EnumSymbolTableEntry * entry = enum_st.lookup(*$1);
+                        Enum * entry = enum_st.lookup(*$1);
                         if(!entry) yyerror("No such type.");
                         else {
                             Type * t = new Type();
@@ -261,7 +261,7 @@ constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
                 | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
                 | IDENT VARIANT IDENT  {
                     $$.val = 0;
-                    EnumSymbolTableEntry * entry = enum_st.lookup(*$1);
+                    Enum * entry = enum_st.lookup(*$1);
                     if(!entry) yyerror("Enum not found in symbol table.");
                     else {
                         for(auto i: entry->fields) {
@@ -290,7 +290,7 @@ expression      : '(' expression ')' {
                 }
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
                 {
-                    ClaimSymbolTableEntry *cste = claim_st.lookup($2, GROUP);
+                    Claim *cste = claim_st.lookup($2, GROUP);
                     if(!cste){
                         yyerror("unary minus requires Group");
                     }
@@ -315,8 +315,8 @@ expression      : '(' expression ')' {
                         yyerror("Must be struct");
                     }
                     else{
-                        StructSymbolTableEntry * sste = ((AuxSSTE *)$1->head->aux)->sste;
-                        VarSymbolTableEntry *v = sste->fieldLookup(*($3));
+                        Struct * sste = ((AuxSSTE *)$1->head->aux)->sste;
+                        Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
                         }
@@ -340,7 +340,7 @@ expression      : '(' expression ')' {
                     }
                 }         
                 | expression KW_AS '(' type ')' {
-                    FunctionSymbolTableEntry * fste = forge_st.lookup($1, $4);
+                    Function * fste = forge_st.lookup($1, $4);
                     if(!fste || typecmp($4, fste->return_type)){
                         yyerror("No forge found");
                     }
@@ -350,14 +350,14 @@ expression      : '(' expression ')' {
                 }
                 | expression '@' expression // claim space 
                 {
-                    ClaimSymbolTableEntry * cste1 = claim_st.lookup($1, SPACE);
-                    ClaimSymbolTableEntry * cste2 = claim_st.lookup($3, SPACE);
+                    Claim * cste1 = claim_st.lookup($1, SPACE);
+                    Claim * cste2 = claim_st.lookup($3, SPACE);
                     if(!cste1 || !cste2){
                         yyerror("Must be a space");
                     } else {
                         // check if same type
                         if(typecmp($1, $3)){
-                            FunctionSymbolTableEntry * fste = forge_st.lookup($1, $3);
+                            Function * fste = forge_st.lookup($1, $3);
                             if(!fste){
                                 yyerror("Type mismatch");
                             }
@@ -368,7 +368,7 @@ expression      : '(' expression ')' {
                                  * IMPORTANT
                                  * In Type *, if the head claims SPACE, the field it is a space over will be in the next pointer.
                                  * Hence the pop_type() call.
-                                 * In a ClaimSymbolTableEntry, this is not so - there is a separate field.
+                                 * In a Claim, this is not so - there is a separate field.
                                 */
                             }
                         }
@@ -467,7 +467,7 @@ return_stmt     : KW_RETURN expression // Check if compatible with current funct
                 ;
 
 call            : IDENT '(' expr_list ')' {
-                    FunctionSymbolTableEntry * entry = func_st.lookup(*$1);
+                    Function * entry = func_st.lookup(*$1);
                     if(!entry) {
                         yyerror("Function not found in symbol table."); 
                         $$ = new Type();
@@ -488,7 +488,7 @@ call            : IDENT '(' expr_list ')' {
                     if($1->core() != STRUCT) {
                         yyerror("Method call on non-struct type.");
                     } else {
-                        FunctionSymbolTableEntry * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
+                        Function * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
                         if(!meth) yyerror("Method not found in symbol table.");
                         else {
                             for(int i = 0; i < $3->size(); i++) {
@@ -659,21 +659,21 @@ sc_blocks       : sc_blocks KW_CASE expression ARROW body {
 
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     $$.type = (Type *)(void *)-1;
-                    StructSymbolTableEntry * entry = struct_st.lookup(*$2);
+                    Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
-                        EnumSymbolTableEntry * entry = enum_st.lookup(*$2);
+                        Enum * entry = enum_st.lookup(*$2);
                         if(!entry) yyerror("No such type.");
                         else {
                             Type * t = new Type();
                             t->push_type(ENUM, 0, 1, new AuxESTE(entry));
-                            ClaimSymbolTableEntry * claim = claim_st.lookup(t, $4);
+                            Claim * claim = claim_st.lookup(t, $4);
                             if(!claim) $$.type = t; // Can copy Type, as InnerType is malloc'd.
                         }
                     } 
                     else {
                         Type * t = new Type();
                         t->push_type(STRUCT, 0, 1, new AuxSSTE(entry));
-                        ClaimSymbolTableEntry * claim = claim_st.lookup(t, $4);
+                        Claim * claim = claim_st.lookup(t, $4);
                         if(!claim) $$.type = t;
                     }
 
@@ -694,7 +694,7 @@ archetype_claim : claim_stub '{' type_def {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        ClaimSymbolTableEntry * claim = new ClaimSymbolTableEntry($1.type, $1.archetype);
+                        Claim * claim = new Claim($1.type, $1.archetype);
                         claim_st.insert(claim);
                     }
                 }
@@ -703,15 +703,15 @@ archetype_claim : claim_stub '{' type_def {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        FunctionSymbolTableEntry * entry1 = func_st.lookup((*$4)[0]);
-                        FunctionSymbolTableEntry * entry2 = func_st.lookup((*$4)[1]);
+                        Function * entry1 = func_st.lookup((*$4)[0]);
+                        Function * entry2 = func_st.lookup((*$4)[1]);
                         if(!entry1 || !entry2) yyerror("Function not found in symbol table.");
                         else {
                             if(typecmp(entry1->return_type, get_param_type(entry2)) || typecmp(entry2->return_type, get_param_type(entry1))) {
                                 yyerror("Functions are not inverses.");
                             }
                             else {
-                                ClaimSymbolTableEntry * claim = new ClaimSymbolTableEntry($1.type, $1.archetype);
+                                Claim * claim = new Claim($1.type, $1.archetype);
                                 claim_st.insert(claim);
                             }
                         }
@@ -765,7 +765,7 @@ function        : {in_func = 1;} start_table function_header{in_func = 0;} body 
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
-                    FunctionSymbolTableEntry * entry = func_st.lookup(*$2);
+                    Function * entry = func_st.lookup(*$2);
                     if(entry) yyerror("Function already exists in symbol table.");
                     else {
                         VarSymbolTable * params = new VarSymbolTable();
@@ -773,7 +773,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                             params->insert(i);
                         }
 
-                        FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(*$2, params, NULL);
+                        Function * entry = new Function(*$2, params, NULL);
                         $$ = entry;
                     }
                 }
@@ -791,12 +791,12 @@ type_var_list   : type_var ',' type_var_list {
                     $$->push_front($1);
                 }
                 | type_var {
-                    deque<VarSymbolTableEntry *> *arr = new deque<VarSymbolTableEntry *>(1, $1);
+                    deque<Var *> *arr = new deque<Var *>(1, $1);
                     $$ = arr;
 
                 }
                 | epsilon { 
-                   deque<VarSymbolTableEntry *> *arr = new deque<VarSymbolTableEntry *>(0, new VarSymbolTableEntry);
+                   deque<Var *> *arr = new deque<Var *>(0, new Var);
                    $$ = arr;
                 }
                 ;
@@ -805,12 +805,12 @@ param_list      : type_var_list
                 ;
 
 type_var        : IDENT ':' type {
-                    $$ = new VarSymbolTableEntry(*$1, $3);
+                    $$ = new Var(*$1, $3);
                 }
                 ;
 
 struct          : KW_STRUCT IDENT '{' attr_list '}' {
-                    StructSymbolTableEntry * entry = new StructSymbolTableEntry(*$2, *$4);
+                    Struct * entry = new Struct(*$2, *$4);
                     struct_st.insert(entry);
                 }
                 ;
@@ -819,7 +819,7 @@ attr_list       : type_var_list
                 ;
 
 enum            : KW_ENUM IDENT '{' variant_list '}' {
-                    EnumSymbolTableEntry * entry = new EnumSymbolTableEntry(*$2, *$4);
+                    Enum * entry = new Enum(*$2, *$4);
                     enum_st.insert(entry);
                 }
                 ;
@@ -847,7 +847,7 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' bod
                         params->insert(i);
                     }
 
-                    FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(NULL, params, $8);
+                    Function * entry = new Function(NULL, params, $8);
                     forge_st.insert(entry);
                 }
                 ;

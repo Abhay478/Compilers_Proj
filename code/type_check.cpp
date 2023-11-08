@@ -18,7 +18,7 @@ Type * forge_check(Type * t1, Type * t2) {
     if(!typecmp(t1, t2)){
         return t1;
     }
-    FunctionSymbolTableEntry *fste = forge_st.lookup(t1, t2);
+    Function *fste = forge_st.lookup(t1, t2);
     Type * t = new Type();
     if(!fste){
         yyerror("Type mismatch");

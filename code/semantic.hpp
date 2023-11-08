@@ -12,11 +12,11 @@
 ************************************************/
 
 struct InnerType;
-struct EnumSymbolTableEntry;
+struct Enum;
 struct Variant;
-struct VarSymbolTableEntry;
-struct StructSymbolTableEntry;
-struct FunctionSymbolTableEntry;
+struct Var;
+struct Struct;
+struct Function;
 
 /***********************************************
  * Structs and functions for %union and yylval.
@@ -51,8 +51,8 @@ enum CType {
 struct Variant {
     std::string tag;
     std::string val;
-    EnumSymbolTableEntry * este;
-    Variant(std::string tag, std::string val, EnumSymbolTableEntry * este);
+    Enum * este;
+    Variant(std::string tag, std::string val, Enum * este);
 };
 
 struct GenericInner {
@@ -94,13 +94,13 @@ struct Aux {
 };
 
 struct AuxSSTE : public Aux {
-    StructSymbolTableEntry * sste;
-    AuxSSTE(StructSymbolTableEntry * sste);
+    Struct * sste;
+    AuxSSTE(Struct * sste);
 };
 
 struct AuxESTE : public Aux {
-    EnumSymbolTableEntry * este;
-    AuxESTE(EnumSymbolTableEntry * este);
+    Enum * este;
+    AuxESTE(Enum * este);
 };
 
 struct AuxCART : public Aux {
@@ -142,25 +142,25 @@ struct Type {
 int typecmp(Type * t1, Type * t2);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
-struct VarSymbolTableEntry {
+struct Var {
     std::string name;
     Type * type;
-    VarSymbolTableEntry() {
+    Var() {
         name = "";
         type = NULL;
     }
-    VarSymbolTableEntry(std::string name, Type * type);
+    Var(std::string name, Type * type);
 };
 
 /// @brief Contains all the variables in the current scope.
 struct VarSymbolTable {
-    std::vector<VarSymbolTableEntry *> entries;
-    int insert(VarSymbolTableEntry * vste);
-    VarSymbolTableEntry * lookup(std::string name);
+    std::vector<Var *> entries;
+    int insert(Var * vste);
+    Var * lookup(std::string name);
     // VarSymbolTable();
 };
 
-Type * get_param_type(FunctionSymbolTableEntry * f);
+Type * get_param_type(Function * f);
 
 /// @brief Contains the symbol table for the current scope, and the current function. Tree structure. 
 /// Each time a scope is entered, a new Scope is created, and the ScopeTree is updated.
@@ -180,108 +180,108 @@ struct ScopeTree {
 
 
 /// @brief A single function.
-struct FunctionSymbolTableEntry {
+struct Function {
     std::string name;
     // int numParams; // Redundant, but nvm.
     VarSymbolTable * params;
     ScopeTree * locals;
     Type * return_type;
 
-    FunctionSymbolTableEntry(std::string name, VarSymbolTable * params, Type * return_type);
+    Function(std::string name, VarSymbolTable * params, Type * return_type);
 };
 
-// FunctionSymbolTableEntry * make_fste(char * name, int numParams, VarSymbolTable * params);
+// Function * make_fste(char * name, int numParams, VarSymbolTable * params);
 
 /// @brief Contains all the functions. There's only one of these. 
 struct FunctionSymbolTable {
-    std::vector<FunctionSymbolTableEntry *> entries;
-    int insert(FunctionSymbolTableEntry * fste);
-    FunctionSymbolTableEntry * lookup(std::string name);
+    std::vector<Function *> entries;
+    int insert(Function * fste);
+    Function * lookup(std::string name);
 };
 
 // FunctionSymbolTable * make_func_st();
 
 /// @brief Not used for instances of a struct. This is used for the definition.
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
-struct StructSymbolTableEntry {
+struct Struct {
     std::string name;
-    std::deque<VarSymbolTableEntry *> fields; 
+    std::deque<Var *> fields; 
     FunctionSymbolTable * methods;
-    StructSymbolTableEntry(std::string name, std::deque<VarSymbolTableEntry *> fields);
+    Struct(std::string name, std::deque<Var *> fields);
     Type * make_struct_type();
-    VarSymbolTableEntry* fieldLookup(std::string);
+    Var* fieldLookup(std::string);
 };
 
-// StructSymbolTableEntry * make_struct_ste(char * name, Var ** fields, int numFields);
-// Type * make_struct_type(StructSymbolTableEntry * sste);
+// Struct * make_struct_ste(char * name, Var ** fields, int numFields);
+// Type * make_struct_type(Struct * sste);
 
 
 struct StructSymbolTable {
-    std::vector<StructSymbolTableEntry *> entries;
-    int insert(StructSymbolTableEntry * sste);
-    StructSymbolTableEntry * lookup(std::string name);   
+    std::vector<Struct *> entries;
+    int insert(Struct * sste);
+    Struct * lookup(std::string name);   
 };
 
 // StructSymbolTable * make_struct_st();
-// int sst_insert(StructSymbolTable * sst, StructSymbolTableEntry * sste);
-// StructSymbolTableEntry * sst_lookup(StructSymbolTable * sst, char * name);
+// int sst_insert(StructSymbolTable * sst, Struct * sste);
+// Struct * sst_lookup(StructSymbolTable * sst, char * name);
 
-struct EnumSymbolTableEntry {
+struct Enum {
     std::string name;
     std::deque<std::string> fields;
     // int * values; // Corresponding ints.
     // int numFields;
-    EnumSymbolTableEntry(std::string name, std::deque<std::string> fields);
+    Enum(std::string name, std::deque<std::string> fields);
 };
 
-// EnumSymbolTableEntry * make_enum_ste(char * name, char ** fields, int numFields);
+// Enum * make_enum_ste(char * name, char ** fields, int numFields);
 
 /// @brief Only one of these.
 struct EnumSymbolTable {
-    // EnumSymbolTableEntry ** entries;
+    // Enum ** entries;
     // int size;
     // int capacity;
-    std::vector<EnumSymbolTableEntry *> entries;
-    int insert(EnumSymbolTableEntry * este);
-    EnumSymbolTableEntry * lookup(std::string name);
+    std::vector<Enum *> entries;
+    int insert(Enum * este);
+    Enum * lookup(std::string name);
 };
 
 // EnumSymbolTable * make_enum_st();
-// int est_insert(EnumSymbolTable * est, EnumSymbolTableEntry * este);
-// EnumSymbolTableEntry * est_lookup(EnumSymbolTable * est, char * name);
+// int est_insert(EnumSymbolTable * est, Enum * este);
+// Enum * est_lookup(EnumSymbolTable * est, char * name);
 
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
 struct ForgeSymbolTable {
     FunctionSymbolTable * inner;
-    int insert(FunctionSymbolTableEntry * fste);
-    FunctionSymbolTableEntry * lookup(Type * t1, Type * t2);
+    int insert(Function * fste);
+    Function * lookup(Type * t1, Type * t2);
 };
 
 // ForgeSymbolTable * make_forge_st();
-// int forge_insert(ForgeSymbolTable * fst, FunctionSymbolTableEntry * fste);
-// FunctionSymbolTableEntry * forge_lookup(ForgeSymbolTable * fst, Type * t1, Type * t2);
+// int forge_insert(ForgeSymbolTable * fst, Function * fste);
+// Function * forge_lookup(ForgeSymbolTable * fst, Type * t1, Type * t2);
 
-struct ClaimSymbolTableEntry {
+struct Claim {
     Type * type;
     Archetypes archetype;
     Type * over;
     // We don't need more, ig?
 
-    ClaimSymbolTableEntry(Type * type, Archetypes archetype);
+    Claim(Type * type, Archetypes archetype);
 };
 
-// ClaimSymbolTableEntry * make_claim_ste(Type * type, Archetypes archetype);
+// Claim * make_claim_ste(Type * type, Archetypes archetype);
 
 struct ClaimSymbolTable {
-    std::vector<ClaimSymbolTableEntry *> entries;
-    int insert(ClaimSymbolTableEntry * cste);
-    ClaimSymbolTableEntry * lookup(Type * type, Archetypes archetype);
+    std::vector<Claim *> entries;
+    int insert(Claim * cste);
+    Claim * lookup(Type * type, Archetypes archetype);
 };
 
 // ClaimSymbolTable * make_claim_st();
-// int cst_insert(ClaimSymbolTable * cst, ClaimSymbolTableEntry * cste);
-// ClaimSymbolTableEntry * cst_lookup(ClaimSymbolTable * cst, Type * type, Archetypes archetype); 
+// int cst_insert(ClaimSymbolTable * cst, Claim * cste);
+// Claim * cst_lookup(ClaimSymbolTable * cst, Type * type, Archetypes archetype); 
 
 /**********************************
  * Typecheck functions

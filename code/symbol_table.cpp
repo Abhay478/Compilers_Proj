@@ -221,20 +221,10 @@ FunctionSymbolTableEntry *FunctionSymbolTable::lookup(string name)
     return NULL;
 }
 
-void Scope::add_child(Scope *child)
-{
-    this->children.push_back(child);
-    child->parent = this;
-}
-
 /// @brief Provide the current scope and the current function.
 VarSymbolTableEntry *scoped_lookup(FunctionSymbolTableEntry *func, Scope *s, string name)
 {
-    VarSymbolTableEntry *vste = func->params->lookup(name);
-    if (vste)
-    {
-        return vste;
-    }
+    VarSymbolTableEntry *vste = NULL;
     Scope *current = s;
     while (current)
     {
@@ -251,15 +241,8 @@ VarSymbolTableEntry *scoped_lookup(FunctionSymbolTableEntry *func, Scope *s, str
 /*******************
  * STRUCT
  ********************/
-Var::Var(string name, Type *type, int offset, int size)
-{
-    this->name = name;
-    this->type = type;
-    this->offset = offset;
-    this->size = size;
-}
 
-StructSymbolTableEntry::StructSymbolTableEntry(string name, deque<Var *> fields)
+StructSymbolTableEntry::StructSymbolTableEntry(string name, deque<VarSymbolTableEntry *> fields)
 {
     this->name = name;
     this->fields = fields;
@@ -301,7 +284,7 @@ StructSymbolTableEntry *StructSymbolTable::lookup(string name)
     return NULL;
 }
 
-Var *StructSymbolTableEntry::fieldLookup(string field_name)
+VarSymbolTableEntry *StructSymbolTableEntry::fieldLookup(string field_name)
 {
     for (auto i : this->fields)
     {

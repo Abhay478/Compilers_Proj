@@ -145,6 +145,10 @@ int typecmp(Type * t1, Type * t2);
 struct VarSymbolTableEntry {
     std::string name;
     Type * type;
+    VarSymbolTableEntry() {
+        name = "";
+        type = NULL;
+    }
     VarSymbolTableEntry(std::string name, Type * type);
 };
 
@@ -162,11 +166,9 @@ Type * get_param_type(FunctionSymbolTableEntry * f);
 /// Each time a scope is entered, a new Scope is created, and the ScopeTree is updated.
 /// Tree-like insertion not implemented, because you'll have the pointer to the current scope while parsing, so just use the add_child function.
 struct Scope {
-    VarSymbolTable * vars; // Locals.
-    FunctionSymbolTableEntry * current; // Maybe we need this, maybe we don't. Two way pointer still cleaner.
+    VarSymbolTable * vars; // Variables in the current scope.
     Scope * parent; 
-    std::vector<Scope *> children; // Non-binary tree. Very queer.
-    void add_child(Scope * child);
+    //std::vector<Scope *> children; // Don't need this, cuz single pass. Will revisit if needed.
 };
 
 struct ScopeTree {
@@ -199,33 +201,15 @@ struct FunctionSymbolTable {
 
 // FunctionSymbolTable * make_func_st();
 
-
-struct Var {
-    std::string name;
-    Type * type;
-    int offset;
-    int size;
-    Var(std::string name, Type * type, int offset, int size);
-    Var() {
-        this->name = "";
-        this->type = NULL;
-        this->offset = 0;
-        this->size = 0;
-    }
-    VarSymbolTableEntry * make_entry() {
-        return new VarSymbolTableEntry(this->name, this->type);
-    }
-};
-
 /// @brief Not used for instances of a struct. This is used for the definition.
 /// When a variable of this type is declared, once the entry is retrieved the aux field is used to store the name of the struct.
 struct StructSymbolTableEntry {
     std::string name;
-    std::deque<Var *> fields; 
+    std::deque<VarSymbolTableEntry *> fields; 
     FunctionSymbolTable * methods;
-    StructSymbolTableEntry(std::string name, std::deque<Var *> fields);
+    StructSymbolTableEntry(std::string name, std::deque<VarSymbolTableEntry *> fields);
     Type * make_struct_type();
-    Var* fieldLookup(std::string);
+    VarSymbolTableEntry* fieldLookup(std::string);
 };
 
 // StructSymbolTableEntry * make_struct_ste(char * name, Var ** fields, int numFields);
@@ -323,5 +307,7 @@ extern ForgeSymbolTable forge_st;
 extern ClaimSymbolTable claim_st;
 extern FunctionSymbolTable func_st;
 extern VarSymbolTable var_st; // global variables only.
+
+extern Scope * current_scope;
 
 #endif

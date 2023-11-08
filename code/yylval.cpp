@@ -2,24 +2,24 @@
 
 PDT get_pdt(char * s) {
     switch(s[0]) {
-        case 'U': switch(s[1]) {
+        case 'u': switch(s[1]) {
             case '8': return U8;
             case '1': return U16; 
             case '6': return U64;
             case '3': return U32;
         };
         break;
-        case 'I': switch(s[1]) {
+        case 'i': switch(s[1]) {
             case '8': return U8;
             case '1': return U16; 
             case '6': return U64;
             case '3': return U32;
         };
         break;
-        case 'F': return PDT_FLOAT;
-        case 'C': return PDT_CHAR;
-        case 'B': return PDT_BOOL;
-        case 'S': return PDT_STR;
+        case 'f': return PDT_FLOAT;
+        case 'c': return PDT_CHAR;
+        case 'b': return PDT_BOOL;
+        case 's': return PDT_STR;
     }
     return I32;
 }

@@ -4,7 +4,7 @@ LDFLAGS=-ll
 
 all: a.out
 
-a.out: code/*.cpp
+a.out: code/*.cpp code/lex.l code/yacc.y code/semantic.hpp
 	bison -d -v -Wcounterexamples code/yacc.y -o code/y.tab.cpp
 	flex -o code/lex.yy.cpp code/lex.l
 	$(CC) code/*.cpp

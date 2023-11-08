@@ -1,4 +1,4 @@
-/* %language "C++" */
+%require "3.6"
 %{
     #include "semantic.hpp"
     extern int yylex();
@@ -9,26 +9,18 @@
     int in_loop = 0;
     int in_cond = 0;
     int tdef = 0;
+    Scope * current_scope = NULL;
 
     using namespace std;
 
-    extern Type * int_float_check(Type * t1, Type * t2);
-    extern Type * forge_check(Type * t1, Type * t2);
-    extern Type * mult_type_check_arithmetic(Type *t1, Type *t2);
-    extern Type * div_type_check_arithmetic(Type *t1, Type *t2);
-    extern Type * modulus_relational_type_check_arithmetic(Type *t1, Type *t2);
-    extern Type * add_sub_type_check_arithmetic(Type *t1, Type *t2);
-    extern Type * and_or_type_check(Type *t1, Type *t2);
-    extern VarTypes convert_constType_to_varType(CType t);
 %}
 %code requires {
-    // #include "semantic.h"
     #include "semantic.hpp"
 }
 %union {
     std::string * ident;
     int lit_int;
-    float lit_float;
+    double lit_float;
     std::string * lit_str;
     char lit_char;
     PDT prim_type;
@@ -43,8 +35,8 @@
         Type * type;
     } claim_stub_type;
 
-    std::deque<Var *> * var_list;
-    Var * var;
+    std::deque<VarSymbolTableEntry *> * var_list;
+    VarSymbolTableEntry * var;
     // std::string * eh;
     std::deque<std::string> * ident_list_type;
     std::deque<Type *> * type_list;
@@ -107,8 +99,6 @@
 %type <var> type_var
 %type <var> decl_item
 %type <var_list> attr_list
-%type <var_list> decl_list
-%type <var_list> declaration
 %type <var_list> type_var_list
 %type <var_list> param_list
 
@@ -125,7 +115,8 @@
 %start P
 
 %%
-P               : declarations // globals
+P               : epsilon
+                | P declaration
                 | P function
                 | P struct
                 | P forge
@@ -133,11 +124,20 @@ P               : declarations // globals
                 | P archetype_claim
                 ;
 
-declarations    : declaration ';' declarations
-                | epsilon
+start_table     : epsilon {
+                    Scope * new_scope = new Scope();
+                    new_scope->parent = current_scope;
+                    current_scope = new_scope;
+                }
                 ;
 
-body            : '{' statements '}'
+end_table       : epsilon {
+                    auto cs = current_scope;
+                    current_scope = current_scope->parent;
+                    delete cs;
+                }
+
+body            : '{' start_table statements '}' end_table
                 ;
 
 statements      : statement statements
@@ -165,12 +165,12 @@ type_args       : type_args ',' type_arg {
                     $$->push_back($3);
                 }
                 | type_arg {
-                    deque<GenericInner *> arr(1, $1);
-                    $$ = &arr;
+                    deque<GenericInner *> *arr = new deque<GenericInner *>(1, $1);
+                    $$ = arr;
                 }
                 | epsilon { 
-                    deque<GenericInner *> arr(0, NULL);
-                    $$ = &arr;
+                    deque<GenericInner *> *arr = new deque<GenericInner *>(0, NULL);
+                    $$ = arr;
                 }
                 ;
 
@@ -182,19 +182,11 @@ type_arg        : type {
                 }
                 ;
 
-declaration     : KW_LET decl_list {
-                    $$ = $2;
-                }
+declaration     : KW_LET decl_list
                 ;
 
-decl_list       : decl_item {
-                    deque<Var *> arr(1, $1);
-                    $$ = &arr;
-                }
-                | decl_item ',' decl_list {
-                    $$ = $3;
-                    $$->push_front($1);
-                }
+decl_list       : decl_item
+                | decl_item ',' decl_list 
                 ;
 
 decl_item       : type_var {
@@ -202,12 +194,14 @@ decl_item       : type_var {
                     // That's it, right?
                 }
                 | type_var '=' expression {
-                    if(typecmp($1->type, $3)) {
+                    if (current_scope->parent == NULL) {
+                        yyerror("Cannot assign to global variable. (use main)");
+                    } else if (typecmp($1->type, $3)) {
                         yyerror("Type mismatch in declaration.");
                     }
 
                     $$ = $1;
-                }// check whether lval and rval have same type.
+                }
                 ;
 
 type            : PRIMITIVE_DTYPE {
@@ -260,7 +254,7 @@ assignment      : expression assign_op expression // first expression must be an
                 ;
 
 constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
-                | LIT_FLOAT {$$.val = (void *)*(int *)(float *)&$1; $$.type = CT_FLOAT;}
+                | LIT_FLOAT {$$.val = (void *)*(unsigned long long *)&$1; $$.type = CT_FLOAT;}
                 | LIT_INT {$$.val = (void *)$1; $$.type = CT_INT;}
                 | LIT_STR {$$.val = (void *)$1; $$.type = CT_STR;}
                 | KW_TRUE {$$.val = (void *)1; $$.type = CT_BOOL;}
@@ -322,7 +316,7 @@ expression      : '(' expression ')' {
                     }
                     else{
                         StructSymbolTableEntry * sste = ((AuxSSTE *)$1->head->aux)->sste;
-                        Var *v = sste->fieldLookup(*($3));
+                        VarSymbolTableEntry *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
                         }
@@ -459,12 +453,12 @@ cart_value_list : expression ',' cart_value_list {
                     $$->push_front($1);
                 }
                 | expression {
-                    deque<Type *> arr(1, $1);
-                    $$ = &arr; // TODO: Check if this works.
+                    deque<Type *> *arr = new deque<Type *>(1, $1);
+                    $$ = arr; // TODO: Check if this works.
                 }
                 | epsilon { 
-                    deque<Type *> arr(0, NULL);
-                    $$ = &arr;
+                    deque<Type *> *arr = new deque<Type *>(0, NULL);
+                    $$ = arr;
                 }
                 ;
 
@@ -515,12 +509,12 @@ expr_list       : expression ',' expr_list {
                     $$->push_front($1); 
                 }
                 | expression {
-                    deque<Type *> arr(1, $1);
-                    $$ = &arr;
+                    deque<Type *> *arr = new deque<Type *>(1, $1);
+                    $$ = arr;
                 }
                 | epsilon {
-                    deque<Type *> arr(0, NULL);
-                    $$ = &arr;
+                    deque<Type *> *arr = new deque<Type *>(0, NULL);
+                    $$ = arr;
                 }
                 ;
 
@@ -624,15 +618,15 @@ if_body         : body {in_cond = 0;}
                 | body KW_ELSE body {in_cond = 0;}
                 ;
 
-loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR '(' declaration ';' loop_cond ';' loop_mut ')' {in_loop = 0;} body {in_loop = 0;}
-                | KW_FOR IDENT KW_IN expression {
-                    if($4->core() != BUF) {
-                        if(!claim_st.lookup($4, SPACE))
+loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop++;} body {in_loop--;}
+                | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;}
+                | KW_FOR '(' start_table declaration ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;} end_table
+                | KW_FOR start_table IDENT KW_IN expression {
+                    if($5->core() != BUF) {
+                        if(!claim_st.lookup($5, SPACE))
                             yyerror("Looping over non-array type.");
                     }
-                } {in_loop = 0;} body {in_loop = 0;}
+                } {in_loop++;} body {in_loop--;} end_table
                 ;
 
 loop_cond       : expression {
@@ -648,18 +642,18 @@ loop_mut        : unary_operation
                 | epsilon
                 ;
 
-switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ':' statements '}'
+switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ARROW body '}'
                 | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
                 ;
 
-sc_blocks       : sc_blocks KW_CASE expression ':' statements {
+sc_blocks       : sc_blocks KW_CASE expression ARROW body {
                     $$ = $1;
                     $$->push_back($3);
                 }
                 | epsilon {
                     // $$ = new deque<Type *>();
-                    deque<Type *> arr(0, NULL);
-                    $$ = &arr;
+                    deque<Type *> *arr = new deque<Type *>(0, NULL);
+                    $$ = arr;
                 }
                 ; // NOTE: Does not cascade
 
@@ -689,13 +683,12 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                 ; 
 
 archetype_claim : claim_stub '{' type_def {
-                    if($1.archetype != SPACE) yyerror("Cannot add inner types for flat archetypes."); 
-                    else {
-                        if(!tdef) yyerror("No inner types defined.");
-                        else {
-                            tdef = 0;
-                        }
+                    if (tdef && $1.archetype != SPACE) {
+                        yyerror("Cannot add inner types for flat archetypes.");
+                    } else if (!tdef && $1.archetype == SPACE) {
+                        yyerror("No inner types defined.");
                     }
+                    tdef = 0;
                 } rule_list '}' {
                     if($1.type == (Type *)(void *)-1) {
                         yyerror("Claim unsuccesful.");
@@ -739,8 +732,11 @@ type_def        : KW_FIELD '=' type ';' {
                 | epsilon
                 ;
 
-rule_list       : rule_list rule
-                | rule
+rule_list       : rule_list tbl_rule
+                | tbl_rule
+                ;
+
+tbl_rule        : start_table rule end_table
                 ;
 
 rule            : additive_rule
@@ -765,7 +761,7 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
                 ; // LIT_INT must be 1
 
-function        : {in_func = 1;}function_header{in_func = 0;} body 
+function        : {in_func = 1;} start_table function_header{in_func = 0;} body end_table
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
@@ -774,7 +770,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                     else {
                         VarSymbolTable * params = new VarSymbolTable();
                         for(auto i: *$4) {
-                            params->insert(i->make_entry());
+                            params->insert(i);
                         }
 
                         FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(*$2, params, NULL);
@@ -795,13 +791,13 @@ type_var_list   : type_var ',' type_var_list {
                     $$->push_front($1);
                 }
                 | type_var {
-                    deque<Var *> arr(1, $1);
-                    $$ = &arr;
+                    deque<VarSymbolTableEntry *> *arr = new deque<VarSymbolTableEntry *>(1, $1);
+                    $$ = arr;
 
                 }
                 | epsilon { 
-                   deque<Var *> arr(0, new Var());
-                   $$ = &arr;
+                   deque<VarSymbolTableEntry *> *arr = new deque<VarSymbolTableEntry *>(0, new VarSymbolTableEntry);
+                   $$ = arr;
                 }
                 ;
 
@@ -809,7 +805,7 @@ param_list      : type_var_list
                 ;
 
 type_var        : IDENT ':' type {
-                    $$ = new Var(*$1, $3, 0, 0);
+                    $$ = new VarSymbolTableEntry(*$1, $3);
                 }
                 ;
 
@@ -833,25 +829,25 @@ ident_list      : ident_list ',' IDENT {
                     $$->push_front(*$3);
                 }
                 | IDENT {
-                    deque<string> arr(1, *$1);
-                    $$ = &arr;
+                    deque<string> *arr = new deque<string>(1, *$1);
+                    $$ = arr;
                 }
                 | epsilon { 
-                    deque<string> arr(0, string());
-                    $$ = &arr;
+                    deque<string> *arr = new deque<string>(0, string());
+                    $$ = arr;
                 }
                 ;
 
 variant_list    : ident_list
                 ;
 
-forge           : KW_FORGE '(' param_list ')' KW_AS '(' type ')' body {
+forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' body end_table {
                     VarSymbolTable * params = new VarSymbolTable();
-                    for(auto i: *$3) {
-                        params->insert(i->make_entry());
+                    for(auto i: *$4) {
+                        params->insert(i);
                     }
 
-                    FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(NULL, params, $7);
+                    FunctionSymbolTableEntry * entry = new FunctionSymbolTableEntry(NULL, params, $8);
                     forge_st.insert(entry);
                 }
                 ;
@@ -879,8 +875,8 @@ type_list       : type_list ',' type {
                     $$->push_front($3);
                 }
                 | type {
-                    deque<Type *> arr(1, $1);   
-                    $$ = &arr;
+                    deque<Type *> *arr = new deque<Type *>(1, $1);   
+                    $$ = arr;
                 }
                 ;
 

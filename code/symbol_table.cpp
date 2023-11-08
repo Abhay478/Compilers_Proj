@@ -7,43 +7,27 @@ using namespace std;
 /*******************
  * TYPE
  ********************/
-// Type * make_type() {
-//     Type * t = (Type *)calloc(1, sizeof(Type));
-//     return t;
-// }
-// InnerType::InnerType() {
-//     this->core_type = VOID;
-//     this->offset = 0;
-//     this->size = 0;
-//     this->aux = NULL;
-//     this->next = NULL;
-// }
 
-AuxSSTE::AuxSSTE(Struct *sste)
-{
+AuxSSTE::AuxSSTE(Struct *sste) {
     this->sste = sste;
 }
 
-AuxESTE::AuxESTE(Enum *este)
-{
+AuxESTE::AuxESTE(Enum *este) {
     this->este = este;
 }
 
-AuxCART::AuxCART(vector<InnerType *> cart)
-{
+AuxCART::AuxCART(vector<InnerType *> cart) {
     this->cart = cart;
 }
 
-InnerType::InnerType(VarTypes core_type, int offset, int size)
-{
+InnerType::InnerType(VarTypes core_type, int offset, int size) {
     this->core_type = core_type;
     this->offset = offset;
     this->size = size;
     this->next = NULL;
 }
 
-int Type::push_type(VarTypes core_type, int offset, int size, Aux *aux)
-{
+int Type::push_type(VarTypes core_type, int offset, int size, Aux *aux) {
     InnerType *it = new InnerType(core_type, offset, size);
     it->aux = aux;
     it->next = this->head;
@@ -55,47 +39,37 @@ VarTypes Type::core() {
     return this->core();
 }
 
-Type *Type::pop_type()
-{
+Type *Type::pop_type() {
     Type *t = new Type();
     t->head = this->head->next;
     return t;
 }
 
-int typecmp(Type *t1, Type *t2)
-{
+int typecmp(Type *t1, Type *t2) {
     InnerType *current1 = t1->head;
     InnerType *current2 = t2->head;
-    while (current1 && current2)
-    {
-        if (current1->core_type != current2->core_type)
-        {
+    while (current1 && current2) {
+        if (current1->core_type != current2->core_type) {
             return 1;
         }
-        if (current1->core_type == STRUCT || current1->core_type == ENUM)
-        {
-            if (current1->aux != current2->aux)
-            {
+        if (current1->core_type == STRUCT || current1->core_type == ENUM) {
+            if (current1->aux != current2->aux) {
                 return 1;
             } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
         }
 
-        if (current1->core_type == CART)
-        {
-            if (current1->size != current2->size)
-            {
+        if (current1->core_type == CART) {
+            if (current1->size != current2->size) {
                 return 1;
             }
-            for (int i = 0; i < current1->size; i++)
-            {
+            for (int i = 0; i < current1->size; i++) {
                 InnerType *it1 = ((AuxCART *)current1->aux)->cart[i];
                 InnerType *it2 = ((AuxCART *)current2->aux)->cart[i];
                 Type nt1;
                 nt1.head = it1;
                 Type nt2;
                 nt2.head = it2;
-                if (typecmp(&nt1, &nt2))
-                { // Bhupendra Jogi.
+                if (typecmp(&nt1, &nt2)) { // Bhupendra Jogi.
                     return 1;
                 }
             }
@@ -103,8 +77,7 @@ int typecmp(Type *t1, Type *t2)
         current1 = current1->next;
         current2 = current2->next;
     }
-    if (current1 || current2)
-    {
+    if (current1 || current2) {
         return 1;
     }
     return 0;
@@ -114,28 +87,17 @@ int typecmp(Type *t1, Type *t2)
  * VAR
  ********************/
 
-// Var * make_vste(char * name, void * value, Type * type, int offset, int size, void * aux) {
-//     Var * vste = (Var *)malloc(sizeof(Var));
-//     vste->name = name;
-//     vste->type = type;
-//     return vste;
-// }
 
-Var::Var(string name, Type *type)
-{
+Var::Var(string name, Type *type) {
     this->name = name;
     this->type = type;
 }
 
-int VarSymbolTable::insert(Var *vste)
-{
-    for (int i = 0; i < this->entries.size(); i++)
-    {
-        if (this->entries[i]->name == vste->name)
-        {
+int VarSymbolTable::insert(Var *vste) {
+    for (int i = 0; i < this->entries.size(); i++) {
+        if (this->entries[i]->name == vste->name) {
             // Same type fine.
-            if (!typecmp(this->entries[i]->type, vste->type))
-            {
+            if (!typecmp(this->entries[i]->type, vste->type)) {
                 return 0;
             }
             return 1;
@@ -146,61 +108,28 @@ int VarSymbolTable::insert(Var *vste)
     return 0;
 }
 
-Var *VarSymbolTable::lookup(string name)
-{
-    for (int i = 0; i < this->entries.size(); i++)
-    {
-        if (this->entries[i]->name == name)
-        {
+Var *VarSymbolTable::lookup(string name) {
+    for (int i = 0; i < this->entries.size(); i++) {
+        if (this->entries[i]->name == name) {
             return this->entries[i];
         }
     }
     return NULL;
 }
 
-// VarSymbolTable * make_vst() {
-//     VarSymbolTable * st = (VarSymbolTable *)malloc(sizeof(VarSymbolTable));
-//     st->size = 0;
-//     st->capacity = 69;
-//     st->entries = (Var **)malloc(st->capacity * sizeof(Var *));
-//     return st;
-// }
-
-// VarSymbolTable::VarSymbolTable() {
-//     this->size = 0;
-//     this->capacity = 69;
-//     this->entries = vector<Var *>();
-// }
-
 /*******************
  * FUNC
  ********************/
 
-/// @brief Generated by the function prototype, modified by the function definition.
-/// That's why the ScopeTree is NULL.
-// Function * make_fste(char * name, int numParams, VarSymbolTable * params) {
-//     Function * fste = (Function *)malloc(sizeof(Function));
-//     fste->name = name;
-//     fste->numParams = numParams;
-//     fste->params = params;
-//     fste->locals = NULL;
-//     return fste;
-// }
-
-Function::Function(string name, VarSymbolTable *params, Type *return_type)
-{
+Function::Function(string name, VarSymbolTable *params, Type *return_type) {
     this->name = name;
     this->params = params;
     this->return_type = return_type;
-    this->locals = NULL;
 }
 
-int FunctionSymbolTable::insert(Function *fste)
-{
-    for (int i = 0; i < this->entries.size(); i++)
-    {
-        if (this->entries[i]->name == fste->name)
-        {
+int FunctionSymbolTable::insert(Function *fste) {
+    for (int i = 0; i < this->entries.size(); i++) {
+        if (this->entries[i]->name == fste->name) {
             return 1;
         }
     }
@@ -209,47 +138,35 @@ int FunctionSymbolTable::insert(Function *fste)
     return 0;
 }
 
-Function *FunctionSymbolTable::lookup(string name)
-{
-    for (int i = 0; i < this->entries.size(); i++)
-    {
-        if (this->entries[i]->name == name)
-        {
+Function *FunctionSymbolTable::lookup(string name) {
+    for (int i = 0; i < this->entries.size(); i++) {
+        if (this->entries[i]->name == name) {
             return this->entries[i];
         }
     }
     return NULL;
 }
 
-/// @brief Provide the current scope and the current function.
-Var *scoped_lookup(Function *func, Scope *s, string name)
-{
-    Var *vste = NULL;
-    Scope *current = s;
-    while (current)
-    {
+Var * Scope::lookup(string name) {
+    Var * vste = NULL;
+    Scope * current = this;
+    while(current && !vste) {
         vste = current->vars->lookup(name);
-        if (vste)
-        {
-            return vste;
-        }
         current = current->parent;
     }
-    return NULL;
+    return vste;
 }
 
 /*******************
  * STRUCT
  ********************/
 
-Struct::Struct(string name, vector<Var *> fields)
-{
+Struct::Struct(string name, vector<Var *> fields) {
     this->name = name;
     this->fields = fields;
 }
 
-Type *Struct::make_struct_type()
-{
+Type *Struct::make_struct_type() {
     Type *t = new Type();
 
     t->head = new InnerType(STRUCT, 0, 0);
@@ -257,12 +174,9 @@ Type *Struct::make_struct_type()
     return t;
 }
 
-int StructSymbolTable::insert(Struct *sste)
-{
-    for (int i = 0; i < this->entries.size(); i++)
-    {
-        if (this->entries[i]->name == sste->name)
-        {
+int StructSymbolTable::insert(Struct *sste) {
+    for (int i = 0; i < this->entries.size(); i++) {
+        if (this->entries[i]->name == sste->name) {
             return 1;
         }
     }
@@ -272,24 +186,18 @@ int StructSymbolTable::insert(Struct *sste)
     return 0;
 }
 
-Struct *StructSymbolTable::lookup(string name)
-{
-    for (auto i : this->entries)
-    {
-        if (i->name == name)
-        {
+Struct *StructSymbolTable::lookup(string name) {
+    for (auto i : this->entries) {
+        if (i->name == name) {
             return i;
         }
     }
     return NULL;
 }
 
-Var *Struct::fieldLookup(string field_name)
-{
-    for (auto i : this->fields)
-    {
-        if (i->name == field_name)
-        {
+Var *Struct::fieldLookup(string field_name) {
+    for (auto i : this->fields) {
+        if (i->name == field_name) {
             return i;
         }
     }
@@ -299,18 +207,14 @@ Var *Struct::fieldLookup(string field_name)
  * ENUM
  ********************/
 
-Enum::Enum(string name, vector<string> fields)
-{
+Enum::Enum(string name, vector<string> fields) {
     this->name = name;
     this->fields = fields;
 }
 
-int EnumSymbolTable::insert(Enum *este)
-{
-    for (auto i : this->entries)
-    {
-        if (i->name == este->name)
-        {
+int EnumSymbolTable::insert(Enum *este) {
+    for (auto i : this->entries) {
+        if (i->name == este->name) {
             return 1;
         }
     }
@@ -319,12 +223,9 @@ int EnumSymbolTable::insert(Enum *este)
     return 0;
 }
 
-Enum *EnumSymbolTable::lookup(string name)
-{
-    for (auto i : this->entries)
-    {
-        if (i->name == name)
-        {
+Enum *EnumSymbolTable::lookup(string name) {
+    for (auto i : this->entries) {
+        if (i->name == name) {
             return i;
         }
     }
@@ -335,16 +236,13 @@ Enum *EnumSymbolTable::lookup(string name)
  * FORGE
  ********************/
 
-int ForgeSymbolTable::insert(Function *fste)
-{
+int ForgeSymbolTable::insert(Function *fste) {
     return this->inner->insert(fste);
 }
 
-Type *get_param_type(Function *f)
-{
+Type *get_param_type(Function *f) {
     VarSymbolTable *params = f->params;
-    if (params->entries.size() == 1)
-    {
+    if (params->entries.size() == 1) {
         // Only one parameter, just return it's type.
         return params->entries[0]->type;
     }
@@ -352,22 +250,18 @@ Type *get_param_type(Function *f)
     Type *t = new Type();
     t->head = new InnerType(CART, 0, params->entries.size());
 
-    for (auto i : params->entries)
-    {
+    for (auto i : params->entries) {
         ((AuxCART *)t->head->aux)->cart.push_back(i->type->head);
     }
 
     return t;
 }
 
-Function *ForgeSymbolTable::lookup(Type *t1, Type *t2)
-{
+Function *ForgeSymbolTable::lookup(Type *t1, Type *t2) {
     FunctionSymbolTable *f = this->inner;
-    for (auto i : f->entries)
-    {
+    for (auto i : f->entries) {
         Type *t = get_param_type(i);
-        if ((!typecmp(t, t1) && !typecmp(i->return_type, t2)) || (!typecmp(t, t2) && !typecmp(i->return_type, t1)))
-        {
+        if ((!typecmp(t, t1) && !typecmp(i->return_type, t2)) || (!typecmp(t, t2) && !typecmp(i->return_type, t1))) {
             return i; // A forge !
         }
     }
@@ -378,25 +272,14 @@ Function *ForgeSymbolTable::lookup(Type *t1, Type *t2)
  * CLAIM
  ********************/
 
-// Claim * make_claim_ste(Type * type, Archetypes archetype) {
-//     Claim * cste = (Claim *)malloc(sizeof(Claim));
-//     cste->type = type;
-//     cste->archetype = archetype;
-//     return cste;
-// }
-
-Claim::Claim(Type *type, Archetypes archetype)
-{
+Claim::Claim(Type *type, Archetypes archetype) {
     this->type = type;
     this->archetype = archetype;
 }
 
-int ClaimSymbolTable::insert(Claim *cste)
-{
-    for (auto i : this->entries)
-    {
-        if (!typecmp(i->type, cste->type) && i->archetype == cste->archetype)
-        {
+int ClaimSymbolTable::insert(Claim *cste) {
+    for (auto i : this->entries) {
+        if (!typecmp(i->type, cste->type) && i->archetype == cste->archetype) {
             return 1;
         }
     }
@@ -405,17 +288,9 @@ int ClaimSymbolTable::insert(Claim *cste)
     return 0;
 }
 
-Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype)
-{
-    // for (int i = 0; i < cst->size; i++) {
-    //     if(!typecmp(cst->entries[i]->type, type) && cst->entries[i]->archetype == archetype) {
-    //         return cst->entries[i];
-    //     }
-    // }
-    for (auto i : this->entries)
-    {
-        if (!typecmp(i->type, type) && i->archetype == archetype)
-        {
+Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype) {
+    for (auto i : this->entries) {
+        if (!typecmp(i->type, type) && i->archetype == archetype) {
             return i;
         }
     }

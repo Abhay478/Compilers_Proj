@@ -10,6 +10,7 @@
     int in_cond = 0;
     int tdef = 0;
     Scope * current_scope = NULL;
+    Struct * method_of = NULL;
 
     using namespace std;
 
@@ -46,7 +47,7 @@
 }
 
 // keywords
-%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_WITH
+%token KW_CLAIM KW_IS KW_GROUP KW_RING KW_FIELD KW_SPACE KW_LET KW_RETURN KW_IF KW_ELSE KW_WHILE KW_FOR KW_IN KW_SWITCH KW_CASE KW_DEFAULT KW_BREAK KW_CONTINUE KW_FN KW_FORGE KW_AS KW_STRUCT KW_ENUM KW_WITH KW_THIS
 
 // Types
 %token <ident> IDENT 
@@ -86,6 +87,7 @@
 %type <type> array_access
 %type <type> call
 %type <type> unary_operation
+%type <type> generic
 %type <type_list> type_list
 %type <type_list> opt_expr_list
 %type <type_list> expr_list
@@ -412,7 +414,17 @@ expression      : '(' expression ')' {
                 {
                     $$ = and_or_type_check($1, $3);
                 }
-                | IDENT // lookup in global VarST
+                | IDENT {
+                    Var * vste = current_scope->lookup(*$1);
+
+                    if(!vste) {
+                        yyerror("Variable not found.");
+                        $$ = new Type();
+                    }
+                    else {
+                        $$ = vste->type;
+                    }
+                }
                 | constant 
                 {
                     $$ = new Type();
@@ -422,6 +434,13 @@ expression      : '(' expression ')' {
                         $$->push_type(vt, 0, 0, new AuxESTE(((Variant *)$1.val)->este));
                     }
                     else $$->push_type(vt, 0, 0, NULL);
+                }
+                | KW_THIS {
+                    $$ = new Type();
+                    if(method_of) $$->push_type(STRUCT, 0, 0, new AuxSSTE(method_of));
+                    else {
+                        yyerror("this can only be used in a method.");
+                    }
                 }
                 | unary_operation 
                 | call 
@@ -763,7 +782,7 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
                 ; // LIT_INT must be 1
 
-function        : {in_func = 1;} start_table function_header{in_func = 0;} body end_table
+function        : {in_func = 1;} start_table function_header{in_func = 0;} body {method_of = NULL;} end_table
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
@@ -776,6 +795,20 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         $$ = entry;
                     }
                 }
+
+                | KW_FN IDENT '.' IDENT '(' param_list ')' {
+                    Struct * sste = struct_st.lookup(*$2);
+                    if(!sste) yyerror("Struct not found.");
+                    else {
+                        VarSymbolTable * params = current_scope->vars;
+                        method_of = sste;
+                        Function * fste = new Function(*$4, params, NULL);
+                        sste->methods->insert(fste);
+
+                        $$ = fste;
+                    }
+                }
+                ;
 function_header :  fh_stub ':' type {
                     $1->return_type = $3;
                     func_st.insert($1);

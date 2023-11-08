@@ -156,7 +156,6 @@ struct VarSymbolTable {
     std::vector<Var *> entries;
     int insert(Var * vste);
     Var * lookup(std::string name);
-    // VarSymbolTable();
 };
 
 Type * get_param_type(Function * f);
@@ -172,22 +171,14 @@ struct Scope {
         vars = new VarSymbolTable();
         parent = NULL;
     }
+
+    Var * lookup(std::string name);
 };
-
-struct ScopeTree {
-    Scope * root;
-};
-
-// Scope * make_scope();
-// ScopeTree * make_scope_tree();
-
 
 /// @brief A single function.
 struct Function {
     std::string name;
-    // int numParams; // Redundant, but nvm.
-    VarSymbolTable * params;
-    ScopeTree * locals;
+    VarSymbolTable * params; // Too much work to remove.
     Type * return_type;
 
     Function(std::string name, VarSymbolTable * params, Type * return_type);
@@ -309,7 +300,7 @@ extern EnumSymbolTable enum_st;
 extern ForgeSymbolTable forge_st;
 extern ClaimSymbolTable claim_st;
 extern FunctionSymbolTable func_st;
-extern VarSymbolTable var_st; // global variables only.
+// extern VarSymbolTable var_st; // global variables only.
 
 extern Scope * current_scope;
 

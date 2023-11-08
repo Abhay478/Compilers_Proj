@@ -7,9 +7,6 @@
     #include "y.tab.hpp"
     #define seq_token(a) fprintf(token_stream, "%s: %s\n", (a), yytext)
     extern FILE * token_stream;
-
-    // typedef yy::parser::token_kind_type tt;
-    // extern yy::parser::value_type yylval;
 %}
 dig [0-9]
 num (-?{dig}+)
@@ -66,6 +63,7 @@ else        { seq_token("reserved keyword"); return KW_ELSE; }
 for         { seq_token("reserved keyword"); return KW_FOR; }
 while       { seq_token("reserved keyword"); return KW_WHILE; }
 fn          { seq_token("reserved keyword"); return KW_FN; }
+this        { seq_token("reserved keyword"); return KW_THIS; }
 let         { seq_token("reserved keyword"); return KW_LET; }
 return      { seq_token("reserved keyword"); return KW_RETURN; }
 claim       { seq_token("reserved keyword"); return KW_CLAIM; }

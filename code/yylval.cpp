@@ -52,3 +52,8 @@ Variant::Variant(std::string tag, std::string val, EnumSymbolTableEntry * este) 
     this->val = val;
     this->este = este;
 }
+
+GenericInner::GenericInner(void * val, int which) {
+    this->val = val;
+    this->which = which;
+}

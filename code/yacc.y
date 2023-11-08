@@ -50,6 +50,8 @@
     std::deque<Type *> * type_list;
     int count;
     FunctionSymbolTableEntry * func;
+    GenericInner * targ;
+    std::deque<GenericInner *> * targ_list;
 }
 
 // keywords
@@ -81,30 +83,44 @@
 %left OR
 
 %type <cons> constant
+
 %type <lit_int> identity_rule
+
 %type <type> expression
 %type <type> loop_cond
-%type <archetype> archetype
-%type <claim_stub_type> claim_stub
 %type <type> type
-%type <var> type_var
-%type <var_list> attr_list
-%type <var_list> type_var_list
-%type <var_list> param_list
-%type <ident_list_type> ident_list
-%type <type_list> type_list
-%type <type_list> expr_list
 %type <type> array_decl
 %type <type> cart
 %type <type> cart_value
 %type <type> array_access
 %type <type> call
+%type <type> unary_operation
+%type <type_list> type_list
+%type <type_list> expr_list
 %type <type_list> cart_value_list
 %type <type_list> sc_blocks
-%type <type> unary_operation
+
+%type <archetype> archetype
+
+%type <claim_stub_type> claim_stub
+
+%type <var> type_var
+%type <var> decl_item
+%type <var_list> attr_list
+%type <var_list> decl_list
+%type <var_list> declaration
+%type <var_list> type_var_list
+%type <var_list> param_list
+
+%type <ident_list_type> ident_list
 %type <ident_list_type> variant_list
+
 %type <count> array_index
+
 %type <func> fh_stub
+
+%type <targ> type_arg
+%type <targ_list> type_args
 
 %start P
 
@@ -144,27 +160,54 @@ statement       : declaration ';'
 generic         : IDENT '<' type_args '>' // someone write a list of allowed generics.
                 ;
 
-type_args       : type_arg ',' type_args
-                | type_arg
-                | epsilon
+type_args       : type_args ',' type_arg {
+                    $$ = $1;
+                    $$->push_back($3);
+                }
+                | type_arg {
+                    deque<GenericInner *> arr(1, $1);
+                    $$ = &arr;
+                }
+                | epsilon { 
+                    deque<GenericInner *> arr(0, NULL);
+                    $$ = &arr;
+                }
                 ;
 
-type_arg        : type
-                | LIT_INT
+type_arg        : type {
+                    $$ = new GenericInner($1, 0);
+                }
+                | LIT_INT {
+                    $$ = new GenericInner($1, 1);
+                }
                 ;
 
-declaration     : KW_LET decl_list
+declaration     : KW_LET decl_list {
+                    $$ = $2;
+                }
                 ;
 
-decl_list       : decl_item 
-                | decl_item ',' decl_list
+decl_list       : decl_item {
+                    deque<Var *> arr(1, $1);
+                    $$ = &arr;
+                }
+                | decl_item ',' decl_list {
+                    $$ = $3;
+                    $$->push_front($1);
+                }
                 ;
 
 decl_item       : type_var {
-                    // Install in var_st.
-
+                    $$ = $1;
+                    // That's it, right?
                 }
-                | type_var '=' expression // check whether lval and rval have same type.
+                | type_var '=' expression {
+                    if(typecmp($1->type, $3)) {
+                        yyerror("Type mismatch in declaration.");
+                    }
+
+                    $$ = $1;
+                }// check whether lval and rval have same type.
                 ;
 
 type            : PRIMITIVE_DTYPE {
@@ -302,7 +345,15 @@ expression      : '(' expression ')' {
                         }
                     }
                 }         
-                | expression KW_AS '(' type ')' 
+                | expression KW_AS '(' type ')' {
+                    FunctionSymbolTableEntry * fste = forge_st.lookup($1, $4);
+                    if(!fste || typecmp($4, fste->return_type)){
+                        yyerror("No forge found");
+                    }
+                    else{
+                        $$ = fste->return_type;
+                    }
+                }
                 | expression '@' expression // claim space 
                 {
                     ClaimSymbolTableEntry * cste1 = claim_st.lookup($1, SPACE);

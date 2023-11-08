@@ -55,6 +55,12 @@ struct Variant {
     Variant(std::string tag, std::string val, EnumSymbolTableEntry * este);
 };
 
+struct GenericInner {
+    void * val;
+    int which;
+    GenericInner(void * val, int which);
+};
+
 PDT get_pdt(char * s);
 
 /***********************************************

@@ -185,7 +185,7 @@ struct FunctionSymbolTableEntry {
     ScopeTree * locals;
     Type * return_type;
 
-    FunctionSymbolTableEntry(char * name, VarSymbolTable * params, Type * return_type);
+    FunctionSymbolTableEntry(std::string name, VarSymbolTable * params, Type * return_type);
 };
 
 // FunctionSymbolTableEntry * make_fste(char * name, int numParams, VarSymbolTable * params);

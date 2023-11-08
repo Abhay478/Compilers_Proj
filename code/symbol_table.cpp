@@ -187,7 +187,7 @@ VarSymbolTableEntry *VarSymbolTable::lookup(string name)
 //     return fste;
 // }
 
-FunctionSymbolTableEntry::FunctionSymbolTableEntry(char *name, VarSymbolTable *params, Type *return_type)
+FunctionSymbolTableEntry::FunctionSymbolTableEntry(string name, VarSymbolTable *params, Type *return_type)
 {
     this->name = name;
     this->params = params;

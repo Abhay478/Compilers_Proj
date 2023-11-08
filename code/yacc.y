@@ -175,10 +175,10 @@ type_args       : type_args ',' type_arg {
                 ;
 
 type_arg        : type {
-                    $$ = new GenericInner($1, 0);
+                    $$ = new GenericInner((void *)$1, 0);
                 }
                 | LIT_INT {
-                    $$ = new GenericInner($1, 1);
+                    $$ = new GenericInner((void *)$1, 1);
                 }
                 ;
 

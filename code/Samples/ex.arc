@@ -11,15 +11,6 @@ forge (a: u8) as (Parity) {
   }
 }
 
-/*
-forge (a: u8) as (Parity) {
-  if (a % 2 == 0) {
-    return Parity::Even;
-  } else {
-    return Parity::Odd;
-  }
-}
-
 forge (a: u8, b: u8) as (Parity) {
   if (a % 2 == 0 && b % 2 == 0) {
     return Parity::Even;
@@ -33,4 +24,3 @@ fn main() {
   let b: Parity = (1, 2) as (Parity); /* b is
                                         now Parity::Odd */
 }
-*/

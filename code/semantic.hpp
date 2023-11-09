@@ -113,12 +113,13 @@ struct InnerType {
     int offset;
     /**
      * For cartesian product (i.e. tuple), stores the tuple length.
-     * For SPACE types, stores the dimension. Is 1 for BUF.
+     * For generic types with an integer parameter, stores the parameter. (Mat, InvMat, Cyclic, etc.)
+     * Is 1 for BUF.
     */
     int size; 
     /// @brief For structs, enums, and cartesian products.
     Aux * aux; 
-    /// @brief For buf, ref
+    /// @brief For buf, ref, generics
     struct InnerType * next; 
     InnerType(VarTypes core_type, int offset, int size);
 };
@@ -130,6 +131,15 @@ struct Type {
     VarTypes core();
 };
 
+struct Expr: public Type {
+private:
+    Expr();
+public:
+    bool is_lvalue;
+    Expr(Type * t, bool is_lvalue);
+};
+
+int typecmp(InnerType * t1, InnerType * t2);
 int typecmp(Type * t1, Type * t2);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
@@ -273,14 +283,14 @@ struct ClaimSymbolTable {
  * Typecheck functions
 */
 
-Type * int_float_check(Type * t1, Type * t2);
-Type * forge_check(Type * t1, Type * t2);
-Type * mult_type_check_arithmetic(Type *t1, Type *t2);
-Type * div_type_check_arithmetic(Type *t1, Type *t2);
-Type * modulus_type_check_arithmetic(Type *t1, Type *t2);
-Type * add_sub_type_check_arithmetic(Type *t1, Type *t2);
-Type * and_or_type_check(Type *t1, Type *t2);
-Type * rel_op_type_check_arithmetic(Type *t1, Type *t2);
+Expr * int_float_check(Expr * t1, Expr * t2);
+Expr * mult_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * div_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * modulus_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * add_sub_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * and_or_type_check(Expr *t1, Expr *t2);
+Expr * rel_op_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * in_type_check(Expr *t1, Expr *t2);
 VarTypes convert_constType_to_varType(CType t);
 
 
@@ -296,5 +306,10 @@ extern FunctionSymbolTable func_st;
 // extern VarSymbolTable var_st; // global variables only.
 
 extern Scope * current_scope;
+
+#define RED_ESCAPE "\x1B[1;31;40m"
+#define BLUE_ESCAPE "\x1B[1;34;40m"
+#define GREEN_ESCAPE "\x1B[1;32;40m"
+#define RESET_ESCAPE "\x1B[0;37;40m"
 
 #endif

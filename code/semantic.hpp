@@ -175,6 +175,9 @@ struct Scope {
     }
 
     Var * lookup(std::string name);
+    int insert(Var * vste) {
+        return vars->insert(vste);
+    }
 };
 
 /// @brief A single function.

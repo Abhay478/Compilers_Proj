@@ -841,7 +841,7 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                         current_scope->insert(new Var(*$4, current_claim->type));
                         current_scope->insert(new Var(*$6, current_claim->type));
                     } else if(current_claim->archetype == SPACE) {
-                        Type * t = current_clain->type->pop_type();
+                        Type * t = current_claim->type->pop_type();
                         current_scope->insert(new Var(*$2, current_claim->type));
                         current_scope->insert(new Var(*$4, t));
                         current_scope->insert(new Var(*$6, current_claim->type));

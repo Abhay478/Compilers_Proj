@@ -1,5 +1,6 @@
 %require "3.6"
 %{
+    #include <stdint.h>
     #include "semantic.hpp"
     extern int yylex();
     void yyerror(const char* s);
@@ -30,6 +31,7 @@
         CType type;
     } cons;
     Type * type;
+    Expr * expr;
     Archetypes archetype; 
     struct {
         Archetypes archetype;
@@ -61,32 +63,33 @@
 
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
-%left '.'
-%left '[' '('
-%left INCR DECR
-%right '!' // Also unary minus, ref, and deref - see `expression` definition.
-%left KW_AS 
-%left '@'
-%left '*' '/' '%' 
-%left '+' '-' 
-%left rel_op '>' '<'
-%left KW_IN
-%left AND
 %left OR
+%left AND
+%left KW_IN
+%left rel_op '>' '<'
+%left '+' '-' 
+%left '*' '/' '%' 
+%left '@'
+%left KW_AS 
+%right '!' // Also unary minus, ref, and deref - see `expression` definition.
+%left INCR DECR
+%left '[' '('
+%left '.'
 
 %type <cons> constant
 
 %type <lit_int> identity_rule
 
-%type <type> expression
-%type <type> loop_cond
+%type <expr> expression
+%type <expr> cart_value
+%type <expr> array_decl
+%type <expr> array_access
+%type <expr> call
+%type <expr> unary_operation
+%type <expr> loop_cond
+
 %type <type> type
-%type <type> array_decl
 %type <type> cart
-%type <type> cart_value
-%type <type> array_access
-%type <type> call
-%type <type> unary_operation
 %type <type> generic
 %type <type_list> type_list
 %type <type_list> opt_expr_list
@@ -180,7 +183,7 @@ type_arg        : type {
                     $$ = new GenericInner((void *)$1, 0);
                 }
                 | LIT_INT {
-                    $$ = new GenericInner((void *)$1, 1);
+                    $$ = new GenericInner((void *)(intptr_t)$1, 1);
                 }
                 ;
 
@@ -256,12 +259,20 @@ assign_op       : ASSIGN_OP
                 | '='
                 ;
 
-assignment      : expression assign_op expression // first expression must be an lvalue
+assignment      : expression assign_op expression  {
+                    if (!$1 || !$3) {
+                        yyerror("Invalid assignment.");
+                    } else if (!$1->is_lvalue) {
+                        yyerror("Cannot assign to non-lvalue.");
+                    } else if (typecmp($1, $3)) {
+                        yyerror("Type mismatch in assignment.");
+                    }
+                }
                 ;
 
-constant        : LIT_CHAR {$$.val = (void *)$1; $$.type = CT_CHAR;}
+constant        : LIT_CHAR {$$.val = (void *)(intptr_t)$1; $$.type = CT_CHAR;}
                 | LIT_FLOAT {$$.val = (void *)*(unsigned long long *)&$1; $$.type = CT_FLOAT;}
-                | LIT_INT {$$.val = (void *)$1; $$.type = CT_INT;}
+                | LIT_INT {$$.val = (void *)(intptr_t)$1; $$.type = CT_INT;}
                 | LIT_STR {$$.val = (void *)$1; $$.type = CT_STR;}
                 | KW_TRUE {$$.val = (void *)1; $$.type = CT_BOOL;}
                 | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
@@ -288,49 +299,74 @@ expression      : '(' expression ')' {
                 }
                 | array_access
                 | '!' expression {
-                    Type *t = $2;
-                    if(t->core() != BOOL){
+                    if (!$2) {
+                        $$ = NULL;
+                        break;
+                    }
+                    if($2->core() != BOOL){
                         yyerror("Can only negate bool expression!");
                     }
-                    $$ = $2;
+                    $$ = new Expr($2, false);
                 }
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
                 {
+                    if (!$2) {
+                        $$ = NULL;
+                        break;
+                    }
                     Claim *cste = claim_st.lookup($2, GROUP);
                     if(!cste){
                         yyerror("unary minus requires Group");
                     }
-                    $$ = $2;
+                    $$ = new Expr($2, false);
                 }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 {
-                    if($2->core() != REF){
-                        yyerror("Must be reference");
+                    if (!$2) {
+                        $$ = NULL;
+                        break;
                     }
-                    $$ = $2->pop_type();
+                    if ($2->core() != REF){
+                        yyerror("Dereference of non-reference type.");
+                    }
+                    Type * t = $2->pop_type();
+                    $$ = new Expr(t, true);
                 }
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 {
-                    $$ = new Type();
-                    $$->head = $2->head;
-                    $$->push_type(REF, 0, 0, NULL);
+                    if (!$2) {
+                        $$ = NULL;
+                        break;
+                    }
+                    Type * t = new Type();
+                    t->head = $2->head;
+                    t->push_type(REF, 0, 0, NULL);
+                    $$ = new Expr(t, false);
                 }
                 | expression '.' IDENT // struct access, lookup in table
                 {
-                    if($1->core() != STRUCT){
-                        yyerror("Must be struct");
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
                     }
-                    else{
+                    if ($1->core() != STRUCT){
+                        yyerror("Field access on non-struct type.");
+                        $$ = NULL;
+                    } else {
                         Struct * sste = ((AuxSSTE *)$1->head->aux)->sste;
                         Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
                         }
-                        $$ = v->type;
+                        $$ = new Expr(v->type, $1->is_lvalue);
                     }
                 }
                 | expression '.' LIT_INT 
                 {
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
+                    }
                     if($1->core() != CART) {
                         yyerror("Tuple access on non-tuple type.");
                     } 
@@ -338,48 +374,65 @@ expression      : '(' expression ')' {
                     {
                         if($3 < 0 || $3 >= $1->head->size) {
                             yyerror("Tuple access out of bounds.");
+                            break;
                         } else {
                             vector<InnerType *> c = ((AuxCART *)$1->head->aux)->cart;
-                            $$ = new Type();
-                            $$->head = c[$3];
+                            Type * t = new Type();
+                            t->head = c[$3];
+                            $$ = new Expr(t, $1->is_lvalue);
                         }
                     }
                 }         
                 | expression KW_AS '(' type ')' {
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
+                    }
+                    // TODO: forge check should change
                     Function * fste = forge_st.lookup($1, $4);
                     if(!fste || typecmp($4, fste->return_type)){
                         yyerror("No forge found");
                     }
                     else{
-                        $$ = fste->return_type;
+                        Type * t = fste->return_type;
+                        $$ = new Expr(t, false);
                     }
                 }
                 | expression '@' expression // claim space 
                 {
+                    if (!$1 || !$3) {
+                        $$ = NULL;
+                        break;
+                    }
                     Claim * cste1 = claim_st.lookup($1, SPACE);
                     Claim * cste2 = claim_st.lookup($3, SPACE);
                     if(!cste1 || !cste2){
-                        yyerror("Must be a space");
+                        yyerror("Both operands to " RED_ESCAPE "@" RESET_ESCAPE " must be spaces.");
                     } else {
-                        // check if same type
-                        if(typecmp($1, $3)){
-                            Function * fste = forge_st.lookup($1, $3);
-                            if(!fste){
-                                yyerror("Type mismatch");
-                            }
-                            else{
-                                Type * temp = fste->return_type;
-                                $$ = temp->pop_type(); 
-                                /***
-                                 * IMPORTANT
-                                 * In Type *, if the head claims SPACE, the field it is a space over will be in the next pointer.
-                                 * Hence the pop_type() call.
-                                 * In a Claim, this is not so - there is a separate field.
-                                */
-                            }
+                        if(!typecmp($1, $3)) {
+                            // same type, don't need to check for forge
+                            Type * t = cste1->over;
+                            $$ = new Expr(t, false);
+                            break;
+                        }
+
+                        // both types are different, check for forge
+
+                        // TODO: forge check should change
+                        Function * fste = forge_st.lookup($1, $3);
+                        if(!fste){
+                            yyerror("Use of " RED_ESCAPE "@" RESET_ESCAPE " over incompatible spaces.");
                         }
                         else{
-                            $$ = cste1->over; // Aforementioned separate field.
+                            Type * temp = fste->return_type;
+                            Type * t = temp->pop_type(); 
+                            $$ = new Expr(t, false);
+                            /***
+                             * IMPORTANT
+                             * In Type *, if the head claims SPACE, the field it is a space over will be in the next pointer.
+                             * Hence the pop_type() call.
+                             * In a Claim, this is not so - there is a separate field.
+                            */
                         }
                     }
                 }
@@ -391,42 +444,39 @@ expression      : '(' expression ')' {
                 | expression '>' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
                 | expression '<' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
                 | expression rel_op expression { $$ = rel_op_type_check_arithmetic($1, $3); }
-                // TODO: type check KW_IN
-                | expression KW_IN expression // second buf over first.
-                | expression AND expression // bool
-                {
-                    $$ = and_or_type_check($1, $3);
-                }
-                | expression OR expression // bool
-                {
-                    $$ = and_or_type_check($1, $3);
-                }
+                | expression KW_IN expression  { $$ = in_type_check($1, $3); }
+                | expression AND expression    { $$ = and_or_type_check($1, $3); }
+                | expression OR expression     { $$ = and_or_type_check($1, $3); }
                 | IDENT {
                     Var * vste = current_scope->lookup(*$1);
-
                     if(!vste) {
-                        yyerror("Variable not found.");
-                        $$ = new Type();
+                        string err = "Variable " GREEN_ESCAPE + *$1 + RESET_ESCAPE " not found in current scope.";
+                        yyerror(err.c_str());
+                        $$ = NULL;
+                        break;
                     }
-                    else {
-                        $$ = vste->type;
-                    }
+
+                    $$ = new Expr(vste->type, true);
                 }
-                | constant 
-                {
-                    $$ = new Type();
+                | constant {
+                    auto t = new Type();
                     VarTypes vt = convert_constType_to_varType($1.type);
 
                     if(vt == ENUM) {
-                        $$->push_type(vt, 0, 0, new AuxESTE(((Variant *)$1.val)->este));
+                        t->push_type(vt, 0, 0, new AuxESTE(((Variant *)$1.val)->este));
+                    } else {
+                        t->push_type(vt, 0, 0, NULL);
                     }
-                    else $$->push_type(vt, 0, 0, NULL);
+                    $$ = new Expr(t, false);
                 }
                 | KW_THIS {
-                    $$ = new Type();
-                    if(method_of) $$->push_type(STRUCT, 0, 0, new AuxSSTE(method_of));
-                    else {
-                        yyerror("this can only be used in a method.");
+                    if(method_of) {
+                        auto t = new Type();
+                        t->push_type(STRUCT, 0, 0, new AuxSSTE(method_of));
+                        $$ = new Expr(t, true);
+                    } else {
+                        yyerror(GREEN_ESCAPE "this" RESET_ESCAPE " can only be used in a struct method.");
+                        $$ = NULL;
                     }
                 }
                 | unary_operation 
@@ -442,7 +492,7 @@ cart_value      : '(' cart_value_list ')' {
                         arr[i] = (*$2)[i]->head;
                     }
                     t->push_type(CART, 0, arr.size(), new AuxCART(arr));
-                    $$ = t;
+                    $$ = new Expr(t, false);
                 }
                 ;
 
@@ -479,36 +529,52 @@ return_stmt     : KW_RETURN expression // Check if compatible with current funct
 call            : IDENT '(' opt_expr_list ')' {
                     Function * entry = func_st.lookup(*$1);
                     if(!entry) {
-                        yyerror("Function not found in symbol table."); 
-                        $$ = new Type();
+                        string err = "Function " GREEN_ESCAPE + *$1 + RESET_ESCAPE " not declared";
+                        yyerror(err.c_str()); 
+                        $$ = NULL;
+                        break;
                     }
-                    else {
-                        // TODO: Check if the types are compatible.
-                        for(int i = 0; i < $3->size(); i++) {
-                            // Might be a better way than directly accessing the vector?
-                            if(typecmp((*$3)[i], entry->params->entries[i]->type)) {
-                                yyerror("Function call parameter type mismatch.");
-                                break;
-                            }
+                    $$ = new Expr(entry->return_type, false);
+                    if (entry->params->entries.size() != $3->size()) {
+                        string err = "Expected " + to_string(entry->params->entries.size()) + " parameters, got " + to_string($3->size()) + ".";
+                        yyerror(err.c_str());
+                        break;
+                    }
+                    for(int i = 0; i < $3->size(); i++) {
+                        if(typecmp((*$3)[i], entry->params->entries[i]->type)) {
+                            string err = "Type mismatch on parameter " + to_string(i) + " of call to " + *$1 + ".";
+                            yyerror(err.c_str());
+                            break;
                         }
-                        $$ = entry->return_type;
                     }
                 }
                 | expression '.' IDENT '(' opt_expr_list ')' {
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
+                    }
                     if($1->core() != STRUCT) {
                         yyerror("Method call on non-struct type.");
-                    } else {
-                        Function * meth = ((AuxSSTE *)$1->head->aux)->sste->methods->lookup(*$3);
-                        if(!meth) yyerror("Method not found in symbol table.");
-                        else {
-                            for(int i = 0; i < $3->size(); i++) {
-                            // Might be a better way than directly accessing the vector?
-                            if(typecmp((*$5)[i], meth->params->entries[i]->type)) {
-                                yyerror("Function call parameter type mismatch.");
-                                break;
-                            }
-                        }
-                            $$ = meth->return_type;
+                        $$ = NULL;
+                        break;
+                    }
+
+                    auto sste = ((AuxSSTE *)$1->head->aux)->sste;
+                    Function * meth = sste->methods->lookup(*$3);
+                    if(!meth) {
+                        string err = "Method " GREEN_ESCAPE + *$3 + RESET_ESCAPE
+                                     " not found on struct " GREEN_ESCAPE + sste->name + RESET_ESCAPE ".";
+                        yyerror(err.c_str());
+                        $$ = NULL;
+                        break;
+                    }
+                    $$ = new Expr(meth->return_type, false);
+                    for(int i = 0; i < $3->size(); i++) {
+                        // Might be a better way than directly accessing the vector?
+                        if(typecmp((*$5)[i], meth->params->entries[i]->type)) {
+                            string err = "Type mismatch on parameter " + to_string(i) + " of call to " + *$3 + ".";
+                            yyerror(err.c_str());
+                            break;
                         }
                     }
                 }// member functions 
@@ -540,36 +606,36 @@ unary_op        : INCR
                 ;
 
 unary_operation : expression unary_op {
-                    if($1->core() != INT) {
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
+                    }
+                    if (!$1->is_lvalue) {
+                        yyerror("Unary operation on non-lvalue.");
+                    } else if($1->core() != INT) {
                         yyerror("Unary operation on non-int type.");
-                        $$ = new Type();
                     }
-                    else {
-                        $$ = $1;
-                    }
+                    $$ = new Expr($1, false);
                 }
                 ;
 
 array_access    : expression array_index {
+                    if (!$1) {
+                        $$ = NULL;
+                        break;
+                    }
                     if($1->core() != BUF) {
-                        if(!claim_st.lookup($1, SPACE))
-                            yyerror("Array access on non-array type.");
+                        // TODO: Vec/Mat/InvMat
+                        yyerror("Array access on non-array type.");
+                        $$ = NULL;
+                        break;
                     }
-                    else {
-                        // Keep track of dimensions and stuff.
-                        InnerType * current = $1->head;
-                        int n = current->size;
-                        while($1->core() == BUF || claim_st.lookup($1, SPACE)) {
-                            n += current->size;
-                            if($2 > n) yyerror("Array access out of bounds.");
-                            else if($2 == n) {
-                                $$ = new Type();
-                                $$->head = current;
-                                break;
-                            }
-                            current = current->next;
-                        }
+                    if ($2 > 1) {
+                        yyerror("Buf index must contain exactly one dimension.");
+                        $$ = NULL;
+                        break;
                     }
+                    $$ = new Expr($1, $1->is_lvalue);
                 }
                 ;
 
@@ -579,33 +645,35 @@ array_decl      : '[' opt_expr_list ']' {
                     for(int i = 1; i < $2->size(); i++) {
                         if(typecmp(t, (*$2)[i])) {
                             yyerror("Array elements must have the same type.");
+                            $$ = NULL;
                             break;
                         }
                     }
-
-                    $$ = new Type();
-                    $$->head = t->head;
-                    $$->push_type(BUF, 0, 1, NULL);
+                    auto in = new Type();
+                    in->head = t->head;
+                    in->push_type(BUF, 0, 1, NULL);
+                    $$ = new Expr(in, false);
                 }
                 | '[' expression ';' expression ']' {
                     if($4->core() != INT) {
                         yyerror("Array size must be an integer.");
                     }
-                    $$ = new Type();
-                    $$->head = $2->head;
-                    $$->push_type(BUF, 0, 1, NULL);
+                    auto t = new Type();
+                    t->head = $2->head;
+                    t->push_type(BUF, 0, 1, NULL);
+                    $$ = new Expr(t, false);
                 }
                 ;
 
 array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
                 {
+                    $$ = $2->size();
                     for(auto i: (*$2)) {
                         if(i->core() != INT) {
                             yyerror("Array index must be an integer.");
                             break;
                         }
                     }
-                    $$ = $2->size();
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
@@ -886,14 +954,18 @@ epsilon         : ;
 
 %%
 
+bool error = false;
+
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
     yyparse();
-    return 0;
+    return error;
 }
 
 extern int yylineno;
 
 void yyerror(const char* s) {
-    fprintf(stderr, "Error on line %d: %s\n", yylineno, s);
+    const char *m = GREEN_ESCAPE "Error" RESET_ESCAPE " on line %3d: %s\n";
+    fprintf(stderr, m, yylineno, s);
+    error = true;
 }

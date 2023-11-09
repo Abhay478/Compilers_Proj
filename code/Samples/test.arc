@@ -3,6 +3,6 @@ fn foo(): u32 {
 }
 
 fn main() {
-  let a: u32 = foo();
+  let a: u32;
   let b: u32 = foo(a);
 }

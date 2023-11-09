@@ -45,26 +45,24 @@ Type *Type::pop_type() {
     return t;
 }
 
-int typecmp(Type *t1, Type *t2) {
-    InnerType *current1 = t1->head;
-    InnerType *current2 = t2->head;
-    while (current1 && current2) {
-        if (current1->core_type != current2->core_type) {
+int typecmp(InnerType *t1, InnerType *t2) {
+    while (t1 && t2) {
+        if (t1->core_type != t2->core_type) {
             return 1;
         }
-        if (current1->core_type == STRUCT || current1->core_type == ENUM) {
-            if (current1->aux != current2->aux) {
+        if (t1->core_type == STRUCT || t1->core_type == ENUM) {
+            if (t1->aux != t2->aux) {
                 return 1;
             } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
         }
 
-        if (current1->core_type == CART) {
-            if (current1->size != current2->size) {
+        if (t1->core_type == CART) {
+            if (t1->size != t2->size) {
                 return 1;
             }
-            for (int i = 0; i < current1->size; i++) {
-                InnerType *it1 = ((AuxCART *)current1->aux)->cart[i];
-                InnerType *it2 = ((AuxCART *)current2->aux)->cart[i];
+            for (int i = 0; i < t1->size; i++) {
+                InnerType *it1 = ((AuxCART *)t1->aux)->cart[i];
+                InnerType *it2 = ((AuxCART *)t2->aux)->cart[i];
                 Type nt1;
                 nt1.head = it1;
                 Type nt2;
@@ -74,13 +72,22 @@ int typecmp(Type *t1, Type *t2) {
                 }
             }
         }
-        current1 = current1->next;
-        current2 = current2->next;
+        t1 = t1->next;
+        t2 = t2->next;
     }
-    if (current1 || current2) {
+    if (t1 || t2) {
         return 1;
     }
     return 0;
+}
+
+int typecmp(Type *t1, Type *t2) {
+    return typecmp(t1->head, t2->head);
+}
+
+Expr::Expr(Type *t, bool is_lvalue) {
+    this->head = t->head;
+    this->is_lvalue = is_lvalue;
 }
 
 /*******************

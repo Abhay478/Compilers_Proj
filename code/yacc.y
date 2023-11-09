@@ -113,9 +113,11 @@
 %type <targ> type_arg
 %type <targ_list> type_args
 
-%start P
+%start program
 
 %%
+program         : start_table P end_table
+
 P               : epsilon
                 | P declaration
                 | P function
@@ -195,6 +197,15 @@ decl_item       : type_var
                         yyerror("Cannot assign to global variable. (use main)");
                     } else if (typecmp($1->type, $3)) {
                         yyerror("Type mismatch in declaration.");
+                    }
+                }
+                ;
+
+type_var        : IDENT ':' type {
+                    $$ = new Var(*$1, $3);
+                    if (current_scope->vars->insert($$)) {
+                        string err = "Variable " + *$1 + " already defined.";
+                        yyerror(err.c_str());
                     }
                 }
                 ;
@@ -372,39 +383,15 @@ expression      : '(' expression ')' {
                         }
                     }
                 }
-                | expression '*' expression // int, float, forgeable, claim group, ring
-                {
-                    $$ = mult_type_check_arithmetic($1, $3);
-                }
-                | expression '/' expression // int, float, forgeable, claim group, ring, field
-                {
-                    $$ = div_type_check_arithmetic($1, $3);
-
-                }
-                | expression '%' expression // int, float
-                {
-                    $$ = modulus_relational_type_check_arithmetic($1, $3);
-                }
-                | expression '+' expression // int, float, forgeable, claim group
-                {
-                    $$ = add_sub_type_check_arithmetic($1, $3);
-                }
-                | expression '-' expression // int, float, forgeable, claim group
-                {
-                    $$ = add_sub_type_check_arithmetic($1, $3);
-                }
-                | expression '>' expression // int, float
-                {
-                    $$ = modulus_relational_type_check_arithmetic($1, $3);
-                }
-                | expression '<' expression // int, float
-                {
-                    $$ = modulus_relational_type_check_arithmetic($1, $3);
-                }
-                | expression rel_op expression // int, float
-                {
-                    $$ = modulus_relational_type_check_arithmetic($1, $3);
-                }
+                | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); }
+                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); }
+                | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); }
+                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
+                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
+                | expression '>' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
+                | expression '<' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
+                | expression rel_op expression { $$ = rel_op_type_check_arithmetic($1, $3); }
+                // TODO: type check KW_IN
                 | expression KW_IN expression // second buf over first.
                 | expression AND expression // bool
                 {
@@ -630,7 +617,7 @@ array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead
                 ;
 
 conditional     : KW_IF '(' expression {
-                    if($3->core() != BOOL) yyerror("predicate must be boolean");
+                    if($3 && $3->core() != BOOL) yyerror("predicate must be boolean");
                 } ')' {in_cond = 1;} if_body 
                 ;
 
@@ -782,7 +769,7 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
                 ; // LIT_INT must be 1
 
-function        : {in_func = 1;} start_table function_header{in_func = 0;} body {method_of = NULL;} end_table
+function        : start_table function_header {in_func = 1;} body end_table {method_of = NULL; in_func = 0;}
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
@@ -826,12 +813,6 @@ type_var_list   : type_var ',' type_var_list
 param_list      : type_var_list 
                 ;
 
-type_var        : IDENT ':' type {
-                    $$ = new Var(*$1, $3);
-                    current_scope->vars->insert($$);
-                }
-                ;
-
 struct          : KW_STRUCT IDENT '{' start_table attr_list end_table '}' {
                     Struct * entry = new Struct(*$2, $6->entries);
                     struct_st.insert(entry);
@@ -864,10 +845,11 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list
                 ;
 
-forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' body end_table {
-                    VarSymbolTable * params = current_scope->vars;
+forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' {in_func = 1;} body end_table {
+                    in_func = 0;
+                    VarSymbolTable * params = $12;
 
-                    Function * entry = new Function(NULL, params, $8);
+                    Function * entry = new Function("", params, $8);
                     forge_st.insert(entry);
                 }
                 ;
@@ -910,6 +892,8 @@ int main() {
     return 0;
 }
 
+extern int yylineno;
+
 void yyerror(const char* s) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Error on line %d: %s\n", yylineno, s);
 }

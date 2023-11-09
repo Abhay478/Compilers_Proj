@@ -26,6 +26,7 @@ PDT get_pdt(char * s) {
 
 VarTypes get_vt(PDT pdt) {
     switch(pdt) {
+        default: // all cases are covered, default is unreachable (included to silence compiler warning)
         case U8:
         case U16:
         case U32:
@@ -44,7 +45,6 @@ VarTypes get_vt(PDT pdt) {
         case PDT_STR:
             return STR;
     }
-    return INT;
 }
 
 Variant::Variant(std::string tag, std::string val, Enum * este) {

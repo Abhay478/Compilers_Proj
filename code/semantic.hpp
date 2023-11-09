@@ -111,23 +111,15 @@ struct AuxCART : public Aux {
 struct InnerType {
     VarTypes core_type; // Yay types.
     int offset;
-    int size; 
     /**
      * For cartesian product (i.e. tuple), stores the tuple length.
      * For SPACE types, stores the dimension. Is 1 for BUF.
-     * So, a Matrix would be two, and a Vector would be one. This would be created in generic.
     */
+    int size; 
+    /// @brief For structs, enums, and cartesian products.
     Aux * aux; 
-    /**
-     * Pointer to symbol table entry for struct or enum.
-     * For cartesian product, stores the list of types, i.e. vector<InnerType *>.
-     * NULL for everything else.
-    */
+    /// @brief For buf, ref
     struct InnerType * next; 
-    /**
-     * For references, Bufs and generics. Because you can have [InvMat<InvMat<InvMat<...>>>].
-     * Pointer to next type in the list. NULL for the last type.
-    */
     InnerType(VarTypes core_type, int offset, int size);
 };
 
@@ -247,7 +239,7 @@ struct EnumSymbolTable {
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
 struct ForgeSymbolTable {
-    FunctionSymbolTable * inner;
+    FunctionSymbolTable inner;
     int insert(Function * fste);
     Function * lookup(Type * t1, Type * t2);
 };
@@ -285,9 +277,10 @@ Type * int_float_check(Type * t1, Type * t2);
 Type * forge_check(Type * t1, Type * t2);
 Type * mult_type_check_arithmetic(Type *t1, Type *t2);
 Type * div_type_check_arithmetic(Type *t1, Type *t2);
-Type * modulus_relational_type_check_arithmetic(Type *t1, Type *t2);
+Type * modulus_type_check_arithmetic(Type *t1, Type *t2);
 Type * add_sub_type_check_arithmetic(Type *t1, Type *t2);
 Type * and_or_type_check(Type *t1, Type *t2);
+Type * rel_op_type_check_arithmetic(Type *t1, Type *t2);
 VarTypes convert_constType_to_varType(CType t);
 
 

@@ -36,7 +36,7 @@ int Type::push_type(VarTypes core_type, int offset, int size, Aux *aux) {
 }
 
 VarTypes Type::core() {
-    return this->core();
+    return this->head->core_type;
 }
 
 Type *Type::pop_type() {
@@ -96,10 +96,6 @@ Var::Var(string name, Type *type) {
 int VarSymbolTable::insert(Var *vste) {
     for (int i = 0; i < this->entries.size(); i++) {
         if (this->entries[i]->name == vste->name) {
-            // Same type fine.
-            if (!typecmp(this->entries[i]->type, vste->type)) {
-                return 0;
-            }
             return 1;
         }
     }
@@ -237,7 +233,7 @@ Enum *EnumSymbolTable::lookup(string name) {
  ********************/
 
 int ForgeSymbolTable::insert(Function *fste) {
-    return this->inner->insert(fste);
+    return this->inner.insert(fste);
 }
 
 Type *get_param_type(Function *f) {
@@ -258,7 +254,8 @@ Type *get_param_type(Function *f) {
 }
 
 Function *ForgeSymbolTable::lookup(Type *t1, Type *t2) {
-    FunctionSymbolTable *f = this->inner;
+    FunctionSymbolTable *f = &this->inner;
+    auto x = f->entries;
     for (auto i : f->entries) {
         Type *t = get_param_type(i);
         if ((!typecmp(t, t1) && !typecmp(i->return_type, t2)) || (!typecmp(t, t2) && !typecmp(i->return_type, t1))) {

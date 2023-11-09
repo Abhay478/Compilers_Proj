@@ -141,6 +141,7 @@ public:
 
 int typecmp(InnerType * t1, InnerType * t2);
 int typecmp(Type * t1, Type * t2);
+// void print_type(Type * t);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 struct Var {
@@ -315,4 +316,10 @@ extern Scope * current_scope;
 #define GREEN_ESCAPE "\x1B[1;32;40m"
 #define RESET_ESCAPE "\x1B[0;37;40m"
 
+#define este(t) (((AuxESTE *)(t)->head->aux)->este)
+#define sste(t) (((AuxSSTE *)(t)->head->aux)->sste)
+#define ieste(t) (((AuxESTE *)(t)->aux)->este)
+#define isste(t) (((AuxSSTE *)(t)->aux)->sste)
+#define cart(t) (((AuxCART *)(t)->head->aux)->cart)
+#define icart(t) (((AuxCART *)(t)->aux)->cart)
 #endif

@@ -201,11 +201,11 @@ decl_item       : type_var
                 ;
 
 type_var        : IDENT ':' type {
-                    $$ = new Var(*$1, $3);
-                    if (current_scope->vars->insert($$)) {
+                    auto out = new Var(*$1, $3);
+                    if (current_scope->insert(out)) {
                         string err = "Variable " + *$1 + " already defined.";
                         yyerror(err.c_str());
-                    }
+                    } else $$ = out;
                 }
                 ;
 
@@ -310,7 +310,11 @@ expression      : '(' expression ')' {
                         $$ = NULL;
                         break;
                     }
-                    Claim *cste = claim_st.lookup($2, GROUP);
+                    if($2->core() == INT || $2->core() == FLOAT) {
+                        $$ = new Expr($2, false);
+                        break;
+                    }
+                    Claim * cste = claim_st.lookup($2, GROUP);
                     if(!cste){
                         yyerror("unary minus requires Group");
                     }
@@ -349,7 +353,7 @@ expression      : '(' expression ')' {
                         yyerror("Field access on non-struct type.");
                         $$ = NULL;
                     } else {
-                        Struct * sste = ((AuxSSTE *)$1->head->aux)->sste;
+                        Struct * sste = sste($1);
                         Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
@@ -372,7 +376,7 @@ expression      : '(' expression ')' {
                             yyerror("Tuple access out of bounds.");
                             break;
                         } else {
-                            vector<InnerType *> c = ((AuxCART *)$1->head->aux)->cart;
+                            vector<InnerType *> c = cart($1);
                             Type * t = new Type();
                             t->head = c[$3];
                             $$ = new Expr(t, $1->is_lvalue);
@@ -384,9 +388,8 @@ expression      : '(' expression ')' {
                         $$ = NULL;
                         break;
                     }
-                    // TODO: forge check should change
                     Function * fste = forge_st.lookup($1, $4);
-                    if(!fste || typecmp($4, fste->return_type)){
+                    if(!fste){
                         yyerror("No forge found");
                     }
                     else{
@@ -415,7 +418,8 @@ expression      : '(' expression ')' {
                         // both types are different, check for forge
 
                         // TODO: forge check should change
-                        Function * fste = forge_st.lookup($1, $3);
+                        Function * temp = forge_st.lookup($1, $3);
+                        Function * fste = temp ? temp : forge_st.lookup($3, $1);
                         if(!fste){
                             yyerror("Use of " RED_ESCAPE "@" RESET_ESCAPE " over incompatible spaces.");
                         }
@@ -555,7 +559,7 @@ call            : IDENT '(' opt_expr_list ')' {
                         break;
                     }
 
-                    auto sste = ((AuxSSTE *)$1->head->aux)->sste;
+                    auto sste = sste($1);
                     Function * meth = sste->methods->lookup(*$3);
                     if(!meth) {
                         string err = "Method " GREEN_ESCAPE + *$3 + RESET_ESCAPE
@@ -631,7 +635,7 @@ array_access    : expression array_index {
                         $$ = NULL;
                         break;
                     }
-                    $$ = new Expr($1, $1->is_lvalue);
+                    $$ = new Expr($1->pop_type(), $1->is_lvalue);
                 }
                 ;
 
@@ -963,13 +967,13 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list
                 ;
 
-forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' {in_func = 1;} body end_table {
-                    in_func = 0;
-                    VarSymbolTable * params = $12;
-
+forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' {
+                    VarSymbolTable * params = current_scope->vars;
                     Function * entry = new Function("", params, $8);
+
                     forge_st.insert(entry);
-                }
+                    in_func = 1;
+                } body end_table {in_func = 0;}
                 ;
 
 cart            : '(' type ',' ')' {

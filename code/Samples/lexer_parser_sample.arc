@@ -29,23 +29,26 @@ claim two_tup is Group {
     }
 
     (b = -a) => {
-        c.val = -a.val;
-        c.aux = -a.aux;
+        b.val = -a.val;
+        b.aux = -a.aux;
     }
 }
 
 forge (a: two_tup) as ((u64, u64)) {
+    let b: (u64, u64);
     b = (a.val, a.aux);
     print("We are forging here.");
 }
 
 forge (a: (u64, u64)) as (two_tup) {
+    let b: two_tup;
     b.val = a.0;
     b.aux = a.1;
     print("We are forging here also.");
 }
 
 forge (a: [u64]) as (two_tup) {
+    let b: two_tup;
     b.val = a[0];
     b.aux = a[1];
     print("We are forging here again.");
@@ -54,12 +57,11 @@ forge (a: [u64]) as (two_tup) {
 fn main() {
     print("This is main.");
     let b: [u64] = fib(30);
-    print(b);
+    // print(b);
 
     let a: two_tup = [1, 2] as (two_tup);
-    print(a);
+    // print(a);
     let tup: (u64, u64) = a as ((u64, u64));
-    print(tup);
+    // print(tup);
 
-    
 }

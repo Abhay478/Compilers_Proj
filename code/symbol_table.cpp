@@ -48,10 +48,20 @@ Type *Type::pop_type() {
 int typecmp(InnerType *t1, InnerType *t2) {
     while (t1 && t2) {
         if (t1->core_type != t2->core_type) {
+            // printf("core type mismatch: %d, %d\n", t1->core_type, t2->core_type);
             return 1;
         }
-        if (t1->core_type == STRUCT || t1->core_type == ENUM) {
-            if (t1->aux != t2->aux) {
+        if (t1->core_type == STRUCT) {
+            if (isste(t1) != isste(t2)) {
+                // printf("aux mismatch: %s, %s.\n", ((AuxSSTE *)t1->aux)->sste->name.c_str(), ((AuxSSTE *)t2->aux)->sste->name.c_str());
+                return 1;
+            } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
+        }
+
+        if (t1->core_type == ENUM) {
+            if (ieste(t1) != ieste(t2)) {
+                // printf("aux mismatch: %s, %s.\n", ((AuxESTE *)t1->aux)->este->name.c_str(), ((AuxESTE *)t2->aux)->este->name.c_str());
+                // printf("aux mismatch: %p, %p.\n", t1->aux, t2->aux);
                 return 1;
             } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
         }
@@ -61,8 +71,8 @@ int typecmp(InnerType *t1, InnerType *t2) {
                 return 1;
             }
             for (int i = 0; i < t1->size; i++) {
-                InnerType *it1 = ((AuxCART *)t1->aux)->cart[i];
-                InnerType *it2 = ((AuxCART *)t2->aux)->cart[i];
+                InnerType *it1 = icart(t1)[i];
+                InnerType *it2 = icart(t2)[i];
                 Type nt1;
                 nt1.head = it1;
                 Type nt2;
@@ -173,7 +183,7 @@ Type *Struct::make_struct_type() {
     Type *t = new Type();
 
     t->head = new InnerType(STRUCT, 0, 0);
-    ((AuxSSTE *)t->head->aux)->sste = this;
+    sste(t) = this;
     return t;
 }
 
@@ -240,7 +250,13 @@ Enum *EnumSymbolTable::lookup(string name) {
  ********************/
 
 int ForgeSymbolTable::insert(Function *fste) {
-    return this->inner.insert(fste);
+    for (auto i : this->inner.entries) {
+        if (!typecmp(get_param_type(i), get_param_type(fste)) && !typecmp(i->return_type, fste->return_type)) {
+            return 1;
+        }
+    }
+    this->inner.entries.push_back(fste);
+    return 0;
 }
 
 Type *get_param_type(Function *f) {
@@ -251,21 +267,21 @@ Type *get_param_type(Function *f) {
     }
 
     Type *t = new Type();
-    t->head = new InnerType(CART, 0, params->entries.size());
-
+    auto cart = new vector<InnerType *>();
     for (auto i : params->entries) {
-        ((AuxCART *)t->head->aux)->cart.push_back(i->type->head);
+        cart->push_back(i->type->head);
     }
+    t->push_type(CART, 0, params->entries.size(), new AuxCART(*cart));
+
 
     return t;
 }
 
-Function *ForgeSymbolTable::lookup(Type *t1, Type *t2) {
+Function * ForgeSymbolTable::lookup(Type *t1, Type *t2) {
     FunctionSymbolTable *f = &this->inner;
-    auto x = f->entries;
     for (auto i : f->entries) {
         Type *t = get_param_type(i);
-        if ((!typecmp(t, t1) && !typecmp(i->return_type, t2)) || (!typecmp(t, t2) && !typecmp(i->return_type, t1))) {
+        if (!typecmp(t, t1) && !typecmp(i->return_type, t2)) {
             return i; // A forge !
         }
     }

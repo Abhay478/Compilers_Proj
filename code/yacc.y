@@ -8,9 +8,9 @@
     int in_func = 0;
     int in_loop = 0;
     int in_cond = 0;
-    int tdef = 0;
     Scope * current_scope = NULL;
     Struct * method_of = NULL;
+    Claim * current_claim = NULL;
 
     using namespace std;
 
@@ -31,10 +31,7 @@
     } cons;
     Type * type;
     Archetypes archetype; 
-    struct {
-        Archetypes archetype;
-        Type * type;
-    } claim_stub_type;
+    Claim * claim_stub_type;
 
     VarSymbolTable * var_table;
     Var * var;
@@ -76,8 +73,6 @@
 
 %type <cons> constant
 
-%type <lit_int> identity_rule
-
 %type <type> expression
 %type <type> loop_cond
 %type <type> type
@@ -88,6 +83,7 @@
 %type <type> call
 %type <type> unary_operation
 %type <type> generic
+%type <type> type_def
 %type <type_list> type_list
 %type <type_list> opt_expr_list
 %type <type_list> expr_list
@@ -193,7 +189,7 @@ decl_list       : decl_item
 
 decl_item       : type_var
                 | type_var '=' expression {
-                    if (current_scope->parent == NULL) {
+                    if (!current_scope->parent) {
                         yyerror("Cannot assign to global variable. (use main)");
                     } else if (typecmp($1->type, $3)) {
                         yyerror("Type mismatch in declaration.");
@@ -630,10 +626,13 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop++;} body {in_loop--;}
                 | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;}
                 | KW_FOR '(' start_table declaration ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;} end_table
                 | KW_FOR start_table IDENT KW_IN expression {
-                    if($5->core() != BUF) {
-                        if(!claim_st.lookup($5, SPACE))
-                            yyerror("Looping over non-array type.");
+                    if($5->core() != BUF){
+                        yyerror("Looping over non-buf type.");
+                        break;
                     }
+                    Type * t = $5->pop_type();
+                    current_scope->insert(new Var(*$3, t));
+
                 } {in_loop++;} body {in_loop--;} end_table
                 ;
 
@@ -666,7 +665,6 @@ sc_blocks       : sc_blocks KW_CASE expression ARROW body {
                 ; // NOTE: Does not cascade
 
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
-                    $$.type = (Type *)(void *)-1;
                     Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
                         Enum * entry = enum_st.lookup(*$2);
@@ -675,39 +673,41 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                             Type * t = new Type();
                             t->push_type(ENUM, 0, 1, new AuxESTE(entry));
                             Claim * claim = claim_st.lookup(t, $4);
-                            if(!claim) $$.type = t; // Can copy Type, as InnerType is malloc'd.
+                            if(!claim) {$$ = new Claim(t, $4);} // Can copy Type, as InnerType is malloc'd.
                         }
                     } 
                     else {
                         Type * t = new Type();
                         t->push_type(STRUCT, 0, 1, new AuxSSTE(entry));
                         Claim * claim = claim_st.lookup(t, $4);
-                        if(!claim) $$.type = t;
+                        if(!claim) {$$ = new Claim(t, $4);}
                     }
-
-                    $$.archetype = $4;
                     
                 }
                 ; 
 
 archetype_claim : claim_stub '{' type_def {
-                    if (tdef && $1.archetype != SPACE) {
-                        yyerror("Cannot add inner types for flat archetypes.");
-                    } else if (!tdef && $1.archetype == SPACE) {
-                        yyerror("No inner types defined.");
-                    }
-                    tdef = 0;
-                } rule_list '}' {
-                    if($1.type == (Type *)(void *)-1) {
+                    if(!$1) {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        Claim * claim = new Claim($1.type, $1.archetype);
-                        claim_st.insert(claim);
+                        // We do not need a copy constructor. current_claim is malloc'd in claim_stub.
+                        current_claim = $1;
+                        if ($3 && $1->archetype != SPACE) {
+                            yyerror("Cannot add inner types for flat archetypes.");
+                        } else if (!$3 && $1->archetype == SPACE) {
+                            yyerror("No inner types defined.");
+                        } else if ($3 && $1->archetype == SPACE) {
+                            current_claim->over = $3;
+                        }
+
+                        claim_st.insert(current_claim);
                     }
+                } rule_list '}' {
+                    current_claim = NULL;
                 }
                 | claim_stub KW_WITH '(' ident_list ')' ';' {
-                    if($1.type == (Type *)(void *)-1) {
+                    if(!$1) {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
@@ -719,11 +719,13 @@ archetype_claim : claim_stub '{' type_def {
                                 yyerror("Functions are not inverses.");
                             }
                             else {
-                                Claim * claim = new Claim($1.type, $1.archetype);
-                                claim_st.insert(claim);
+                                // Claim * claim = new Claim($1.type, $1.archetype);
+                                claim_st.insert($1);
                             }
                         }
                     }
+
+                    current_claim = NULL;
                 }
                 ;
 
@@ -735,9 +737,9 @@ archetype       : KW_GROUP {$$ = GROUP;}
 
 type_def        : KW_FIELD '=' type ';' {
                     if(!claim_st.lookup($3, FIELD)) yyerror("Type is not a field.");
-                    tdef = 1;
+                    $$ = $3;
                 }
-                | epsilon
+                | epsilon {$$ = NULL;}
                 ;
 
 rule_list       : rule_list tbl_rule
@@ -754,19 +756,67 @@ rule            : additive_rule
                 | inverse_rule
                 ;
 
-additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' ARROW body 
+additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
+                    if(current_claim->archetype != GROUP) {
+                        yyerror("Additive rule must be in a group.");
+                        break;
+                    }
+                    current_scope->insert(new Var(*$2, current_claim->type));
+                    current_scope->insert(new Var(*$4, current_claim->type));
+                    current_scope->insert(new Var(*$6, current_claim->type));
+                } ARROW body
                 ;
 
-mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' ARROW body
+mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
+                    if(current_claim->archetype == RING) {
+                        current_scope->insert(new Var(*$2, current_claim->type));
+                        current_scope->insert(new Var(*$4, current_claim->type));
+                        current_scope->insert(new Var(*$6, current_claim->type));
+                    } else if(current_claim->archetype == SPACE) {
+                        Type * t = current_clain->type->pop_type();
+                        current_scope->insert(new Var(*$2, current_claim->type));
+                        current_scope->insert(new Var(*$4, t));
+                        current_scope->insert(new Var(*$6, current_claim->type));
+                    } else {
+                        yyerror("Multiplicative rule must be in a ring or space.");
+                    }
+                    
+                } ARROW body
                 ;
 
-identity_rule   : '(' IDENT '=' LIT_INT ')' ARROW body {$$ = $4;}// LIT_INT should be 0 or 1, depending on the archetype
+identity_rule   : '(' IDENT '=' LIT_INT ')' {
+                    current_scope->insert(new Var(*$2, current_claim->type));
+                } ARROW body {
+                    if(current_claim->archetype == GROUP) {
+                        if($4 != 0) yyerror("Identity rule must be 0.");
+                    }
+                    else if(current_claim->archetype == RING) {
+                        if($4 != 1) yyerror("Identity rule must be 1.");
+                    }
+                    else {
+                        yyerror("Cannot have identity rule in field or space.");
+                    }   
+                }
                 ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
 
-negation_rule   : '(' IDENT '=' '-' IDENT ')' ARROW body
+negation_rule   : '(' IDENT '=' '-' IDENT ')' {
+                    if(current_claim->archetype != GROUP) {
+                        yyerror("Negation rule must be in a group.");
+                        break;
+                    }
+                    current_scope->insert(new Var(*$2, current_claim->type));
+                    current_scope->insert(new Var(*$5, current_claim->type));
+                } ARROW body
                 ;
 
-inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
+inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
+                    if(current_claim->archetype != FIELD) {
+                        yyerror("Inverse rule must be in a field.");
+                        break;
+                    }
+                    current_scope->insert(new Var(*$2, current_claim->type));
+                    current_scope->insert(new Var(*$6, current_claim->type));
+                } ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
                 ; // LIT_INT must be 1
 
 function        : start_table function_header {in_func = 1;} body end_table {method_of = NULL; in_func = 0;}

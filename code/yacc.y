@@ -784,13 +784,10 @@ switch_case     : KW_SWITCH '(' expression {
                         yyerror("Empty predicate not allowed.");
                         break;
                     }
-                } ')' '{' sc_blocks KW_DEFAULT ARROW body '}'
-                | KW_SWITCH '(' expression ')' {
-                    if(!$3) {
-                        yyerror("Empty predicate nont allowed.");
-                        break;
-                    }
-                }'{' sc_blocks '}'
+                } ')' '{' sc_blocks sc_default '}'
+                ;
+sc_default      : KW_DEFAULT ARROW body
+                | epsilon
                 ;
 
 sc_blocks       : sc_blocks KW_CASE expression ARROW body {

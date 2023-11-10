@@ -321,7 +321,7 @@ Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype) {
  * LIB
  ********************/
 
-int LibSymbolTable::insert(Lib *lste) {
+int GenSymbolTable::insert(Generic *lste) {
     for (auto i : this->entries) {
         if (i->name == lste->name) {
             return 1;
@@ -332,7 +332,7 @@ int LibSymbolTable::insert(Lib *lste) {
     return 0;
 }
 
-Lib * LibSymbolTable::lookup(string name) {
+Generic * GenSymbolTable::lookup(string name) {
     for (auto i : this->entries) {
         if (i->name == name) {
             return i;

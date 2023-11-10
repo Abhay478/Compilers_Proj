@@ -159,7 +159,7 @@ statement       : declaration ';'
                 ;
 
 generic         : IDENT '<' type_args '>' {
-                    Lib * l = lib_st.lookup(*$1);
+                    Generic * l = gen_st.lookup(*$1);
                     if(!l) {
                         yyerror("No such type.");
                         break;
@@ -180,7 +180,15 @@ generic         : IDENT '<' type_args '>' {
                         }
                     }
                     $$ = new Type();
-                    // TODO: Pass the type up the tree. Maybe constrain to generic only over a single type? Eh.
+                    /**
+                     * New rule: Only the last entry of a generic will be considered for the stack.
+                     * That way, generic over one type only, and position also defined.
+                     * We do not need to check this, because we will be hardcoding all the generics.
+                    */
+                    auto up = new AuxGENT(l);
+                    $$->head = ((Type *)l->types.back()->val)->head;
+                    // Maybe the aux is redundant here, as the inner type and the dimension is being stored elsewhere? Nah.
+                    $$->push_type(GEN, 0, 0, up); 
                 }
                 ;
 
@@ -990,9 +998,12 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list
                 ;
 
-forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type ')' {
-                    VarSymbolTable * params = current_scope->vars;
-                    Function * entry = new Function("", params, $8);
+forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type_var ')' {
+                    VarSymbolTable * params = new VarSymbolTable(vector<Var *>(current_scope->vars->entries));
+                    params->entries.pop_back();
+                    Function * entry = new Function("", params, $8->type);
+
+                    // Beware inconsistencies.
 
                     forge_st.insert(entry);
                     in_func = 1;

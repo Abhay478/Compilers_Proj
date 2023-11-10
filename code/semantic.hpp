@@ -6,6 +6,12 @@
 
 #ifndef _SEMANTIC_H
 #define _SEMANTIC_H
+
+//! TODO
+//! - Initialise symbol table with builtin functions/types and generics - that would be 3 symbol tables.
+//! - Predeclare forge output variable?
+
+
 /***********************************************
  * Struct declarations.
 ************************************************/
@@ -16,7 +22,7 @@ struct Variant;
 struct Var;
 struct Struct;
 struct Function;
-struct Lib;
+struct Generic;
 
 /***********************************************
  * Structs and functions for %union and yylval.
@@ -75,7 +81,7 @@ enum VarTypes {
     STR,
     BUF,
     REF,
-    LIB, // Library types, i.e. builtins. Generics and stuff.
+    GEN, // Library types, i.e. builtins. Generics and stuff.
     STRUCT,
     ENUM,
     CART,
@@ -109,10 +115,10 @@ struct AuxCART : public Aux {
     AuxCART(std::vector<InnerType *> cart);
 };
 
-struct AuxLIBT : public Aux {
-    Lib * libt; 
-    AuxLIBT(Lib * libt) {
-        this->libt = libt;
+struct AuxGENT : public Aux {
+    Generic * gent; 
+    AuxGENT(Generic * gent) {
+        this->gent = gent;
     };
 };
 
@@ -167,6 +173,14 @@ struct VarSymbolTable {
     std::vector<Var *> entries;
     int insert(Var * vste);
     Var * lookup(std::string name);
+
+    VarSymbolTable(std::vector<Var *> fields) {
+        this->entries = fields;
+    }
+
+    VarSymbolTable() {
+        entries = std::vector<Var *>();
+    }
 };
 
 Type * get_param_type(Function * f);
@@ -267,19 +281,19 @@ struct ClaimSymbolTable {
     Claim * lookup(Type * type, Archetypes archetype);
 };
 
-struct Lib {
+struct Generic {
     std::string name;
     std::vector<GenericInner *> types;
-    Lib(std::string name, std::vector<GenericInner *> types) {
+    Generic(std::string name, std::vector<GenericInner *> types) {
         this->name = name;
         this->types = types;
     }
 };
 
-struct LibSymbolTable {
-    std::vector<Lib *> entries;
-    int insert(Lib * fste);
-    Lib * lookup(std::string name);
+struct GenSymbolTable {
+    std::vector<Generic *> entries;
+    int insert(Generic * fste);
+    Generic * lookup(std::string name);
 };
 
 
@@ -307,7 +321,7 @@ extern EnumSymbolTable enum_st;
 extern ForgeSymbolTable forge_st;
 extern ClaimSymbolTable claim_st;
 extern FunctionSymbolTable func_st;
-extern LibSymbolTable lib_st;
+extern GenSymbolTable gen_st;
 // extern VarSymbolTable var_st; // global variables only.
 
 extern Scope * current_scope;

@@ -34,21 +34,18 @@ claim two_tup is Group {
     }
 }
 
-forge (a: two_tup) as ((u64, u64)) {
-    let b: (u64, u64);
+forge (a: two_tup) as (b: (u64, u64)) {
     b = (a.val, a.aux);
     print("We are forging here.");
 }
 
-forge (a: (u64, u64)) as (two_tup) {
-    let b: two_tup;
+forge (a: (u64, u64)) as (b: two_tup) {
     b.val = a.0;
     b.aux = a.1;
     print("We are forging here also.");
 }
 
-forge (a: [u64]) as (two_tup) {
-    let b: two_tup;
+forge (a: [u64]) as (b: two_tup) {
     b.val = a[0];
     b.aux = a[1];
     print("We are forging here again.");

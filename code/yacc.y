@@ -158,7 +158,30 @@ statement       : declaration ';'
                 | ';'
                 ;
 
-generic         : IDENT '<' type_args '>' // someone write a list of allowed generics.
+generic         : IDENT '<' type_args '>' {
+                    Lib * l = lib_st.lookup(*$1);
+                    if(!l) {
+                        yyerror("No such type.");
+                        break;
+                    }
+                    if(l->types.size() != $3->size()) {
+                        yyerror("Generic type has wrong number of parameters.");
+                        break;
+                    }
+                    for(int i = 0; i < $3->size(); i++) {
+                        auto x = l->types[i];
+                        if((*$3)[i]->which != x->which) {
+                            yyerror("Wrong parameter type.");
+                            break;
+                        } 
+                        if(!(*$3)[i]->which && typecmp((Type *)((*$3)[i]->val), (Type *)(x->val))) {
+                            yyerror("Wrong parameter type.");
+                            break;
+                        }
+                    }
+                    $$ = new Type();
+                    // TODO: Pass the type up the tree. Maybe constrain to generic only over a single type? Eh.
+                }
                 ;
 
 type_args       : type_args ',' type_arg {

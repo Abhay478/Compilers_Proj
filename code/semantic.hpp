@@ -16,6 +16,7 @@ struct Variant;
 struct Var;
 struct Struct;
 struct Function;
+struct Lib;
 
 /***********************************************
  * Structs and functions for %union and yylval.
@@ -74,6 +75,7 @@ enum VarTypes {
     STR,
     BUF,
     REF,
+    LIB, // Library types, i.e. builtins. Generics and stuff.
     STRUCT,
     ENUM,
     CART,
@@ -107,6 +109,13 @@ struct AuxCART : public Aux {
     AuxCART(std::vector<InnerType *> cart);
 };
 
+struct AuxLIBT : public Aux {
+    Lib * libt; 
+    AuxLIBT(Lib * libt) {
+        this->libt = libt;
+    };
+};
+
 
 struct InnerType {
     VarTypes core_type; // Yay types.
@@ -117,9 +126,9 @@ struct InnerType {
      * Is 1 for BUF.
     */
     int size; 
-    /// @brief For structs, enums, and cartesian products.
+    /// @brief For structs, enums, LIBRARY TYPES and cartesian products.
     Aux * aux; 
-    /// @brief For buf, ref, generics
+    /// @brief For buf, ref, and generics.
     struct InnerType * next; 
     InnerType(VarTypes core_type, int offset, int size);
 };
@@ -141,7 +150,6 @@ public:
 
 int typecmp(InnerType * t1, InnerType * t2);
 int typecmp(Type * t1, Type * t2);
-// void print_type(Type * t);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
 struct Var {
@@ -169,7 +177,7 @@ Type * get_param_type(Function * f);
 struct Scope {
     VarSymbolTable * vars; // Variables in the current scope.
     Scope * parent; 
-    //std::vector<Scope *> children; // Don't need this, cuz single pass. Will revisit if needed.
+    // std::vector<Scope *> children; // Don't need this, cuz single pass. Will revisit if needed.
     Scope() {
         vars = new VarSymbolTable();
         parent = NULL;
@@ -212,9 +220,6 @@ struct Struct {
     Var* fieldLookup(std::string);
 };
 
-// Struct * make_struct_ste(char * name, Var ** fields, int numFields);
-// Type * make_struct_type(Struct * sste);
-
 
 struct StructSymbolTable {
     std::vector<Struct *> entries;
@@ -222,19 +227,11 @@ struct StructSymbolTable {
     Struct * lookup(std::string name);   
 };
 
-// StructSymbolTable * make_struct_st();
-// int sst_insert(StructSymbolTable * sst, Struct * sste);
-// Struct * sst_lookup(StructSymbolTable * sst, char * name);
-
 struct Enum {
     std::string name;
     std::vector<std::string> fields;
-    // int * values; // Corresponding ints.
-    // int numFields;
     Enum(std::string name, std::vector<std::string> fields);
 };
-
-// Enum * make_enum_ste(char * name, char ** fields, int numFields);
 
 /// @brief Only one of these.
 struct EnumSymbolTable {
@@ -246,9 +243,6 @@ struct EnumSymbolTable {
     Enum * lookup(std::string name);
 };
 
-// EnumSymbolTable * make_enum_st();
-// int est_insert(EnumSymbolTable * est, Enum * este);
-// Enum * est_lookup(EnumSymbolTable * est, char * name);
 
 /// @brief We do not need an entry struct, because a forge is a function.
 /// Only one of these.
@@ -257,10 +251,6 @@ struct ForgeSymbolTable {
     int insert(Function * fste);
     Function * lookup(Type * t1, Type * t2);
 };
-
-// ForgeSymbolTable * make_forge_st();
-// int forge_insert(ForgeSymbolTable * fst, Function * fste);
-// Function * forge_lookup(ForgeSymbolTable * fst, Type * t1, Type * t2);
 
 struct Claim {
     Type * type;
@@ -271,17 +261,27 @@ struct Claim {
     Claim(Type * type, Archetypes archetype);
 };
 
-// Claim * make_claim_ste(Type * type, Archetypes archetype);
-
 struct ClaimSymbolTable {
     std::vector<Claim *> entries;
     int insert(Claim * cste);
     Claim * lookup(Type * type, Archetypes archetype);
 };
 
-// ClaimSymbolTable * make_claim_st();
-// int cst_insert(ClaimSymbolTable * cst, Claim * cste);
-// Claim * cst_lookup(ClaimSymbolTable * cst, Type * type, Archetypes archetype); 
+struct Lib {
+    std::string name;
+    std::vector<GenericInner *> types;
+    Lib(std::string name, std::vector<GenericInner *> types) {
+        this->name = name;
+        this->types = types;
+    }
+};
+
+struct LibSymbolTable {
+    std::vector<Lib *> entries;
+    int insert(Lib * fste);
+    Lib * lookup(std::string name);
+};
+
 
 /**********************************
  * Typecheck functions
@@ -307,6 +307,7 @@ extern EnumSymbolTable enum_st;
 extern ForgeSymbolTable forge_st;
 extern ClaimSymbolTable claim_st;
 extern FunctionSymbolTable func_st;
+extern LibSymbolTable lib_st;
 // extern VarSymbolTable var_st; // global variables only.
 
 extern Scope * current_scope;

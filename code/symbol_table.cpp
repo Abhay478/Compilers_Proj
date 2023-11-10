@@ -316,3 +316,28 @@ Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype) {
     }
     return NULL;
 }
+
+/*******************
+ * LIB
+ ********************/
+
+int LibSymbolTable::insert(Lib *lste) {
+    for (auto i : this->entries) {
+        if (i->name == lste->name) {
+            return 1;
+        }
+    }
+    this->entries.push_back(lste);
+
+    return 0;
+}
+
+Lib * LibSymbolTable::lookup(string name) {
+    for (auto i : this->entries) {
+        if (i->name == name) {
+            return i;
+        }
+    }
+    return NULL;
+}
+

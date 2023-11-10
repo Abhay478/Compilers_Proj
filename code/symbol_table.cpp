@@ -1,7 +1,7 @@
+//! note: All symbol table lookups should be preceded with a lookup to the global symbol table.
 #include "semantic.hpp"
 using namespace std;
 
-//! note: All symbol table lookups should be preceded with a lookup to the global symbol table.
 //! this means we don't have to put pointers to the thing everywhere. Phew.
 
 /*******************
@@ -48,25 +48,16 @@ Type *Type::pop_type() {
 int typecmp(InnerType *t1, InnerType *t2) {
     while (t1 && t2) {
         if (t1->core_type != t2->core_type) {
-            // printf("core type mismatch: %d, %d\n", t1->core_type, t2->core_type);
             return 1;
         }
+
         if (t1->core_type == STRUCT) {
-            if (isste(t1) != isste(t2)) {
-                // printf("aux mismatch: %s, %s.\n", ((AuxSSTE *)t1->aux)->sste->name.c_str(), ((AuxSSTE *)t2->aux)->sste->name.c_str());
-                return 1;
-            } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
-        }
-
-        if (t1->core_type == ENUM) {
-            if (ieste(t1) != ieste(t2)) {
-                // printf("aux mismatch: %s, %s.\n", ((AuxESTE *)t1->aux)->este->name.c_str(), ((AuxESTE *)t2->aux)->este->name.c_str());
-                // printf("aux mismatch: %p, %p.\n", t1->aux, t2->aux);
-                return 1;
-            } // This is fine, as there is only one symbol table entry for each struct or enum in the global table.
-        }
-
-        if (t1->core_type == CART) {
+            // Fine, as there is only one symbol table entry for each struct.
+            return isste(t1) != isste(t2);
+        } else if (t1->core_type == ENUM) {
+            // Fine, as there is only one symbol table entry for each enum.
+            return ieste(t1) != ieste(t2);
+        } else if (t1->core_type == CART) {
             if (t1->size != t2->size) {
                 return 1;
             }
@@ -81,9 +72,30 @@ int typecmp(InnerType *t1, InnerType *t2) {
                     return 1;
                 }
             }
+            return 0;
+        } else if (t1->core_type == GEN) {
+            if (igste(t1) != igste(t2)) {
+                return 1;
+            }
+            auto v1 = &((AuxGSTE *)t1->aux)->types;
+            auto v2 = &((AuxGSTE *)t1->aux)->types;
+
+            for (int i = 0; i < v1->size(); i++) {
+                auto v1i = (*v1)[i];
+                auto v2i = (*v2)[i];
+                if (v1i->is_int) {
+                    return v1i->lit_int != v2i->lit_int;
+                } else {
+                    return typecmp(v1i->type, v2i->type);
+                }
+            }
+        } else if (t1->core_type == BUF || t1->core_type == GEN) {
+            t1 = t1->next;
+            t2 = t2->next;
+        } else {
+            // All other types are primitive
+            return 0;
         }
-        t1 = t1->next;
-        t2 = t2->next;
     }
     if (t1 || t2) {
         return 1;

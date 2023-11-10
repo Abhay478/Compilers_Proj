@@ -53,7 +53,12 @@ Variant::Variant(std::string tag, std::string val, Enum * este) {
     this->este = este;
 }
 
-GenericInner::GenericInner(void * val, int which) {
-    this->val = val;
-    this->which = which;
+GenericInner::GenericInner(int lit_int) {
+    this->is_int = true;
+    this->lit_int = lit_int;
+}
+
+GenericInner::GenericInner(Type * type) {
+    this->is_int = false;
+    this->type = type;
 }

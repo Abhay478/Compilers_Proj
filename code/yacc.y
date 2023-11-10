@@ -160,39 +160,61 @@ statement       : declaration ';'
                 ;
 
 generic         : IDENT '<' type_args '>' {
-                    Generic * l = gen_st.lookup(*$1);
-                    if(!l) {
-                        yyerror("No such type.");
+                    Generic * gste = gen_st.lookup(*$1);
+                    if(!gste) {
+                        string err = "Generic type " GREEN_ESCAPE + *$1 + RESET_ESCAPE " not found.";
+                        yyerror(err.c_str());
                         break;
                     }
                     if(!$3) {
+                        yyerror("Unknown compile error (allocation failed?)");
                         $$ = NULL;
                         break;
                     }
-                    if(l->types.size() != $3->size()) {
+                    if(gste->types.size() != $3->size()) {
                         yyerror("Generic type has wrong number of parameters.");
                         break;
                     }
+                    auto arr = vector<GenericInner *>();
+                    bool err = false;
                     for(int i = 0; i < $3->size(); i++) {
-                        auto x = l->types[i];
-                        if((*$3)[i]->which != x->which) {
-                            yyerror("Wrong parameter type.");
-                            break;
-                        } 
-                        if(!(*$3)[i]->which && typecmp((Type *)((*$3)[i]->val), (Type *)(x->val))) {
-                            yyerror("Wrong parameter type.");
-                            break;
+                        GenericInner * t = (*$3)[i];
+                        if (gste->types[i].is_int) {
+                            if (!t->is_int) {
+                                yyerror("Expected integer generic parameter, found type.");
+                                err = true;
+                                break;
+                            }
+                            arr.push_back(new GenericInner(t->lit_int));
+                        } else {
+                            if (t->is_int) {
+                                yyerror("Expected type generic parameter, found integer.");
+                                err = true;
+                                break;
+                            }
+
+                            Archetypes a = gste->types[i].archetype;
+                            Type * t1 = (*$3)[i]->type;
+                            if (!claim_st.lookup(t1, a)) {
+                                yyerror("Type does not claim archetype.");
+                                err = true;
+                                break;
+                            }
+                            arr.push_back(new GenericInner(t->type));
                         }
                     }
+                    if (err) {
+                        $$ = NULL;
+                        break;
+                    }
+
                     $$ = new Type();
                     /**
                      * New rule: Only the last entry of a generic will be considered for the stack.
                      * That way, generic over one type only, and position also defined.
                      * We do not need to check this, because we will be hardcoding all the generics.
                     */
-                    auto up = new AuxGENT(l);
-                    $$->head = ((Type *)l->types.back()->val)->head;
-                    // Maybe the aux is redundant here, as the inner type and the dimension is being stored elsewhere? Nah.
+                    auto up = new AuxGSTE(gste, arr);
                     $$->push_type(GEN, 0, 0, up); 
                 }
                 ;
@@ -206,16 +228,16 @@ type_args       : type_args ',' type_arg {
                     $$ = arr;
                 }
                 | epsilon { 
-                    vector<GenericInner *> *arr = new vector<GenericInner *>(0, NULL);
+                    vector<GenericInner *> *arr = new vector<GenericInner *>;
                     $$ = arr;
                 }
                 ;
 
 type_arg        : type {
-                    $$ = new GenericInner((void *)$1, 0);
+                    $$ = new GenericInner($1);
                 }
                 | LIT_INT {
-                    $$ = new GenericInner((void *)(intptr_t)$1, 1);
+                    $$ = new GenericInner($1);
                 }
                 ;
 
@@ -244,7 +266,10 @@ type_var        : IDENT ':' type {
                     if (current_scope->insert(out)) {
                         string err = "Variable " + *$1 + " already defined.";
                         yyerror(err.c_str());
-                    } else $$ = out;
+                        $$ = NULL;
+                    } else {
+                        $$ = out;
+                    }
                 }
                 ;
 
@@ -692,7 +717,8 @@ array_access    : expression array_index {
                         break;
                     }
                     if ($2 > 1) {
-                        yyerror("Buf index must contain exactly one dimension.");
+                        yyerror("Buf index must contain exactly one dimension.\n" BLUE_ESCAPE
+                                "    Note" RESET_ESCAPE ": For `a: [[T]]`, use a[i][j] syntax.");
                         $$ = NULL;
                         break;
                     }
@@ -707,13 +733,17 @@ array_decl      : '[' opt_expr_list ']' {
                         if(typecmp(t, (*$2)[i])) {
                             yyerror("Array elements must have the same type.");
                             $$ = NULL;
-                            break;
+                            goto array_decl_break;
                         }
                     }
-                    auto in = new Type();
-                    in->head = t->head;
-                    in->push_type(BUF, 0, 1, NULL);
-                    $$ = new Expr(in, false);
+                    {
+                        auto in = new Type();
+                        in->head = t->head;
+                        in->push_type(BUF, 0, 1, NULL);
+                        $$ = new Expr(in, false);
+                    }
+                array_decl_break:
+                    break;
                 }
                 | '[' expression ';' expression ']' {
                     if(!$4 || !$2) {
@@ -1061,20 +1091,16 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list
                 ;
 
-forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type_var ')' {
-                    if(!$8) {
+forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' type_var ')' {
+                    if (!$9) {
                         yyerror("Forge must have a return type.");
                         break;
                     }
-                    VarSymbolTable * params = new VarSymbolTable(vector<Var *>(current_scope->vars->entries));
-                    params->entries.pop_back();
-                    Function * entry = new Function("", params, $8->type);
-
-                    // Beware inconsistencies.
-
+                    VarSymbolTable * params = current_scope->parent->vars;
+                    Function * entry = new Function("", params, $9->type);
                     forge_st.insert(entry);
                     in_forg = 1;
-                } body end_table {in_forg = 0;}
+                } body end_table end_table {in_forg = 0;}
                 ;
 
 cart            : '(' type ',' ')' {

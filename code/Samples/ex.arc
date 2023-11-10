@@ -3,19 +3,26 @@ enum Parity {
   Odd
 }
 
-forge (a: u8) as (Parity) {
-  if (a % 2 == 0) {
-    return Parity::Even;
+forge (a: u8) as (b: [[u8]]) {
+  b[0][0] = a;
+}
+
+forge (a: u8) as (b: Parity) {
+  if (a > 1) {
+    b = (a - 2) as (Parity);
+  }
+  if (a == 1) {
+    b = Parity::Odd;
   } else {
-    return Parity::Odd;
+    b = Parity::Even;
   }
 }
 
-forge (a: u8, b: u8) as (Parity) {
+forge (a: u8, b: u8) as (c: Parity) {
   if (a % 2 == 0 && b % 2 == 0) {
-    return Parity::Even;
+    c = Parity::Even;
   } else {
-    return Parity::Odd;
+    c = Parity::Odd;
   }
 }
 

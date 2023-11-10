@@ -24,6 +24,9 @@ struct Struct;
 struct Function;
 struct Generic;
 
+struct GenericInner;
+struct Type;
+
 /***********************************************
  * Structs and functions for %union and yylval.
 ************************************************/
@@ -61,12 +64,6 @@ struct Variant {
     Variant(std::string tag, std::string val, Enum * este);
 };
 
-struct GenericInner {
-    void * val;
-    int which;
-    GenericInner(void * val, int which);
-};
-
 PDT get_pdt(char * s);
 
 /***********************************************
@@ -97,7 +94,6 @@ enum Archetypes {
 };
 
 struct Aux {
-    Aux() {}
 };
 
 struct AuxSSTE : public Aux {
@@ -115,11 +111,23 @@ struct AuxCART : public Aux {
     AuxCART(std::vector<InnerType *> cart);
 };
 
-struct AuxGENT : public Aux {
-    Generic * gent; 
-    AuxGENT(Generic * gent) {
-        this->gent = gent;
+struct AuxGSTE : public Aux {
+    Generic * gste; 
+    std::vector<GenericInner *> types;
+    AuxGSTE(Generic * gste, std::vector<GenericInner *> types) {
+        this->gste = gste;
+        this->types = types;
     };
+};
+
+struct GenericInner {
+    bool is_int;
+    union {
+        int lit_int;
+        Type *type;
+    };
+    GenericInner(int lit_int);
+    GenericInner(Type *type);
 };
 
 
@@ -134,6 +142,22 @@ struct InnerType {
     int size; 
     /// @brief For structs, enums, LIBRARY TYPES and cartesian products.
     Aux * aux; 
+
+    // TODO: replace aux with this.
+    union {
+        // STUCT
+        Struct *sste;
+        // ENUM
+        Enum * este;
+        // CART
+        std::vector<InnerType *> cart;
+        // GEN
+        struct {
+            Generic * gste;
+            std::vector<InnerType *> *types;
+        };
+    };
+
     /// @brief For buf, ref, and generics.
     struct InnerType * next; 
     InnerType(VarTypes core_type, int offset, int size);
@@ -281,10 +305,15 @@ struct ClaimSymbolTable {
     Claim * lookup(Type * type, Archetypes archetype);
 };
 
+struct GenericArg {
+    bool is_int;
+    Archetypes archetype;
+};
+
 struct Generic {
     std::string name;
-    std::vector<GenericInner *> types;
-    Generic(std::string name, std::vector<GenericInner *> types) {
+    std::vector<GenericArg> types;
+    Generic(std::string name, std::vector<GenericArg> types) {
         this->name = name;
         this->types = types;
     }
@@ -333,8 +362,11 @@ extern Scope * current_scope;
 
 #define este(t) (((AuxESTE *)(t)->head->aux)->este)
 #define sste(t) (((AuxSSTE *)(t)->head->aux)->sste)
+#define gste(t) (((AuxGSTE *)(t)->head->aux)->gste)
+#define cart(t) (((AuxCART *)(t)->head->aux)->cart)
+
 #define ieste(t) (((AuxESTE *)(t)->aux)->este)
 #define isste(t) (((AuxSSTE *)(t)->aux)->sste)
-#define cart(t) (((AuxCART *)(t)->head->aux)->cart)
+#define igste(t) (((AuxGSTE *)(t)->aux)->gste)
 #define icart(t) (((AuxCART *)(t)->aux)->cart)
 #endif

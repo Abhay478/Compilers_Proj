@@ -56,6 +56,8 @@ fn main() {
     let b: [u64] = fib(30);
     // print(b);
 
+    while(b[0] > "p") {}
+
     let a: two_tup = [1, 2] as (two_tup);
     // print(a);
     let tup: (u64, u64) = a as ((u64, u64));

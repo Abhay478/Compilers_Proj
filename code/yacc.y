@@ -164,6 +164,10 @@ generic         : IDENT '<' type_args '>' {
                         yyerror("No such type.");
                         break;
                     }
+                    if(!$3) {
+                        $$ = NULL;
+                        break;
+                    }
                     if(l->types.size() != $3->size()) {
                         yyerror("Generic type has wrong number of parameters.");
                         break;
@@ -223,6 +227,9 @@ decl_list       : decl_item
 
 decl_item       : type_var
                 | type_var '=' expression {
+                    if(!$1) {
+                        break;
+                    }
                     if (!current_scope->parent) {
                         yyerror("Cannot assign to global variable. (use main)");
                     } else if (typecmp($1->type, $3)) {
@@ -248,7 +255,7 @@ type            : PRIMITIVE_DTYPE {
                 }
                 | '[' type ']' {
                     Type * t = new Type();
-                    t->head = $2->head;
+                    if($2) t->head = $2->head; // Even if inner type is invalid, buffer is propagated. There may be further type errors independent of the inner type.
                     t->push_type(BUF, 0, 1, NULL);
                     $$ = t;
                 }
@@ -274,6 +281,10 @@ type            : PRIMITIVE_DTYPE {
                 }
                 | generic 
                 | '&' type {
+                    if(!$2) {
+                        $$ = NULL;
+                        break;
+                    }
                     Type * t = new Type();
                     t->head = $2->head; // Reference to this.
                     t->push_type(REF, 0, 1, NULL); // Push the reference.
@@ -686,6 +697,10 @@ array_decl      : '[' opt_expr_list ']' {
                     $$ = new Expr(in, false);
                 }
                 | '[' expression ';' expression ']' {
+                    if(!$4 || !$2) {
+                        $$ = NULL;
+                        break;
+                    }
                     if($4->core() != INT) {
                         yyerror("Array size must be an integer.");
                     }
@@ -708,6 +723,10 @@ array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
+                    if(!$2 || !$4) {
+                        $$ = 0;
+                        break;
+                    }
                     if($2->core() != INT || $4->core() != INT) {
                         yyerror("Slice operands must be integers.");
                     }
@@ -716,7 +735,11 @@ array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead
                 ;
 
 conditional     : KW_IF '(' expression {
-                    if($3 && $3->core() != BOOL) yyerror("predicate must be boolean");
+                    if(!$3) {
+                        yyerror("Empty predicate not allowed.");
+                        break;
+                    }
+                    if($3->core() != BOOL) yyerror("predicate must be boolean");
                 } ')' {in_cond = 1;} if_body 
                 ;
 
@@ -740,6 +763,10 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop++;} body {in_loop--;}
                 ;
 
 loop_cond       : expression {
+                    if(!$1) {
+                        yyerror("Empty predicate not allowed.");
+                        break;
+                    }
                     if($1->core() != BOOL) 
                         yyerror("Loop condition has to be boolean.");
 
@@ -752,8 +779,18 @@ loop_mut        : unary_operation
                 | epsilon
                 ;
 
-switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks KW_DEFAULT ARROW body '}'
-                | KW_SWITCH '(' expression ')' '{' sc_blocks '}'
+switch_case     : KW_SWITCH '(' expression {
+                    if(!$3) {
+                        yyerror("Empty predicate not allowed.");
+                        break;
+                    }
+                } ')' '{' sc_blocks KW_DEFAULT ARROW body '}'
+                | KW_SWITCH '(' expression ')' {
+                    if(!$3) {
+                        yyerror("Empty predicate nont allowed.");
+                        break;
+                    }
+                }'{' sc_blocks '}'
                 ;
 
 sc_blocks       : sc_blocks KW_CASE expression ARROW body {
@@ -950,11 +987,13 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                 }
                 ;
 function_header :  fh_stub ':' type {
-                    $1->return_type = $3;
-                    func_st.insert($1);
+                    if($1) {
+                        $1->return_type = $3;
+                        func_st.insert($1);
+                    }
                 }
                 | fh_stub {
-                    func_st.insert($1);
+                    if($1) func_st.insert($1);
                 }// return type is void
                 ;
 
@@ -999,6 +1038,10 @@ variant_list    : ident_list
                 ;
 
 forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type_var ')' {
+                    if(!$8) {
+                        yyerror("Forge must have a return type.");
+                        break;
+                    }
                     VarSymbolTable * params = new VarSymbolTable(vector<Var *>(current_scope->vars->entries));
                     params->entries.pop_back();
                     Function * entry = new Function("", params, $8->type);
@@ -1011,12 +1054,20 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type_var ')'
                 ;
 
 cart            : '(' type ',' ')' {
+                    if(!$2) {
+                        $$ = NULL;
+                        break;
+                    }
                     Type * t = new Type();
                     vector<InnerType *> arr(1, $2->head);
                     t->push_type(CART, 0, 1, new AuxCART(arr));
                     $$ = t;
                 }
                 | '(' type ',' type_list ')' {
+                    if(!$2 || !$4) {
+                        $$ = NULL;
+                        break;
+                    }
                     Type * t = new Type();
                     vector<InnerType *> arr($4->size() + 1, NULL);
                     arr[0] = $2->head;

@@ -6,9 +6,10 @@
     void yyerror(const char* s);
     FILE * token_stream;
     // flags
-    int in_func = 0;
+    Type * current_func = NULL;
     int in_loop = 0;
     int in_cond = 0;
+    int in_forg = 0;
     Scope * current_scope = NULL;
     Struct * method_of = NULL;
     Claim * current_claim = NULL;
@@ -149,7 +150,7 @@ statement       : declaration ';'
                 | assignment ';'
                 | unary_operation ';'
                 | call ';' // check if exists.
-                | return_stmt {if(!in_func) yyerror("Returning outside function.");}';' 
+                | return_stmt ';' 
                 | conditional
                 | switch_case
                 | loop_stmt
@@ -457,11 +458,11 @@ expression      : '(' expression ')' {
                             break;
                         }
 
-                        // both types are different, check for forge
-
-                        // TODO: forge check should change
-                        Function * temp = forge_st.lookup($1, $3);
-                        Function * fste = temp ? temp : forge_st.lookup($3, $1);
+                        // both types are different, check for forge between innards.
+                        auto f1 = $1->pop_type();
+                        auto f2 = $3->pop_type(); 
+                        Function * temp = forge_st.lookup(f1, f2);
+                        Function * fste = temp ? temp : forge_st.lookup(f2, f1);
                         if(!fste){
                             yyerror("Use of " RED_ESCAPE "@" RESET_ESCAPE " over incompatible spaces.");
                         }
@@ -564,8 +565,26 @@ cart_value_list_: cart_value_list_ ',' expression {
                 }
                 ;
 
-return_stmt     : KW_RETURN expression // Check if compatible with current function return type.
-                | KW_RETURN
+return_stmt     : KW_RETURN expression {
+                    if(!current_func) {
+                        yyerror("Returning outside function.");
+                    } else if(!current_func->head) {
+                        yyerror("Returning value from void function.");
+                    }
+                    else if(typecmp(current_func, $2)) {
+                        yyerror("Type mismatch in return.");
+                    }
+                } // Check if compatible with current function return type.
+                | KW_RETURN {
+                    if(in_forg) {
+                        break;
+                    }
+                    if(!current_func) {
+                        yyerror("Returning outside function.");
+                    } else if(current_func->head) {
+                        yyerror("Returning void from non-void function.");
+                    }
+                }
                 ;
 
 call            : IDENT '(' opt_expr_list ')' {
@@ -764,7 +783,6 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop++;} body {in_loop--;}
 
 loop_cond       : expression {
                     if(!$1) {
-                        yyerror("Empty predicate not allowed.");
                         break;
                     }
                     if($1->core() != BOOL) 
@@ -779,12 +797,15 @@ loop_mut        : unary_operation
                 | epsilon
                 ;
 
-switch_case     : KW_SWITCH '(' expression {
-                    if(!$3) {
-                        yyerror("Empty predicate not allowed.");
-                        break;
+switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks sc_default '}' {
+                    if(!$3) break;
+                    for(auto i: *$6) {
+                        if(typecmp($3, i)) {
+                            yyerror("Case type mismatch.");
+                            break;
+                        }
                     }
-                } ')' '{' sc_blocks sc_default '}'
+                }
                 ;
 sc_default      : KW_DEFAULT ARROW body
                 | epsilon
@@ -792,6 +813,10 @@ sc_default      : KW_DEFAULT ARROW body
 
 sc_blocks       : sc_blocks KW_CASE expression ARROW body {
                     $$ = $1;
+                    if(!$3) {
+                        yyerror("Empty predicate not allowed.");
+                        break;
+                    }
                     $$->push_back($3);
                 }
                 | epsilon {
@@ -956,7 +981,7 @@ inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
                 } ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
                 ; // LIT_INT must be 1
 
-function        : start_table function_header {in_func = 1;} body end_table {method_of = NULL; in_func = 0;}
+function        : start_table function_header body end_table {method_of = NULL; current_func = NULL;}
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
@@ -988,9 +1013,11 @@ function_header :  fh_stub ':' type {
                         $1->return_type = $3;
                         func_st.insert($1);
                     }
+                    current_func = $3;
                 }
                 | fh_stub {
                     if($1) func_st.insert($1);
+                    current_func = new Type(); // Not NULL
                 }// return type is void
                 ;
 
@@ -1046,8 +1073,8 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS '(' type_var ')'
                     // Beware inconsistencies.
 
                     forge_st.insert(entry);
-                    in_func = 1;
-                } body end_table {in_func = 0;}
+                    in_forg = 1;
+                } body end_table {in_forg = 0;}
                 ;
 
 cart            : '(' type ',' ')' {

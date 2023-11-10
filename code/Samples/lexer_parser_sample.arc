@@ -8,6 +8,9 @@ fn fib(n: u32) : [u64] {
         b = c;
         out += [c];
     }
+    return;
+
+    return 3;
 
     return out;
 }
@@ -36,6 +39,7 @@ claim two_tup is Group {
 
 forge (a: two_tup) as (b: (u64, u64)) {
     b = (a.val, a.aux);
+    return;
     print("We are forging here.");
 }
 

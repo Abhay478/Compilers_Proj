@@ -37,7 +37,7 @@ static VarSymbolTable *make_params(vector<Var *> params) {
 ///     panic(str) -> void
 static void init_func_st() {
     auto print_params = make_params({new Var("str", make_type(PDT_STR))});
-    auto print = new Function("print", print_params, NULL);
+    auto print = new Function("print", print_params, make_type(PDT_VOID));
     func_st.insert(print);
 
     auto panic_params = make_params({new Var("msg", make_type(PDT_STR))});

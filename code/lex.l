@@ -5,8 +5,13 @@
     #include <stdlib.h>
     #include <string.h>
     #include "y.tab.hpp"
-    #define seq_token(a) fprintf(token_stream, "%s: %s\n", (a), yytext)
+    //#define seq_token(a) fprintf(token_stream, "%s: %s\n", (a), yytext)
     extern FILE * token_stream;
+
+    void seq_token(const char * type) {
+        fprintf(token_stream, "%s: %s\n", type, yytext);
+        fflush(token_stream);
+    }
 %}
 dig [0-9]
 num (-?{dig}+)

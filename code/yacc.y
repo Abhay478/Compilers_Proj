@@ -65,14 +65,15 @@
 %token <lit_str> LIT_STR 
 %token <lit_char> LIT_CHAR 
 
-%token rel_op KW_TRUE KW_FALSE ASSIGN_OP
+%token CMP_OP EQ_OP KW_TRUE KW_FALSE ASSIGN_OP
 
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
 %left OR
 %left AND
 %left KW_IN
-%left rel_op '>' '<'
+%left CMP_OP '>' '<'
+%left EQ_OP
 %left '+' '-' 
 %left '*' '/' '%' 
 %left '@'
@@ -127,7 +128,8 @@
 program         : start_table P end_table
 
 P               : epsilon
-                | P declaration
+                | P declaration ';'
+                | P ';'
                 | P function
                 | P struct
                 | P forge
@@ -515,9 +517,10 @@ expression      : '(' expression ')' {
                 | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); }
                 | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
                 | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
-                | expression '>' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
-                | expression '<' expression    { $$ = rel_op_type_check_arithmetic($1, $3); }
-                | expression rel_op expression { $$ = rel_op_type_check_arithmetic($1, $3); }
+                | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); }
+                | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); }
+                | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); }
+                | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); }
                 | expression KW_IN expression  { $$ = in_type_check($1, $3); }
                 | expression AND expression    { $$ = and_or_type_check($1, $3); }
                 | expression OR expression     { $$ = and_or_type_check($1, $3); }
@@ -792,7 +795,6 @@ array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead
 
 conditional     : KW_IF '(' expression {
                     if(!$3) {
-                        yyerror("Empty predicate not allowed.");
                         break;
                     }
                     if($3->core() != BOOL) yyerror("predicate must be boolean");
@@ -851,7 +853,6 @@ sc_default      : KW_DEFAULT ARROW body
 sc_blocks       : sc_blocks KW_CASE expression ARROW body {
                     $$ = $1;
                     if(!$3) {
-                        yyerror("Empty predicate not allowed.");
                         break;
                     }
                     $$->push_back($3);
@@ -915,12 +916,20 @@ archetype_claim : claim_stub '{' type_def {
                         if(!entry1 || !entry2) yyerror("Function not found in symbol table.");
                         else {
                             if(typecmp(entry1->return_type, get_param_type(entry2)) || typecmp(entry2->return_type, get_param_type(entry1))) {
-                                yyerror("Functions are not inverses.");
+                                yyerror("Function types do not match (should be inverses)");
+                                break;
                             }
-                            else {
-                                // Claim * claim = new Claim($1.type, $1.archetype);
-                                claim_st.insert($1);
+                            if (typecmp(get_param_type(entry1), $1->type)) {
+                                yyerror("Function type does not match claim type.");
+                                break;
                             }
+                            Type *other = entry2->return_type;
+                            // check if other claims claim_stub->archetype
+                            if(!claim_st.lookup(other, $1->archetype)) {
+                                yyerror("Type being claimed via function does not claim archetype.");
+                                break;
+                            }
+                            claim_st.insert($1);
                         }
                     }
 

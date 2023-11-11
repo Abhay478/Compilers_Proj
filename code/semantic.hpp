@@ -341,7 +341,8 @@ Expr * div_type_check_arithmetic(Expr *t1, Expr *t2);
 Expr * modulus_type_check_arithmetic(Expr *t1, Expr *t2);
 Expr * add_sub_type_check_arithmetic(Expr *t1, Expr *t2);
 Expr * and_or_type_check(Expr *t1, Expr *t2);
-Expr * rel_op_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * cmp_op_type_check_arithmetic(Expr *t1, Expr *t2);
+Expr * eq_op_type_check_arithmetic(Expr *t1, Expr *t2);
 Expr * in_type_check(Expr *t1, Expr *t2);
 VarTypes convert_constType_to_varType(CType t);
 

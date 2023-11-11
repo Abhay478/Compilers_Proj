@@ -9,7 +9,7 @@
     extern FILE * token_stream;
 
     void seq_token(const char * type) {
-        fprintf(token_stream, "%s: %s\n", type, yytext);
+        fprintf(token_stream, "%d %s: %s\n", yylineno, type, yytext);
         fflush(token_stream);
     }
 %}
@@ -20,7 +20,8 @@ id [[:alpha:]_][[:alnum:]_]*
 str_c \"([^"]|(\\\"))*\"
 char_c \'([^\\']|\\.)\'
 
-rel_op (==|!=|<=|>=)
+cmp_op (<=|>=)
+eq_op (==|!=)
 spl [\(\)\{\}\[\]]
 arith_op (\+|\-|\*|\/|\%)
 assign_op {arith_op}=
@@ -75,6 +76,7 @@ claim       { seq_token("reserved keyword"); return KW_CLAIM; }
 forge       { seq_token("reserved keyword"); return KW_FORGE; }
 as          { seq_token("reserved keyword"); return KW_AS; }
 is          { seq_token("reserved keyword"); return KW_IS; }
+with        { seq_token("reserved keyword"); return KW_WITH; }
 struct      { seq_token("reserved keyword"); return KW_STRUCT; }
 enum        { seq_token("reserved keyword"); return KW_ENUM; }
 true        { seq_token("reserved keyword"); return KW_TRUE; }
@@ -101,7 +103,8 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
 "=>"        { seq_token("operator"); return ARROW; }
 "::"        { seq_token("operator"); return VARIANT; }
 ".."        { seq_token("operator"); return SLICE; }
-{rel_op}    { seq_token("operator"); return rel_op; }
+{cmp_op}    { seq_token("operator"); return CMP_OP; }
+{eq_op}     { seq_token("operator"); return EQ_OP; }
 "&&"        { seq_token("operator"); return AND; }
 "||"        { seq_token("operator"); return OR; }
 

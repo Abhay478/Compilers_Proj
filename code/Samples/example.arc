@@ -4,41 +4,45 @@ enum Bar {
     Two
 }
 
-// Noting the verbosity of the below code, we are highly inclined to implement switch-case as well.
+let Z0: Cyclic<3>;
+let Z1: Cyclic<3>;
+let Z2: Cyclic<3>;
+
 forge (a: Cyclic<3>) as (b: Bar) {
-    if(a == Bar::Zero) {
-        b = 0;
+    let a: u8 = a as (u8);
+    if(a == 0) {
+        b = Bar::Zero;
     }
-    else if(a == Bar::One) {
-        b = 1;
+    if(a == 1) {
+        b = Bar::One;
     }
     else {
-        b = 2;
+        b = Bar::Two;
     }
 }
 
-forge Bar as (a: Cyclic<3>) {
-    if(a == 0) {
-        return Bar::Zero;
+forge (a: Bar) as (b: Cyclic<3>) {
+    if(a == Bar::Zero) {
+        b = Z0;
     }
-    if(a == 1) {
-        return Bar::One;
+    else if(a == Bar::One) {
+        b = Z1;
     }
     else {
-        return Bar::Two;
+        b = Z2;
     }
 }
 
 claim Bar is Group {
-    (x + y) => {
-        return (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
+    (c = x + y) => {
+        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
     }
-    0 => {
-        return Bar::Zero;
+    (c = 0) => {
+        c = Bar::Zero;
     }
 
-    -x => {
-        return (- (x as Cyclic<3>)) as Bar;
+    (c = -x) => {
+        c = (- (x as (Cyclic<3>))) as (Bar);
     }
 }
 
@@ -47,32 +51,33 @@ struct Foo {
     var: Bar
 }
 
-forge Foo(a: u8, var: Bar) {
-    let out: Foo;
+forge (a: u8) as (out: Foo) {
+    out.a = a;
+    out.var = Bar::Zero;
+}
+
+forge (a: u8, var: Bar) as (out: Foo) {
     out.a = a;
     out.var = var;
-    return out;
 }
 
 claim Foo is Group {
-    (x + y) => {
-        let out: Foo;
+    (out = x + y) => {
         out.a = x.a + y.a;
         out.var = x.var + y.var;
-        return out;
     }
 
-    (0) => {
-        return Foo(0, Zero)
+    (c = 0) => {
+        c = (0, Bar::Zero) as (Foo);
     }
 }
 
 fn main() {
     print("Hello world.\n");
-    let q: Foo = Foo(0);
-    let qq: Foo = Foo(1);
+    let q: Foo = 0 as (Foo);
+    let qq: Foo = 1 as (Foo);
 
     let qqq: Foo = q + qq;
 
-    print(qqq);
+    print(qqq as (str));
 }

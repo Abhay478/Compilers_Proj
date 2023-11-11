@@ -113,10 +113,12 @@ int typecmp(InnerType *t1, InnerType *t2) {
 }
 
 int typecmp(Type *t1, Type *t2, bool ignore_gen) {
+    if (!t1 || !t2) return 0;
     return typecmp(t1->head, t2->head, ignore_gen);
 }
 
 int typecmp(Type *t1, Type *t2) {
+    if (!t1 || !t2) return 0;
     return typecmp(t1->head, t2->head, false);
 }
 
@@ -275,7 +277,7 @@ Enum *EnumSymbolTable::lookup(string name) {
 
 int ForgeSymbolTable::insert(Function *fste) {
     for (auto i : this->inner.entries) {
-        if (!typecmp(get_param_type(i), get_param_type(fste)) && !typecmp(i->return_type, fste->return_type)) {
+        if (!typecmp(get_param_type(i), get_param_type(fste), true) && !typecmp(i->return_type, fste->return_type, true)) {
             return 1;
         }
     }
@@ -305,7 +307,7 @@ Function * ForgeSymbolTable::lookup(Type *t1, Type *t2) {
     FunctionSymbolTable *f = &this->inner;
     for (auto i : f->entries) {
         Type *t = get_param_type(i);
-        if (!typecmp(t, t1) && !typecmp(i->return_type, t2)) {
+        if (!typecmp(t, t1, true) && !typecmp(i->return_type, t2, true)) {
             return i; // A forge !
         }
     }

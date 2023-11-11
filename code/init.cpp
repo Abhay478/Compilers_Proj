@@ -33,6 +33,29 @@ static VarSymbolTable *make_params(vector<Var *> params) {
     return vst;
 }
 
+/// only used within this file, so making some assumptions
+static Type *get_type(const char *name) {
+    auto g = gen_st.lookup(name);
+    if (g != NULL) {
+        Type *t = new Type();
+        t->push_type(GEN, 0, 0, new Aux(g, NULL));
+        return t;
+    }
+
+    auto s = struct_st.lookup(name);
+    if (s != NULL) {
+        return s->make_struct_type();
+    }
+
+    return NULL;
+}
+
+static Type *make_cart(vector<InnerType *> types) {
+    Type *t = new Type();
+    t->push_type(CART, 0, 0, new Aux(new vector<InnerType *>(types)));
+    return t;
+}
+
 ///     print(str) -> void
 ///     panic(str) -> void
 static void init_func_st() {
@@ -83,23 +106,6 @@ static void init_struct_st() {
     }
 }
 
-/// only used within this file, so making some assumptions
-static Type *get_type(const char *name) {
-    auto g = gen_st.lookup(name);
-    if (g != NULL) {
-        Type *t = new Type();
-        t->push_type(GEN, 0, 0, new Aux(g, NULL));
-        return t;
-    }
-
-    auto s = struct_st.lookup(name);
-    if (s != NULL) {
-        return s->make_struct_type();
-    }
-
-    return NULL;
-}
-
 ///   groups:
 ///     Dihedral<n: int>
 ///     Symmetric<n: int>
@@ -136,9 +142,42 @@ static void init_claim_st() {
     }
 }
 
+static void init_forge_st() {
+    //auto print_params = make_params({new Var("str", make_type(PDT_STR))});
+    //auto print = new Function("print", print_params, make_type(PDT_VOID));
+    //func_st.insert(print);
+
+    // forge int as str
+    auto forge_int_str_params = make_params({new Var("n", make_type(I32))});
+    auto forge_int_str = new Function("", forge_int_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_int_str);
+
+    // forge (int, int) as BigRational
+    auto forge_int_int_big_rational_params = make_params({new Var("n", make_type(I32)), new Var("d", make_type(I32))});
+    auto forge_int_int_big_rational = new Function("", forge_int_int_big_rational_params, get_type("BigRational"));
+    forge_st.insert(forge_int_int_big_rational);
+
+    // forge BigRational as (int, int)
+    auto forge_big_rational_int_int_params = make_params({new Var("r", get_type("BigRational"))});
+    auto ret = make_cart({make_type(I32)->head, make_type(I32)->head});
+    auto forge_big_rational_int_int = new Function("", forge_big_rational_int_int_params, ret);
+    forge_st.insert(forge_big_rational_int_int);
+
+    // forge int as Cyclic
+    auto forge_int_cyclic_params = make_params({new Var("n", make_type(I32))});
+    auto forge_int_cyclic = new Function("", forge_int_cyclic_params, get_type("Cyclic"));
+    forge_st.insert(forge_int_cyclic);
+
+    // forge Cyclic as int
+    auto forge_cyclic_int_params = make_params({new Var("c", get_type("Cyclic"))});
+    auto forge_cyclic_int = new Function("", forge_cyclic_int_params, make_type(I32));
+    forge_st.insert(forge_cyclic_int);
+}
+
 void init_symbol_tables() {
     init_func_st();
     init_gen_st();
     init_struct_st();
     init_claim_st();
+    init_forge_st();
 }

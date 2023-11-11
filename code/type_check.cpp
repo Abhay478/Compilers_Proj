@@ -84,7 +84,7 @@ Expr *modulus_type_check_arithmetic(Expr *t1, Expr *t2) {
 }
 
 // both types must be int or float
-Expr *rel_op_type_check_arithmetic(Expr *t1, Expr *t2) {
+Expr *cmp_op_type_check_arithmetic(Expr *t1, Expr *t2) {
     if (!t1 || !t2) return NULL;
     VarTypes t1_ = t1->core();
     VarTypes t2_ = t2->core();
@@ -97,6 +97,29 @@ Expr *rel_op_type_check_arithmetic(Expr *t1, Expr *t2) {
     Type *t = new Type();
     t->push_type(BOOL, 0, 0, NULL);
     return new Expr(t, false);
+}
+
+// both types must be int or float
+// OR same type
+Expr *eq_op_type_check_arithmetic(Expr *t1, Expr *t2) {
+    if (!t1 || !t2) return NULL;
+
+    Expr *t = int_float_check(t1, t2);
+    if (t) {
+        delete t;
+        Type *t = new Type();
+        t->push_type(BOOL, 0, 0, NULL);
+        return new Expr(t, false);
+    }
+
+    if (typecmp(t1, t2) == 0) {
+        Type *t = new Type();
+        t->push_type(BOOL, 0, 0, NULL);
+        return new Expr(t, false);
+    }
+
+    yyerror("Equality operator requires both operands to be the same type");
+    return NULL;
 }
 
 // both types must be int or float

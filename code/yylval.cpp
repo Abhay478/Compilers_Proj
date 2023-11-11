@@ -44,6 +44,8 @@ VarTypes get_vt(PDT pdt) {
             return BOOL;
         case PDT_STR:
             return STR;
+        case PDT_VOID:
+            return VOID;
     }
 }
 

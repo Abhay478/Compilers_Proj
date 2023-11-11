@@ -44,6 +44,7 @@ enum PDT {
     PDT_CHAR,
     PDT_BOOL,
     PDT_STR,
+    PDT_VOID,
 };
 
 enum CType {
@@ -71,6 +72,7 @@ PDT get_pdt(char * s);
 ************************************************/
 
 enum VarTypes {
+    VOID,
     INT,
     FLOAT,
     BOOL,
@@ -92,33 +94,6 @@ enum Archetypes {
     FIELD,
     SPACE
 };
-
-/* struct Aux {
-};
-
-struct AuxSSTE : public Aux {
-    Struct * sste;
-    AuxSSTE(Struct * sste);
-};
-
-struct AuxESTE : public Aux {
-    Enum * este;
-    AuxESTE(Enum * este);
-};
-
-struct AuxCART : public Aux {
-    std::vector<InnerType *> cart;
-    AuxCART(std::vector<InnerType *> cart);
-};
-
-struct AuxGSTE : public Aux {
-    Generic * gste; 
-    std::vector<GenericInner *> types;
-    AuxGSTE(Generic * gste, std::vector<GenericInner *> types) {
-        this->gste = gste;
-        this->types = types;
-    };
-}; */
 
 union Aux {
     // STUCT
@@ -203,7 +178,9 @@ public:
     Expr(Type * t, bool is_lvalue);
 };
 
+int typecmp(InnerType * t1, InnerType * t2, bool ignore_gen);
 int typecmp(InnerType * t1, InnerType * t2);
+int typecmp(Type * t1, Type * t2, bool ignore_gen);
 int typecmp(Type * t1, Type * t2);
 
 /// @brief A single variable. No scope information is contained, coz multiple symbol tables. We can make a tree out of those.
@@ -316,6 +293,7 @@ struct ForgeSymbolTable {
 };
 
 struct Claim {
+    // `type` claims `archetype` with associated type `over`.
     Type * type;
     Archetypes archetype;
     Type * over;
@@ -333,6 +311,8 @@ struct ClaimSymbolTable {
 struct GenericArg {
     bool is_int;
     Archetypes archetype;
+    GenericArg(); // int
+    GenericArg(Archetypes archetype); // archetype
 };
 
 struct Generic {
@@ -376,22 +356,14 @@ extern ForgeSymbolTable forge_st;
 extern ClaimSymbolTable claim_st;
 extern FunctionSymbolTable func_st;
 extern GenSymbolTable gen_st;
-// extern VarSymbolTable var_st; // global variables only.
 
 extern Scope * current_scope;
+
+void init_symbol_tables();
 
 #define RED_ESCAPE "\x1B[1;31;40m"
 #define BLUE_ESCAPE "\x1B[1;34;40m"
 #define GREEN_ESCAPE "\x1B[1;32;40m"
 #define RESET_ESCAPE "\x1B[0;37;40m"
 
-#define este(t) (((AuxESTE *)(t)->head->aux)->este)
-#define sste(t) (((AuxSSTE *)(t)->head->aux)->sste)
-#define gste(t) (((AuxGSTE *)(t)->head->aux)->gste)
-#define cart(t) (((AuxCART *)(t)->head->aux)->cart)
-
-#define ieste(t) (((AuxESTE *)(t)->aux)->este)
-#define isste(t) (((AuxSSTE *)(t)->aux)->sste)
-#define igste(t) (((AuxGSTE *)(t)->aux)->gste)
-#define icart(t) (((AuxCART *)(t)->aux)->cart)
 #endif

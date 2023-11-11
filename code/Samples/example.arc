@@ -1,44 +1,44 @@
 enum Bar {
     Zero,
     One,
-    Two,
+    Two
 }
 
 // Noting the verbosity of the below code, we are highly inclined to implement switch-case as well.
-forge Cyclic<3>(a: Bar) {
-    if(a == Zero) {
-        return 0;
+forge (a: Cyclic<3>) as (b: Bar) {
+    if(a == Bar::Zero) {
+        b = 0;
     }
-    if(a == One) {
-        return 1;
+    else if(a == Bar::One) {
+        b = 1;
     }
     else {
-        return 2;
+        b = 2;
     }
 }
 
-forge Bar(a: Cyclic<3>) {
+forge Bar as (a: Cyclic<3>) {
     if(a == 0) {
-        return Zero;
+        return Bar::Zero;
     }
     if(a == 1) {
-        return One;
+        return Bar::One;
     }
     else {
-        return Two;
+        return Bar::Two;
     }
 }
 
 claim Bar is Group {
     (x + y) => {
-        return Bar(Cyclic<3>(x) + Cyclic<3>(y))
+        return (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
     }
     0 => {
-        return Zero;
+        return Bar::Zero;
     }
 
     -x => {
-        return Bar(-Cyclic<3>(x));
+        return (- (x as Cyclic<3>)) as Bar;
     }
 }
 

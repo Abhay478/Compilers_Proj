@@ -1045,6 +1045,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                     }
                 }
                 ;
+
 function_header :  fh_stub ':' type {
                     if($1) {
                         $1->return_type = $3;
@@ -1054,8 +1055,9 @@ function_header :  fh_stub ':' type {
                 }
                 | fh_stub {
                     if($1) func_st.insert($1);
-                    current_func = new Type(); // Not NULL
-                }// return type is void
+                    current_func = new Type();
+                    current_func->push_type(VOID, 0, 0, NULL);
+                }
                 ;
 
 type_var_list   : type_var ',' type_var_list 
@@ -1067,6 +1069,16 @@ param_list      : type_var_list
                 ;
 
 struct          : KW_STRUCT IDENT '{' start_table attr_list end_table '}' {
+                    Struct *sste = struct_st.lookup(*$2);
+                    if(sste) {
+                        yyerror("Existing struct with same name");
+                        break;
+                    }
+                    Enum * este = enum_st.lookup(*$2);
+                    if(este) {
+                        yyerror("Existing enum with same name");
+                        break;
+                    }
                     Struct * entry = new Struct(*$2, $6->entries);
                     struct_st.insert(entry);
                 }
@@ -1076,6 +1088,17 @@ attr_list       : type_var_list
                 ;
 
 enum            : KW_ENUM IDENT '{' variant_list '}' {
+                    // if preexisting struct or enum, error
+                    Struct *sste = struct_st.lookup(*$2);
+                    if(sste) {
+                        yyerror("Existing struct with same name");
+                        break;
+                    }
+                    Enum * este = enum_st.lookup(*$2);
+                    if(este) {
+                        yyerror("Existing enum with same name");
+                        break;
+                    }
                     Enum * entry = new Enum(*$2, *$4);
                     enum_st.insert(entry);
                 }
@@ -1156,6 +1179,7 @@ bool error = false;
 
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
+    init_symbol_tables();
     yyparse();
     return error;
 }

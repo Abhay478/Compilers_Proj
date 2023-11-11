@@ -8,18 +8,6 @@ using namespace std;
  * TYPE
  ********************/
 
-/* AuxSSTE::AuxSSTE(Struct *sste) {
-    this->sste = sste;
-}
-
-AuxESTE::AuxESTE(Enum *este) {
-    this->este = este;
-}
-
-AuxCART::AuxCART(vector<InnerType *> cart) {
-    this->cart = cart;
-} */
-
 InnerType::InnerType(VarTypes core_type, int offset, int size) {
     this->core_type = core_type;
     this->offset = offset;
@@ -59,7 +47,7 @@ Type *Type::pop_type() {
     return t;
 }
 
-int typecmp(InnerType *t1, InnerType *t2) {
+int typecmp(InnerType *t1, InnerType *t2, bool ignore_gen) {
     while (t1 && t2) {
         if (t1->core_type != t2->core_type) {
             return 1;
@@ -91,6 +79,9 @@ int typecmp(InnerType *t1, InnerType *t2) {
             if (t1->gste != t2->gste) {
                 return 1;
             }
+            if (ignore_gen) {
+                return 0;
+            }
             auto v1 = t1->types;
             auto v2 = t2->types;
 
@@ -117,8 +108,16 @@ int typecmp(InnerType *t1, InnerType *t2) {
     return 0;
 }
 
+int typecmp(InnerType *t1, InnerType *t2) {
+    return typecmp(t1, t2, false);
+}
+
+int typecmp(Type *t1, Type *t2, bool ignore_gen) {
+    return typecmp(t1->head, t2->head, ignore_gen);
+}
+
 int typecmp(Type *t1, Type *t2) {
-    return typecmp(t1->head, t2->head);
+    return typecmp(t1->head, t2->head, false);
 }
 
 Expr::Expr(Type *t, bool is_lvalue) {
@@ -324,7 +323,7 @@ Claim::Claim(Type *type, Archetypes archetype) {
 
 int ClaimSymbolTable::insert(Claim *cste) {
     for (auto i : this->entries) {
-        if (!typecmp(i->type, cste->type) && i->archetype == cste->archetype) {
+        if (!typecmp(i->type, cste->type, true) && i->archetype == cste->archetype) {
             return 1;
         }
     }
@@ -335,7 +334,7 @@ int ClaimSymbolTable::insert(Claim *cste) {
 
 Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype) {
     for (auto i : this->entries) {
-        if (!typecmp(i->type, type) && i->archetype == archetype) {
+        if (!typecmp(i->type, type, true) && i->archetype == archetype) {
             return i;
         }
     }
@@ -366,3 +365,11 @@ Generic * GenSymbolTable::lookup(string name) {
     return NULL;
 }
 
+GenericArg::GenericArg() {
+    this->is_int = true;
+}
+
+GenericArg::GenericArg(Archetypes archetype) {
+    this->is_int = false;
+    this->archetype = archetype;
+}

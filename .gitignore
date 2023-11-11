@@ -1,3 +1,4 @@
 /potentials
-*.out
+*.out*
 /.vscode
+.DS_Store

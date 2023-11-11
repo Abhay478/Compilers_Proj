@@ -8,7 +8,7 @@ using namespace std;
  * TYPE
  ********************/
 
-AuxSSTE::AuxSSTE(Struct *sste) {
+/* AuxSSTE::AuxSSTE(Struct *sste) {
     this->sste = sste;
 }
 
@@ -18,7 +18,7 @@ AuxESTE::AuxESTE(Enum *este) {
 
 AuxCART::AuxCART(vector<InnerType *> cart) {
     this->cart = cart;
-}
+} */
 
 InnerType::InnerType(VarTypes core_type, int offset, int size) {
     this->core_type = core_type;
@@ -27,9 +27,23 @@ InnerType::InnerType(VarTypes core_type, int offset, int size) {
     this->next = NULL;
 }
 
-int Type::push_type(VarTypes core_type, int offset, int size, Aux *aux) {
+int Type::push_type(VarTypes core_type, int offset, int size, Aux * aux) {
     InnerType *it = new InnerType(core_type, offset, size);
-    it->aux = aux;
+    switch(core_type) {
+        case STRUCT:
+            it->set_aux(aux->sste);
+            break;
+        case ENUM:
+            it->set_aux(aux->este);
+            break;
+        case CART:
+            it->set_aux(aux->cart);
+            break;
+        case GEN:
+            it->set_aux(aux->gste, aux->types);
+            break;
+        default: break;
+    }
     it->next = this->head;
     this->head = it;
     return 0;
@@ -53,17 +67,17 @@ int typecmp(InnerType *t1, InnerType *t2) {
 
         if (t1->core_type == STRUCT) {
             // Fine, as there is only one symbol table entry for each struct.
-            return isste(t1) != isste(t2);
+            return t1->sste != t2->sste;
         } else if (t1->core_type == ENUM) {
             // Fine, as there is only one symbol table entry for each enum.
-            return ieste(t1) != ieste(t2);
+            return t1->este != t2->este;
         } else if (t1->core_type == CART) {
             if (t1->size != t2->size) {
                 return 1;
             }
             for (int i = 0; i < t1->size; i++) {
-                InnerType *it1 = icart(t1)[i];
-                InnerType *it2 = icart(t2)[i];
+                InnerType *it1 = (*t1->cart)[i];
+                InnerType *it2 = (*t2->cart)[i];
                 Type nt1;
                 nt1.head = it1;
                 Type nt2;
@@ -74,11 +88,11 @@ int typecmp(InnerType *t1, InnerType *t2) {
             }
             return 0;
         } else if (t1->core_type == GEN) {
-            if (igste(t1) != igste(t2)) {
+            if (t1->gste != t2->gste) {
                 return 1;
             }
-            auto v1 = &((AuxGSTE *)t1->aux)->types;
-            auto v2 = &((AuxGSTE *)t1->aux)->types;
+            auto v1 = t1->types;
+            auto v2 = t2->types;
 
             for (int i = 0; i < v1->size(); i++) {
                 auto v1i = (*v1)[i];
@@ -194,8 +208,7 @@ Struct::Struct(string name, vector<Var *> fields) {
 Type *Struct::make_struct_type() {
     Type *t = new Type();
 
-    t->head = new InnerType(STRUCT, 0, 0);
-    sste(t) = this;
+    (t->head = new InnerType(STRUCT, 0, 0))->set_aux(this);
     return t;
 }
 
@@ -283,7 +296,7 @@ Type *get_param_type(Function *f) {
     for (auto i : params->entries) {
         cart->push_back(i->type->head);
     }
-    t->push_type(CART, 0, params->entries.size(), new AuxCART(*cart));
+    t->push_type(CART, 0, params->entries.size(), new Aux(cart));
 
 
     return t;

@@ -93,7 +93,7 @@ enum Archetypes {
     SPACE
 };
 
-struct Aux {
+/* struct Aux {
 };
 
 struct AuxSSTE : public Aux {
@@ -118,6 +118,26 @@ struct AuxGSTE : public Aux {
         this->gste = gste;
         this->types = types;
     };
+}; */
+
+union Aux {
+    // STUCT
+    Struct *sste;
+    // ENUM
+    Enum * este;
+    // CART
+    std::vector<InnerType *> * cart;
+    // GEN
+    struct {
+        Generic * gste;
+        std::vector<GenericInner *> *types;
+    };
+
+    Aux(Struct * sste) {this->sste = sste;}
+    Aux(Enum * este) {this->este = este;}
+    Aux(std::vector<InnerType *> * cart) {this->cart = cart;}
+    Aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
+
 };
 
 struct GenericInner {
@@ -141,7 +161,7 @@ struct InnerType {
     */
     int size; 
     /// @brief For structs, enums, LIBRARY TYPES and cartesian products.
-    Aux * aux; 
+    // Aux * aux; 
 
     // TODO: replace aux with this.
     union {
@@ -150,13 +170,18 @@ struct InnerType {
         // ENUM
         Enum * este;
         // CART
-        std::vector<InnerType *> cart;
+        std::vector<InnerType *> * cart;
         // GEN
         struct {
             Generic * gste;
-            std::vector<InnerType *> *types;
+            std::vector<GenericInner *> *types;
         };
     };
+
+    void set_aux(Struct * sste) {this->sste = sste;}
+    void set_aux(Enum * este) {this->este = este;}
+    void set_aux(std::vector<InnerType *> * cart) {this->cart = cart;}
+    void set_aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
 
     /// @brief For buf, ref, and generics.
     struct InnerType * next; 

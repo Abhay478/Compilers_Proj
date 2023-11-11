@@ -28,7 +28,15 @@
     char lit_char;
     PDT prim_type;
     struct {
-        void * val;
+        // void * val;
+            union {
+                int lit_int;
+                double lit_float;
+                std::string * lit_str;
+                char lit_char;
+                bool bl;
+                Variant * var;
+            };
         CType type;
     } cons;
     Type * type;
@@ -175,7 +183,7 @@ generic         : IDENT '<' type_args '>' {
                         yyerror("Generic type has wrong number of parameters.");
                         break;
                     }
-                    auto arr = vector<GenericInner *>();
+                    auto arr = new vector<GenericInner *>();
                     bool err = false;
                     for(int i = 0; i < $3->size(); i++) {
                         GenericInner * t = (*$3)[i];
@@ -185,7 +193,7 @@ generic         : IDENT '<' type_args '>' {
                                 err = true;
                                 break;
                             }
-                            arr.push_back(new GenericInner(t->lit_int));
+                            arr->push_back(new GenericInner(t->lit_int));
                         } else {
                             if (t->is_int) {
                                 yyerror("Expected type generic parameter, found integer.");
@@ -200,7 +208,7 @@ generic         : IDENT '<' type_args '>' {
                                 err = true;
                                 break;
                             }
-                            arr.push_back(new GenericInner(t->type));
+                            arr->push_back(new GenericInner(t->type));
                         }
                     }
                     if (err) {
@@ -214,8 +222,7 @@ generic         : IDENT '<' type_args '>' {
                      * That way, generic over one type only, and position also defined.
                      * We do not need to check this, because we will be hardcoding all the generics.
                     */
-                    auto up = new AuxGSTE(gste, arr);
-                    $$->push_type(GEN, 0, 0, up); 
+                    $$->push_type(GEN, 0, 0, new Aux(gste, arr)); 
                 }
                 ;
 
@@ -294,14 +301,14 @@ type            : PRIMITIVE_DTYPE {
                         if(!entry) yyerror("No such type.");
                         else {
                             Type * t = new Type();
-                            t->push_type(ENUM, 0, 1, new AuxESTE(entry)); // aux is the symbol table entry.
+                            t->push_type(ENUM, 0, 1, new Aux(entry)); // aux is the symbol table entry.
                             $$ = t;
                         }
                     }
                     else {
                         Type * t = new Type();
 
-                        t->push_type(STRUCT, 0, 1, new AuxSSTE(entry)); // aux is the symbol table entry.
+                        t->push_type(STRUCT, 0, 1, new Aux(entry)); // aux is the symbol table entry.
                         $$ = t;
                     }
                 }
@@ -334,26 +341,25 @@ assignment      : expression assign_op expression  {
                 }
                 ;
 
-constant        : LIT_CHAR {$$.val = (void *)(intptr_t)$1; $$.type = CT_CHAR;}
-                | LIT_FLOAT {$$.val = (void *)*(unsigned long long *)&$1; $$.type = CT_FLOAT;}
-                | LIT_INT {$$.val = (void *)(intptr_t)$1; $$.type = CT_INT;}
-                | LIT_STR {$$.val = (void *)$1; $$.type = CT_STR;}
-                | KW_TRUE {$$.val = (void *)1; $$.type = CT_BOOL;}
-                | KW_FALSE {$$.val = (void *)0; $$.type = CT_BOOL;}
+constant        : LIT_CHAR {$$.lit_char = $1; $$.type = CT_CHAR;}
+                | LIT_FLOAT {$$.lit_float = $1; $$.type = CT_FLOAT;}
+                | LIT_INT {$$.lit_int = $1; $$.type = CT_INT;}
+                | LIT_STR {$$.lit_str = $1; $$.type = CT_STR;}
+                | KW_TRUE {$$.bl = true; $$.type = CT_BOOL;}
+                | KW_FALSE {$$.bl = false; $$.type = CT_BOOL;}
                 | IDENT VARIANT IDENT  {
-                    $$.val = 0;
+                    $$.var = NULL;
                     Enum * entry = enum_st.lookup(*$1);
                     if(!entry) yyerror("Enum not found in symbol table.");
                     else {
                         for(auto i: entry->fields) {
                             if(i == *$3) {
-                                Variant * var = new Variant(*$1, *$3, entry);
-                                $$.val = var;
+                                $$.var = new Variant(*$1, *$3, entry);
                                 $$.type = CT_VAR; 
                                 break;
                             }
                         }
-                        if(!$$.val) yyerror("Variant not found in enum.");
+                        if(!$$.var) yyerror("Variant not found in enum.");
                     }
                 } 
                 ;
@@ -421,7 +427,7 @@ expression      : '(' expression ')' {
                         yyerror("Field access on non-struct type.");
                         $$ = NULL;
                     } else {
-                        Struct * sste = sste($1);
+                        Struct * sste = $1->head->sste;
                         Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
@@ -444,9 +450,9 @@ expression      : '(' expression ')' {
                             yyerror("Tuple access out of bounds.");
                             break;
                         } else {
-                            vector<InnerType *> c = cart($1);
+                            vector<InnerType *> * c = $1->head->cart;
                             Type * t = new Type();
-                            t->head = c[$3];
+                            t->head = (*c)[$3];
                             $$ = new Expr(t, $1->is_lvalue);
                         }
                     }
@@ -531,7 +537,7 @@ expression      : '(' expression ')' {
                     VarTypes vt = convert_constType_to_varType($1.type);
 
                     if(vt == ENUM) {
-                        t->push_type(vt, 0, 0, new AuxESTE(((Variant *)$1.val)->este));
+                        t->push_type(vt, 0, 0, new Aux($1.var->este));
                     } else {
                         t->push_type(vt, 0, 0, NULL);
                     }
@@ -540,7 +546,7 @@ expression      : '(' expression ')' {
                 | KW_THIS {
                     if(method_of) {
                         auto t = new Type();
-                        t->push_type(STRUCT, 0, 0, new AuxSSTE(method_of));
+                        t->push_type(STRUCT, 0, 0, new Aux(method_of));
                         $$ = new Expr(t, true);
                     } else {
                         yyerror(GREEN_ESCAPE "this" RESET_ESCAPE " can only be used in a struct method.");
@@ -555,11 +561,12 @@ expression      : '(' expression ')' {
 
 cart_value      : '(' cart_value_list ')' {
                     Type * t = new Type();
-                    vector<InnerType *> arr($2->size());
+                    // vector<InnerType *> arr($2->size());
+                    auto arr = new vector<InnerType *>($2->size());
                     for(int i = 0; i < $2->size(); i++) {
-                        arr[i] = (*$2)[i]->head;
+                        (*arr)[i] = (*$2)[i]->head;
                     }
-                    t->push_type(CART, 0, arr.size(), new AuxCART(arr));
+                    t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = new Expr(t, false);
                 }
                 ;
@@ -645,7 +652,7 @@ call            : IDENT '(' opt_expr_list ')' {
                         break;
                     }
 
-                    auto sste = sste($1);
+                    auto sste = $1->head->sste;
                     Function * meth = sste->methods->lookup(*$3);
                     if(!meth) {
                         string err = "Method " GREEN_ESCAPE + *$3 + RESET_ESCAPE
@@ -863,14 +870,14 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                         if(!entry) yyerror("No such type.");
                         else {
                             Type * t = new Type();
-                            t->push_type(ENUM, 0, 1, new AuxESTE(entry));
+                            t->push_type(ENUM, 0, 1, new Aux(entry));
                             Claim * claim = claim_st.lookup(t, $4);
                             if(!claim) {$$ = new Claim(t, $4);} // Can copy Type, as InnerType is malloc'd.
                         }
                     } 
                     else {
                         Type * t = new Type();
-                        t->push_type(STRUCT, 0, 1, new AuxSSTE(entry));
+                        t->push_type(STRUCT, 0, 1, new Aux(entry));
                         Claim * claim = claim_st.lookup(t, $4);
                         if(!claim) {$$ = new Claim(t, $4);}
                     }
@@ -1109,8 +1116,9 @@ cart            : '(' type ',' ')' {
                         break;
                     }
                     Type * t = new Type();
-                    vector<InnerType *> arr(1, $2->head);
-                    t->push_type(CART, 0, 1, new AuxCART(arr));
+                    // vector<InnerType *> arr(1, $2->head);
+                    auto arr = new vector<InnerType *>(1, $2->head);
+                    t->push_type(CART, 0, 1, new Aux(arr));
                     $$ = t;
                 }
                 | '(' type ',' type_list ')' {
@@ -1119,12 +1127,13 @@ cart            : '(' type ',' ')' {
                         break;
                     }
                     Type * t = new Type();
-                    vector<InnerType *> arr($4->size() + 1, NULL);
-                    arr[0] = $2->head;
+                    // vector<InnerType *> arr($4->size() + 1, NULL);
+                    auto arr = new vector<InnerType *> ($4->size() + 1, NULL);
+                    (*arr)[0] = $2->head;
                     for(int i = 1; i <= $4->size(); i++) {
-                        arr[i] = (*$4)[i - 1]->head;
+                        (*arr)[i] = (*$4)[i - 1]->head;
                     }
-                    t->push_type(CART, 0, arr.size(), new AuxCART(arr));
+                    t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = t;
                 }
                 ;

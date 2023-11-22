@@ -8,8 +8,11 @@ forge (a: u8) as (b: [[u8]]) {
 }
 
 forge (a: u8) as (b: Parity) {
-  if (a > 1) {
-    b = (a - 2) as (Parity); // Recursion!
+  if (a < 0) {
+    a = -a;
+  }
+  while (a > 1) {
+    a = a - 2;
   }
   if (a == 1) {
     b = Parity::Odd;

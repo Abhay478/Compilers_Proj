@@ -20,8 +20,10 @@
     extern int yylineno;
 
     int indent = 0;
-    void gen_line(string &s);
-    void gen_line(const char *);
+    void generate(string &s);
+    void generate(const char *);
+    void generateln(string &s);
+    void generateln(const char *);
 
 %}
 %code requires {
@@ -167,13 +169,13 @@ end_table       : epsilon {
                 }
 
 start_block     : '{' {
-                    gen_line("{");
+                    generateln("{");
                     indent++;
                 }
 
 end_block       : '}' {
                     indent--;
-                    gen_line("}");
+                    generateln("}");
                 }
 
 body            : start_block start_table statements end_table end_block
@@ -185,14 +187,28 @@ statements      : statement statements
 
 statement       : declaration ';'
                 | assignment ';'
-                | unary_operation ';'
-                | call ';' // check if exists.
-                | return_stmt ';' 
+                | unary_operation ';' {
+                    $1->repr += ';';
+                    generateln($1->repr);
+                }
+                | call ';' {
+                    $1->repr += ';';
+                    generateln($1->repr);
+                }
+                | return_stmt ';'
                 | conditional
                 | switch_case
                 | loop_stmt
-                | KW_BREAK ';' {if(!in_loop) yyerror("break statement outside of loop");}
-                | KW_CONTINUE ';' {if(!in_loop) yyerror("continue statement outside of loop");}
+                | KW_BREAK ';' {
+                    if (!in_loop)
+                        yyerror("break statement outside of loop");
+                    generateln("break;");
+                }
+                | KW_CONTINUE ';' {
+                    if (!in_loop)
+                        yyerror("continue statement outside of loop");
+                    generateln("continue;");
+                }
                 | ';'
                 ;
 
@@ -290,7 +306,7 @@ decl_item       : type_var {
                     }
 
                     string repr_cpp = $1->type->repr_cpp() + " " + $1->name + ";";
-                    gen_line(repr_cpp);
+                    generateln(repr_cpp);
                 }
                 | type_var '=' expression {
                     if(!$1) {
@@ -304,9 +320,8 @@ decl_item       : type_var {
                         break;
                     }
 
-                    // TODO: expr.repr
                     string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr + ";";
-                    gen_line(repr_cpp);
+                    generateln(repr_cpp);
                 }
                 ;
 
@@ -387,7 +402,7 @@ assignment      : expression assign_op expression  {
                         break;
                     }
                     string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr + ";";
-                    gen_line(repr_cpp);
+                    generateln(repr_cpp);
                 }
                 ;
 
@@ -699,6 +714,9 @@ return_stmt     : KW_RETURN expression {
                     else if(typecmp(current_func, $2)) {
                         yyerror("Type mismatch in return.");
                     }
+
+                    string out = "return " + $2->repr + ";";
+                    generateln(out);
                 } // Check if compatible with current function return type.
                 | KW_RETURN {
                     if(in_forg) {
@@ -709,6 +727,8 @@ return_stmt     : KW_RETURN expression {
                     } else if(current_func->head) {
                         yyerror("Returning void from non-void function.");
                     }
+
+                    generateln("return;");
                 }
                 ;
 
@@ -897,20 +917,30 @@ array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead
                 }
                 ;
 
-conditional     : KW_IF '(' expression {
+conditional     : KW_IF '(' expression ')' {
                     if(!$3) {
                         break;
                     }
                     if($3->core() != BOOL) yyerror("predicate must be boolean");
-                } ')' {in_cond = 1;} if_body 
+
+                    string out = "if (" + $3->repr + ")";
+                    generateln(out);
+                } {in_cond = 1;} if_body 
                 ;
 
 if_body         : body {in_cond = 0;}
-                | body KW_ELSE conditional
-                | body KW_ELSE body {in_cond = 0;}
+                | body KW_ELSE { generate("else "); } conditional
+                | body KW_ELSE { generate("else "); } body {in_cond = 0;}
                 ;
 
-loop_stmt       : KW_WHILE '(' loop_cond ')' {in_loop++;} body {in_loop--;}
+loop_stmt       : KW_WHILE '(' loop_cond ')' {
+                    in_loop++;
+                    if(!$3) {
+                        break;
+                    }
+                    string out = "while (" + $3->repr + ")";
+                    generateln(out);
+                } body {in_loop--;}
                 | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;}
                 | KW_FOR '(' start_table declaration ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;} end_table
                 | KW_FOR start_table IDENT KW_IN expression {
@@ -1289,15 +1319,30 @@ epsilon         : ;
 
 bool error = false;
 
-void gen_line(const char *s) {
-    for (int i = 0; i < indent; i++) {
-        fprintf(output_stream, "    ");
+bool last_ln = true;
+
+void generate(const char *s) {
+    if (last_ln) {
+        for (int i = 0; i < indent; i++) {
+            fprintf(output_stream, "    ");
+        }
     }
-    fprintf(output_stream, "%s\n", s);
+    fprintf(output_stream, "%s", s);
+    last_ln = false;
 }
 
-void gen_line(string &s) {
-    gen_line(s.c_str());
+void generate(string &s) {
+    generate(s.c_str());
+}
+
+void generateln(const char *s) {
+    generate(s);
+    fprintf(output_stream, "\n");
+    last_ln = true;
+}
+
+void generateln(string &s) {
+    generateln(s.c_str());
 }
 
 int main() {
@@ -1308,8 +1353,8 @@ int main() {
     fclose(token_stream);
     fclose(output_stream);
     if (error) {
-        // from stdio.h
-        remove("a.cpp");
+        // TODO: uncomment this once complete
+        // remove("a.cpp");
     }
     return error;
 }

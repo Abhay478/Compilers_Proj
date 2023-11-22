@@ -191,12 +191,12 @@ end_block       : '}' {
 body            : start_block start_table {
                     if(in_forg) {
                         string s = forge_out->type->repr_cpp() + " " + forge_out->name + ";";
-                        gen_line(s);
+                        generateln(s);
                     }
                 } statements {
                     if(in_forg) {
                         string s = "return " + forge_out->name + ";";
-                        gen_line(s);
+                        generateln(s);
                         forge_out = NULL;
                     }
                 }
@@ -1218,7 +1218,7 @@ function_header :  fh_stub ':' type {
                         $1.entry->return_type = $3;
                         func_st.insert($1.entry);
                         string header = $3->repr_cpp() + " " + *($1.repr);
-                        gen_line(header);
+                        generateln(header);
                         // We ain't putting this stuff 
                     }
                     current_func = $3;
@@ -1227,7 +1227,7 @@ function_header :  fh_stub ':' type {
                     if($1.entry) {
                         func_st.insert($1.entry);
                         string header = "void " + *($1.repr);
-                        gen_line(header);
+                        generateln(header);
                     }
                     current_func = new Type();
                     current_func->push_type(VOID, 0, 0, NULL);
@@ -1320,7 +1320,7 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
                     in_forg = 1;
 
                     string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->repr + ")";
-                    gen_line(header);
+                    generateln(header);
 
                     forge_count++;
                     forge_out = $9;

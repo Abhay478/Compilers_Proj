@@ -15,45 +15,79 @@ InnerType::InnerType(VarTypes core_type, int offset, int size) {
     this->next = NULL;
 }
 
+string InnerType::repr_cpp() {
+    switch (this->core_type) {
+        case VOID:
+        case INT:
+        case FLOAT:
+        case BOOL:
+        case CHAR:
+            return get_pdt_str(this->pdt);
+        case STR:
+            return "std::string";
+        case BUF:
+            return "std::vector<" + this->next->repr_cpp() + ">";
+        case REF:
+            return this->next->repr_cpp() + "*";
+        case GEN: {
+            std::string s = this->gste->name + "<";
+            for (int i = 0; i < this->types->size(); i++) {
+                auto it = (*this->types)[i];
+                if (i) {
+                    s += ", ";
+                }
+                if (it->is_int) {
+                    s += to_string(it->lit_int);
+                } else {
+                    s += it->type->repr_cpp();
+                }
+            }
+            s += ">";
+            return s;
+        }
+        case STRUCT:
+            return this->sste->name;
+        case ENUM:
+            return this->este->name;
+        case CART: {
+            std::string s = "std::tuple<";
+            for (int i = 0; i < this->cart->size(); i++) {
+                auto it = (*this->cart)[i];
+                if (i) {
+                    s += ", ";
+                }
+                s += it->repr_cpp();
+            }
+            s += ">";
+            return s;
+        }
+        default:
+            return "unreachable";
+    }
+}
+
+string Type::repr_cpp() {
+    return this->head->repr_cpp();
+}
+
 int Type::push_type(VarTypes core_type, int offset, int size, Aux * aux) {
     InnerType *it = new InnerType(core_type, offset, size);
     switch(core_type) {
         case STRUCT:
             it->set_aux(aux->sste);
-            this->str = aux->sste->name;
             break;
         case ENUM:
             it->set_aux(aux->este);
-            this->str = aux->este->name;
             break;
         case CART:
             it->set_aux(aux->cart);
-            this->str = "tuple<";
-            for (int i = 0; i < aux->cart->size(); i++) {
-                if (i) this->str += ", ";
-                this->str += (*aux->cart)[i]->str;
-            }
-            this->str += ">";
             break;
         case GEN:
             it->set_aux(aux->gste, aux->types);
-            this->str = aux->gste->name;
-            this->str += "<";
-            for (int i = 0; i < aux->types->size(); i++) {
-                if (i) this->str += ", ";
-                auto it = (*aux->types)[i];
-                if (it->is_int) {
-                    this->str += to_string(it->lit_int);
-                } else {
-                    this->str += it->type->str;
-                }
-            }
             break;
         case BUF:
-            this->str += "[]";
             break;
         case REF:
-            this->str += "*";
             break;
         default: break;
     }
@@ -157,9 +191,15 @@ Expr::Expr(Type *t, bool is_lvalue) {
  ********************/
 
 
+int varcount = 0;
 Var::Var(string name, Type *type) {
     this->name = name;
     this->type = type;
+    this->varno = varcount++;
+}
+
+std::string Var::repr_cpp() {
+    return "v" + to_string(this->varno) + "_" + this->name;
 }
 
 int VarSymbolTable::insert(Var *vste) {
@@ -234,7 +274,8 @@ Struct::Struct(string name, vector<Var *> fields) {
 Type *Struct::make_struct_type() {
     Type *t = new Type();
 
-    (t->head = new InnerType(STRUCT, 0, 0))->set_aux(this);
+    t->head = new InnerType(STRUCT, 0, 0);
+    t->head->set_aux(this);
     return t;
 }
 

@@ -30,4 +30,5 @@ fn main() {
   let a: Parity = 1 as (Parity); // a is now Parity::Odd
   let b: Parity = (1, 2) as (Parity); /* b is
                                         now Parity::Odd */
+  let c: &[&(u8, Matrix<5, BigRational>)];
 }

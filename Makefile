@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Wall -std=c++17 -g -O2
+CFLAGS=-std=c++17 -g -O2
 LDFLAGS=-ll
 
 SOURCES := $(wildcard code/*.cpp)

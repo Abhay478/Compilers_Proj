@@ -16,6 +16,8 @@
 
     using namespace std;
 
+    extern int yylineno;
+
 %}
 %code requires {
     #include "../code/semantic.hpp"
@@ -28,15 +30,14 @@
     char lit_char;
     PDT prim_type;
     struct {
-        // void * val;
-            union {
-                int lit_int;
-                double lit_float;
-                std::string * lit_str;
-                char lit_char;
-                bool bl;
-                Variant * var;
-            };
+        union {
+            int lit_int;
+            double lit_float;
+            std::string * lit_str;
+            char lit_char;
+            bool bl;
+            Variant * var;
+        };
         CType type;
     } cons;
     Type * type;
@@ -285,13 +286,16 @@ type_var        : IDENT ':' type {
 type            : PRIMITIVE_DTYPE {
                     Type * t = new Type(); 
                     t->push_type(get_vt($1), 0, 0, NULL);
-                    t->str = get_pdt_str($1);
+                    t->head->pdt = $1;
                     $$ = t;
 
                 }
                 | '[' type ']' {
                     Type * t = new Type();
-                    if($2) t->head = $2->head; // Even if inner type is invalid, buffer is propagated. There may be further type errors independent of the inner type.
+                    if($2) {
+                        t->head = $2->head;
+                    }
+                    // Even if inner type is invalid, buffer is propagated. There may be further type errors independent of the inner type.
                     t->push_type(BUF, 0, 1, NULL);
                     $$ = t;
                 }

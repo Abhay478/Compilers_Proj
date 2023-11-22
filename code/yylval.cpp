@@ -57,10 +57,10 @@ string get_pdt_str(PDT pdt) {
         case U16:
             return "uint16_t";
         case U32:
-            return "uint32_t";  
+            return "uint32_t";
         case U64:
             return "uint64_t";
-        case I8: 
+        case I8:
             return "int8_t";
         case I16:
             return "int16_t";

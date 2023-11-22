@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
@@ -114,6 +115,8 @@ union Aux {
     Aux(std::vector<Type *> * cart) {this->cart = cart;}
     Aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
 
+    int foo();
+
 };
 
 struct GenericInner {
@@ -138,6 +141,7 @@ struct InnerType {
     int size; 
     /// @brief For structs, enums, generics, and cartesian products.
     union {
+        PDT pdt;
         // STUCT
         Struct *sste;
         // ENUM
@@ -156,6 +160,8 @@ struct InnerType {
     void set_aux(std::vector<Type *> * cart) {this->cart = cart;}
     void set_aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
 
+    std::string repr_cpp();
+
     /// @brief For buf, ref, and generics.
     struct InnerType * next; 
     InnerType(VarTypes core_type, int offset, int size);
@@ -163,10 +169,11 @@ struct InnerType {
 
 struct Type {
     InnerType * head; // stack of types,  
-    std::string str; // thing that goes into the output file.
     int push_type(VarTypes core_type, int offset, int size, Aux * aux);
     Type * pop_type();
     VarTypes core();
+
+    std::string repr_cpp();
 };
 
 struct Expr: public Type {
@@ -187,11 +194,14 @@ int typecmp(Type * t1, Type * t2);
 struct Var {
     std::string name;
     Type * type;
+    int varno;
     Var() {
         name = "";
         type = NULL;
     }
     Var(std::string name, Type * type);
+
+    std::string repr_cpp();
 };
 
 /// @brief Contains all the variables in the current scope.

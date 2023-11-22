@@ -285,6 +285,7 @@ type_var        : IDENT ':' type {
 type            : PRIMITIVE_DTYPE {
                     Type * t = new Type(); 
                     t->push_type(get_vt($1), 0, 0, NULL);
+                    t->str = get_pdt_str($1);
                     $$ = t;
 
                 }
@@ -452,9 +453,9 @@ expression      : '(' expression ')' {
                             yyerror("Tuple access out of bounds.");
                             break;
                         } else {
-                            vector<InnerType *> * c = $1->head->cart;
+                            auto c = $1->head->cart;
                             Type * t = new Type();
-                            t->head = (*c)[$3];
+                            t->head = (*c)[$3]->head;
                             $$ = new Expr(t, $1->is_lvalue);
                         }
                     }
@@ -565,9 +566,9 @@ expression      : '(' expression ')' {
 cart_value      : '(' cart_value_list ')' {
                     Type * t = new Type();
                     // vector<InnerType *> arr($2->size());
-                    auto arr = new vector<InnerType *>($2->size());
+                    auto arr = new vector<Type *>($2->size());
                     for(int i = 0; i < $2->size(); i++) {
-                        (*arr)[i] = (*$2)[i]->head;
+                        (*arr)[i] = (*$2)[i];
                     }
                     t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = new Expr(t, false);
@@ -1148,8 +1149,7 @@ cart            : '(' type ',' ')' {
                         break;
                     }
                     Type * t = new Type();
-                    // vector<InnerType *> arr(1, $2->head);
-                    auto arr = new vector<InnerType *>(1, $2->head);
+                    auto arr = new vector<Type *>(1, $2);
                     t->push_type(CART, 0, 1, new Aux(arr));
                     $$ = t;
                 }
@@ -1160,10 +1160,10 @@ cart            : '(' type ',' ')' {
                     }
                     Type * t = new Type();
                     // vector<InnerType *> arr($4->size() + 1, NULL);
-                    auto arr = new vector<InnerType *> ($4->size() + 1, NULL);
-                    (*arr)[0] = $2->head;
+                    auto arr = new vector<Type *> ($4->size() + 1, NULL);
+                    (*arr)[0] = $2;
                     for(int i = 1; i <= $4->size(); i++) {
-                        (*arr)[i] = (*$4)[i - 1]->head;
+                        (*arr)[i] = (*$4)[i - 1];
                     }
                     t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = t;

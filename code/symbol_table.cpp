@@ -20,15 +20,40 @@ int Type::push_type(VarTypes core_type, int offset, int size, Aux * aux) {
     switch(core_type) {
         case STRUCT:
             it->set_aux(aux->sste);
+            this->str = aux->sste->name;
             break;
         case ENUM:
             it->set_aux(aux->este);
+            this->str = aux->este->name;
             break;
         case CART:
             it->set_aux(aux->cart);
+            this->str = "tuple<";
+            for (int i = 0; i < aux->cart->size(); i++) {
+                if (i) this->str += ", ";
+                this->str += (*aux->cart)[i]->str;
+            }
+            this->str += ">";
             break;
         case GEN:
             it->set_aux(aux->gste, aux->types);
+            this->str = aux->gste->name;
+            this->str += "<";
+            for (int i = 0; i < aux->types->size(); i++) {
+                if (i) this->str += ", ";
+                auto it = (*aux->types)[i];
+                if (it->is_int) {
+                    this->str += to_string(it->lit_int);
+                } else {
+                    this->str += it->type->str;
+                }
+            }
+            break;
+        case BUF:
+            this->str += "[]";
+            break;
+        case REF:
+            this->str += "*";
             break;
         default: break;
     }
@@ -64,13 +89,13 @@ int typecmp(InnerType *t1, InnerType *t2, bool ignore_gen) {
                 return 1;
             }
             for (int i = 0; i < t1->size; i++) {
-                InnerType *it1 = (*t1->cart)[i];
-                InnerType *it2 = (*t2->cart)[i];
-                Type nt1;
-                nt1.head = it1;
-                Type nt2;
-                nt2.head = it2;
-                if (typecmp(&nt1, &nt2)) { // Bhupendra Jogi.
+                Type * it1 = (*t1->cart)[i];
+                Type * it2 = (*t2->cart)[i];
+                // Type nt1;
+                // nt1.head = it1;
+                // Type nt2;
+                // nt2.head = it2;
+                if (typecmp(it1, it2)) { // Bhupendra Jogi.
                     return 1;
                 }
             }
@@ -293,9 +318,9 @@ Type *get_param_type(Function *f) {
     }
 
     Type *t = new Type();
-    auto cart = new vector<InnerType *>();
+    auto cart = new vector<Type *>();
     for (auto i : params->entries) {
-        cart->push_back(i->type->head);
+        cart->push_back(i->type);
     }
     t->push_type(CART, 0, params->entries.size(), new Aux(cart));
 

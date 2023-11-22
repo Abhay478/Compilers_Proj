@@ -50,9 +50,9 @@ static Type *get_type(const char *name) {
     return NULL;
 }
 
-static Type *make_cart(vector<InnerType *> types) {
+static Type *make_cart(vector<Type *> types) {
     Type *t = new Type();
-    t->push_type(CART, 0, 0, new Aux(new vector<InnerType *>(types)));
+    t->push_type(CART, 0, 0, new Aux(new vector<Type *>(types)));
     return t;
 }
 
@@ -159,7 +159,7 @@ static void init_forge_st() {
 
     // forge BigRational as (int, int)
     auto forge_big_rational_int_int_params = make_params({new Var("r", get_type("BigRational"))});
-    auto ret = make_cart({make_type(I32)->head, make_type(I32)->head});
+    auto ret = make_cart({make_type(I32), make_type(I32)});
     auto forge_big_rational_int_int = new Function("", forge_big_rational_int_int_params, ret);
     forge_st.insert(forge_big_rational_int_int);
 

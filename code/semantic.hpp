@@ -66,6 +66,7 @@ struct Variant {
 };
 
 PDT get_pdt(char * s);
+std::string get_pdt_str(PDT pdt);
 
 /***********************************************
  * Symbol table for the compiler.
@@ -101,7 +102,7 @@ union Aux {
     // ENUM
     Enum * este;
     // CART
-    std::vector<InnerType *> * cart;
+    std::vector<Type *> * cart;
     // GEN
     struct {
         Generic * gste;
@@ -110,7 +111,7 @@ union Aux {
 
     Aux(Struct * sste) {this->sste = sste;}
     Aux(Enum * este) {this->este = este;}
-    Aux(std::vector<InnerType *> * cart) {this->cart = cart;}
+    Aux(std::vector<Type *> * cart) {this->cart = cart;}
     Aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
 
 };
@@ -135,17 +136,14 @@ struct InnerType {
      * Is 1 for BUF.
     */
     int size; 
-    /// @brief For structs, enums, LIBRARY TYPES and cartesian products.
-    // Aux * aux; 
-
-    // TODO: replace aux with this.
+    /// @brief For structs, enums, generics, and cartesian products.
     union {
         // STUCT
         Struct *sste;
         // ENUM
         Enum * este;
         // CART
-        std::vector<InnerType *> * cart;
+        std::vector<Type *> * cart;
         // GEN
         struct {
             Generic * gste;
@@ -155,7 +153,7 @@ struct InnerType {
 
     void set_aux(Struct * sste) {this->sste = sste;}
     void set_aux(Enum * este) {this->este = este;}
-    void set_aux(std::vector<InnerType *> * cart) {this->cart = cart;}
+    void set_aux(std::vector<Type *> * cart) {this->cart = cart;}
     void set_aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
 
     /// @brief For buf, ref, and generics.
@@ -165,6 +163,7 @@ struct InnerType {
 
 struct Type {
     InnerType * head; // stack of types,  
+    std::string str; // thing that goes into the output file.
     int push_type(VarTypes core_type, int offset, int size, Aux * aux);
     Type * pop_type();
     VarTypes core();
@@ -175,6 +174,7 @@ private:
     Expr();
 public:
     bool is_lvalue;
+    // IMPORTANT: str is now no longer the type itself.
     Expr(Type * t, bool is_lvalue);
 };
 

@@ -1,4 +1,5 @@
 #include "semantic.hpp"
+using namespace std;
 
 PDT get_pdt(char * s) {
     switch(s[0]) {
@@ -46,6 +47,38 @@ VarTypes get_vt(PDT pdt) {
             return STR;
         case PDT_VOID:
             return VOID;
+    }
+}
+
+string get_pdt_str(PDT pdt) {
+    switch(pdt) {
+        case U8:
+            return "uint8_t";
+        case U16:
+            return "uint16_t";
+        case U32:
+            return "uint32_t";  
+        case U64:
+            return "uint64_t";
+        case I8: 
+            return "int8_t";
+        case I16:
+            return "int16_t";
+        case I32:
+            return "int32_t";
+        case I64:
+            return "int64_t";
+        case PDT_FLOAT:
+            return "float";
+        case PDT_CHAR:
+            return "char";
+        case PDT_BOOL:
+            return "bool";
+        case PDT_STR:
+            return "string";
+        case PDT_VOID:
+            return "void";
+        default: return "void"; // all cases are covered, default is unreachable (included to silence compiler warning)
     }
 }
 

@@ -47,13 +47,14 @@
         CType type;
     } cons;
     Type * type;
+    std::vector<Type *> * type_list;
     Expr * expr;
+    std::vector<Expr *> * exp_list;
     Archetypes archetype; 
     Claim * claim_stub_type;
     VarSymbolTable * var_table;
     Var * var;
     std::vector<std::string> * ident_list_type;
-    std::vector<Type *> * type_list;
     int count;
     Function * func;
     GenericInner * targ;
@@ -104,17 +105,20 @@
 %type <expr> unary_operation
 %type <expr> loop_cond
 
+%type <exp_list> expr_list
+%type <exp_list> expr_list_
+%type <exp_list> cart_value_list
+%type <exp_list> cart_value_list_
+%type <exp_list> opt_expr_list
+
+
 %type <type> type
 %type <type> cart
 %type <type> generic
 %type <type> type_def
 %type <type_list> type_list
-%type <type_list> opt_expr_list
-%type <type_list> expr_list
-%type <type_list> expr_list_
-%type <type_list> cart_value_list
-%type <type_list> cart_value_list_
 %type <type_list> sc_blocks
+
 
 %type <archetype> archetype
 
@@ -301,7 +305,7 @@ decl_item       : type_var {
                     }
 
                     // TODO: expr.repr
-                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr_cpp() + ";";
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr + ";";
                     gen_line(repr_cpp);
                 }
                 ;
@@ -382,9 +386,7 @@ assignment      : expression assign_op expression  {
                         yyerror("Type mismatch in assignment.");
                         break;
                     }
-
-                    // TODO: expr.repr
-                    string repr_cpp = $1->repr_cpp() + " " + *$2 + " " + $3->repr_cpp() + ";";
+                    string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr + ";";
                     gen_line(repr_cpp);
                 }
                 ;
@@ -414,7 +416,7 @@ constant        : LIT_CHAR {$$.lit_char = $1; $$.type = CT_CHAR;}
 
 expression      : '(' expression ')' {
                     $$ = $2;
-                    $$->repr = "(" + $$->repr + ")";
+                    $$->repr = "(" + $2->repr + ")";
                 }
                 | array_access
                 | '!' expression {
@@ -426,7 +428,7 @@ expression      : '(' expression ')' {
                         yyerror("Can only negate bool expression!");
                     }
                     $$ = new Expr($2, false); // need new one coz different is_lvalue??
-                    $$->repr = "!" + $$->repr;
+                    $$->repr = "!" + $2->repr;
                 }
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
                 {
@@ -443,7 +445,7 @@ expression      : '(' expression ')' {
                         yyerror("unary minus requires Group");
                     }
                     $$ = new Expr($2, false);
-                    $$->repr = "-" + $$->repr;
+                    $$->repr = "-" + $2->repr;
                 }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 {
@@ -456,7 +458,7 @@ expression      : '(' expression ')' {
                     }
                     Type * t = $2->pop_type();
                     $$ = new Expr(t, true);
-                    $$->repr = "*" + $$->repr;
+                    $$->repr = "*" + $2->repr;
                 }
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 {
@@ -469,7 +471,7 @@ expression      : '(' expression ')' {
                     t->head = $2->head;
                     t->push_type(REF, 0, 0, NULL);
                     $$ = new Expr(t, false);
-                    $$->repr = "&" + $$->repr;
+                    $$->repr = "&" + $2->repr;
                 }
                 | expression '.' IDENT // struct access, lookup in table
                 {
@@ -575,11 +577,12 @@ expression      : '(' expression ')' {
                 | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); $$->repr = $1->repr + " - " + $3->repr;}
                 | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " > " + $3->repr;}
                 | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " < " + $3->repr;}
-                // TODO: these three
-                | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); }
-                | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); }
-                | expression KW_IN expression  { $$ = in_type_check($1, $3); }
-
+                | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
+                | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
+                | expression KW_IN expression  { 
+                    $$ = in_type_check($1, $3); 
+                    $$->repr = "(std::find(" + $3->repr + ".begin(), " + $3->repr + ".end(), " + $1->repr + "))";
+                }
                 | expression AND expression    { $$ = and_or_type_check($1, $3); $$->repr = $1->repr + " && " + $3->repr;}
                 | expression OR expression     { $$ = and_or_type_check($1, $3); $$->repr = $1->repr + " || " + $3->repr;}
                 | IDENT {
@@ -652,12 +655,12 @@ cart_value      : '(' cart_value_list ')' {
                     }
                     t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = new Expr(t, false);
-                    // $$->repr = "{";
-                    // for(int i = 0; i < $2->size(); i++) {
-                    //     if(i) $$->repr += ", ";
-                    //     $$->repr += (*$2)[i]->repr;
-                    // }
-                    // $$->repr += "}";
+                    $$->repr = "{";
+                    for(int i = 0; i < $2->size(); i++) {
+                        if(i) $$->repr += ", ";
+                        $$->repr += (*$2)[i]->repr;
+                    }
+                    $$->repr += "}";
                 }
                 ;
 
@@ -666,7 +669,7 @@ OPT_COMMA       : ','
                 ;
 
 cart_value_list : expression ',' {
-                    vector<Type *> *arr = new vector<Type *>();
+                    vector<Expr *> *arr = new vector<Expr *>();
                     arr->push_back($1);
                     $$ = arr;
                 }
@@ -680,7 +683,7 @@ cart_value_list_: cart_value_list_ ',' expression {
                     $$->push_back($3);
                 }
                 | expression ',' expression {
-                    vector<Type *> *arr = new vector<Type *>();
+                    vector<Expr *> *arr = new vector<Expr *>();
                     arr->push_back($1);
                     arr->push_back($3);
                     $$ = arr;
@@ -730,12 +733,12 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                    // $$->repr = *$1 + "(";
-                    // for(int i = 0; i < $3->size(); i++) {
-                    //     if(i) $$->repr += ", ";
-                    //     $$->repr += (*$3)[i]->repr;
-                    // }
-                    // $$->repr += ")";
+                    $$->repr = *$1 + "(";
+                    for(int i = 0; i < $3->size(); i++) {
+                        if(i) $$->repr += ", ";
+                        $$->repr += (*$3)[i]->repr;
+                    }
+                    $$->repr += ")";
                 }
                 | expression '.' IDENT '(' opt_expr_list ')' {
                     if (!$1) {
@@ -771,7 +774,7 @@ call            : IDENT '(' opt_expr_list ')' {
 
 opt_expr_list   : expr_list_
                 | epsilon {
-                    vector<Type *> *arr = new vector<Type *>();
+                    vector<Expr *> *arr = new vector<Expr *>();
                     $$ = arr;
                 }
                 ;
@@ -785,7 +788,7 @@ expr_list_      : expr_list_ ',' expression {
                     $$->push_back($3); 
                 }
                 | expression {
-                    vector<Type *> *arr = new vector<Type *>(1, $1);
+                    vector<Expr *> *arr = new vector<Expr *>(1, $1);
                     $$ = arr;
                 }
                 ;
@@ -846,12 +849,12 @@ array_decl      : '[' opt_expr_list ']' {
                         in->head = t->head;
                         in->push_type(BUF, 0, 1, NULL);
                         $$ = new Expr(in, false);
-                        // $$->repr = "{";
-                        // for(int i = 0; i < $2->size(); i++) {
-                        //     if(i) $$->repr += ", ";
-                        //     $$->repr += (*$2)[i]->repr;
-                        // }
-                        // $$->repr += "}";
+                        $$->repr = "{";
+                        for(int i = 0; i < $2->size(); i++) {
+                            if(i) $$->repr += ", ";
+                            $$->repr += (*$2)[i]->repr;
+                        }
+                        $$->repr += "}";
                     }
                 array_decl_break:
                     break;

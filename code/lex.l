@@ -50,7 +50,7 @@ ws [\r\n\t ]
     }
 {str_c} {
         seq_token("literal"); 
-        yylval.lit_str = new std::string(strndup(yytext+1, strlen(yytext)-2));
+        yylval.lit_str = new std::string(yytext);
         return LIT_STR; 
     }
 {num} { 
@@ -103,14 +103,25 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
 "=>"        { seq_token("operator"); return ARROW; }
 "::"        { seq_token("operator"); return VARIANT; }
 ".."        { seq_token("operator"); return SLICE; }
-{cmp_op}    { seq_token("operator"); return CMP_OP; }
-{eq_op}     { seq_token("operator"); return EQ_OP; }
 "&&"        { seq_token("operator"); return AND; }
 "||"        { seq_token("operator"); return OR; }
 
 {op}        { seq_token("operator"); return yytext[0]; } /* single character operators */
 
-{assign_op} { seq_token("operator"); return ASSIGN_OP; } /* assignment operators */
+{cmp_op}    {
+    seq_token("operator");
+    yylval.op = new std::string(yytext);
+    return CMP_OP;
+}
+{eq_op}     {
+    seq_token("operator");
+    yylval.op = new std::string(yytext);
+    return EQ_OP;
+}
+{assign_op} {
+    seq_token("operator");
+    return ASSIGN_OP;
+}
 
 {spl}       { seq_token("special characters"); return yytext[0];} /* special characters */
 {punct}     { seq_token("punctuation"); return yytext[0];} /* punctuation */

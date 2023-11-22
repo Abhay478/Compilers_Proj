@@ -5,6 +5,7 @@
     extern int yylex();
     void yyerror(const char* s);
     FILE * token_stream;
+    FILE * output_stream;
     // flags
     Type * current_func = NULL;
     int in_loop = 0;
@@ -18,6 +19,10 @@
 
     extern int yylineno;
 
+    int indent = 0;
+    void gen_line(string &s);
+    void gen_line(const char *);
+
 %}
 %code requires {
     #include "../code/semantic.hpp"
@@ -29,6 +34,7 @@
     std::string * lit_str;
     char lit_char;
     PDT prim_type;
+    std::string *op;
     struct {
         union {
             int lit_int;
@@ -66,7 +72,10 @@
 %token <lit_str> LIT_STR 
 %token <lit_char> LIT_CHAR 
 
-%token CMP_OP EQ_OP KW_TRUE KW_FALSE ASSIGN_OP
+%token <op> CMP_OP
+%token <op> EQ_OP
+%token <op> ASSIGN_OP
+%token KW_TRUE KW_FALSE
 
 %token INCR DECR ARROW VARIANT SLICE AND OR // Two character operators.
 
@@ -86,6 +95,7 @@
 
 %type <cons> constant
 
+%type <op> assign_op
 %type <expr> expression
 %type <expr> cart_value
 %type <expr> array_decl
@@ -150,7 +160,17 @@ end_table       : epsilon {
                     current_scope = current_scope->parent;
                 }
 
-body            : '{' start_table statements '}' end_table
+start_block     : '{' {
+                    gen_line("{");
+                    indent++;
+                }
+
+end_block       : '}' {
+                    indent--;
+                    gen_line("}");
+                }
+
+body            : start_block start_table statements end_table end_block
                 ;
 
 statements      : statement statements
@@ -258,16 +278,29 @@ decl_list       : decl_item
                 | decl_item ',' decl_list 
                 ;
 
-decl_item       : type_var
+decl_item       : type_var {
+                    if(!$1) {
+                        break;
+                    }
+
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + ";";
+                    gen_line(repr_cpp);
+                }
                 | type_var '=' expression {
                     if(!$1) {
                         break;
                     }
                     if (!current_scope->parent) {
                         yyerror("Cannot assign to global variable. (use main)");
+                        break;
                     } else if (typecmp($1->type, $3)) {
                         yyerror("Type mismatch in declaration.");
+                        break;
                     }
+
+                    // TODO: expr.repr
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr_cpp() + ";";
+                    gen_line(repr_cpp);
                 }
                 ;
 
@@ -333,18 +366,24 @@ type            : PRIMITIVE_DTYPE {
                 | cart 
                 ; 
 
-assign_op       : ASSIGN_OP
-                | '='
+assign_op       : ASSIGN_OP { $$ = $1; }
+                | '=' { $$ = new string("="); }
                 ;
 
 assignment      : expression assign_op expression  {
                     if (!$1 || !$3) {
-                        yyerror("Invalid assignment.");
+                        break;
                     } else if (!$1->is_lvalue) {
                         yyerror("Cannot assign to non-lvalue.");
+                        break;
                     } else if (typecmp($1, $3)) {
                         yyerror("Type mismatch in assignment.");
+                        break;
                     }
+
+                    // TODO: expr.repr
+                    string repr_cpp = $1->repr_cpp() + " " + *$2 + " " + $3->repr_cpp() + ";";
+                    gen_line(repr_cpp);
                 }
                 ;
 
@@ -841,7 +880,7 @@ loop_mut        : unary_operation
                 | epsilon
                 ;
 
-switch_case     : KW_SWITCH '(' expression ')' '{' sc_blocks sc_default '}' {
+switch_case     : KW_SWITCH '(' expression ')' start_block sc_blocks sc_default end_block {
                     if(!$3) break;
                     for(auto i: *$6) {
                         if(typecmp($3, i)) {
@@ -891,7 +930,7 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                 }
                 ; 
 
-archetype_claim : claim_stub '{' type_def {
+archetype_claim : claim_stub start_block type_def {
                     if(!$1) {
                         yyerror("Claim unsuccesful.");
                     }
@@ -908,7 +947,7 @@ archetype_claim : claim_stub '{' type_def {
 
                         claim_st.insert(current_claim);
                     }
-                } rule_list '}' {
+                } rule_list end_block {
                     current_claim = NULL;
                 }
                 | claim_stub KW_WITH '(' ident_list ')' ';' {
@@ -1082,7 +1121,7 @@ type_var_list   : type_var ',' type_var_list
 param_list      : type_var_list 
                 ;
 
-struct          : KW_STRUCT IDENT '{' start_table attr_list end_table '}' {
+struct          : KW_STRUCT IDENT start_block start_table attr_list end_table end_block {
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
                         yyerror("Existing struct with same name");
@@ -1101,7 +1140,7 @@ struct          : KW_STRUCT IDENT '{' start_table attr_list end_table '}' {
 attr_list       : type_var_list
                 ;
 
-enum            : KW_ENUM IDENT '{' variant_list '}' {
+enum            : KW_ENUM IDENT start_block variant_list end_block {
                     // if preexisting struct or enum, error
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
@@ -1190,10 +1229,28 @@ epsilon         : ;
 
 bool error = false;
 
+void gen_line(const char *s) {
+    for (int i = 0; i < indent; i++) {
+        fprintf(output_stream, "    ");
+    }
+    fprintf(output_stream, "%s\n", s);
+}
+
+void gen_line(string &s) {
+    gen_line(s.c_str());
+}
+
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
+    output_stream = fopen("a.cpp", "w");
     init_symbol_tables();
     yyparse();
+    fclose(token_stream);
+    fclose(output_stream);
+    if (error) {
+        // from stdio.h
+        remove("a.cpp");
+    }
     return error;
 }
 

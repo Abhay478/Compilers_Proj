@@ -32,9 +32,9 @@
     int lit_int;
     double lit_float;
     std::string * lit_str;
+    std::string * op;
     char lit_char;
     PDT prim_type;
-    std::string *op;
     struct {
         union {
             int lit_int;
@@ -50,7 +50,6 @@
     Expr * expr;
     Archetypes archetype; 
     Claim * claim_stub_type;
-
     VarSymbolTable * var_table;
     Var * var;
     std::vector<std::string> * ident_list_type;
@@ -412,6 +411,7 @@ constant        : LIT_CHAR {$$.lit_char = $1; $$.type = CT_CHAR;}
 
 expression      : '(' expression ')' {
                     $$ = $2;
+                    $$->repr_cpp = "(" + $$->repr_cpp + ")";
                 }
                 | array_access
                 | '!' expression {
@@ -422,7 +422,8 @@ expression      : '(' expression ')' {
                     if($2->core() != BOOL){
                         yyerror("Can only negate bool expression!");
                     }
-                    $$ = new Expr($2, false);
+                    $$ = new Expr($2, false); // need new one coz different is_lvalue??
+                    $$->repr_cpp = "!" + $$->repr_cpp;
                 }
                 | '-' expression                %prec '!'  // Unary minus has precedence of '!', not subtraction.
                 {
@@ -439,6 +440,7 @@ expression      : '(' expression ')' {
                         yyerror("unary minus requires Group");
                     }
                     $$ = new Expr($2, false);
+                    $$->repr_cpp = "-" + $$->repr_cpp;
                 }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 {
@@ -451,6 +453,7 @@ expression      : '(' expression ')' {
                     }
                     Type * t = $2->pop_type();
                     $$ = new Expr(t, true);
+                    $$->repr_cpp = "*" + $$->repr_cpp;
                 }
                 | '&' expression                %prec '!'  // Address-of has precedence of '!', bitwise operators do not exist.
                 {
@@ -458,10 +461,12 @@ expression      : '(' expression ')' {
                         $$ = NULL;
                         break;
                     }
+                    // We could just not do this?
                     Type * t = new Type();
                     t->head = $2->head;
                     t->push_type(REF, 0, 0, NULL);
                     $$ = new Expr(t, false);
+                    $$->repr_cpp = "&" + $$->repr_cpp;
                 }
                 | expression '.' IDENT // struct access, lookup in table
                 {
@@ -479,6 +484,7 @@ expression      : '(' expression ')' {
                             yyerror("Field of struct doesn't exist");
                         }
                         $$ = new Expr(v->type, $1->is_lvalue);
+                        $$->repr_cpp = $1->repr_cpp + "." + *$3;
                     }
                 }
                 | expression '.' LIT_INT 
@@ -500,6 +506,7 @@ expression      : '(' expression ')' {
                             Type * t = new Type();
                             t->head = (*c)[$3]->head;
                             $$ = new Expr(t, $1->is_lvalue);
+                            $$->repr_cpp = $1->repr_cpp + "." + to_string($3);
                         }
                     }
                 }         
@@ -515,8 +522,10 @@ expression      : '(' expression ')' {
                     else{
                         Type * t = fste->return_type;
                         $$ = new Expr(t, false);
+                        $$->repr_cpp = fste->name + "(" + $1->repr_cpp + ")";
                     }
                 }
+                // TODO: Don't even ask.
                 | expression '@' expression // claim space 
                 {
                     if (!$1 || !$3) {
@@ -556,18 +565,20 @@ expression      : '(' expression ')' {
                         }
                     }
                 }
-                | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); }
-                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); }
-                | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); }
-                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
-                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); }
-                | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); }
-                | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); }
+                | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " * " + $3->repr_cpp; }
+                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " / " + $3->repr_cpp; }
+                | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " % " + $3->repr_cpp;}
+                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " + " + $3->repr_cpp;}
+                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " - " + $3->repr_cpp;}
+                | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " > " + $3->repr_cpp;}
+                | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr_cpp = $1->repr_cpp + " < " + $3->repr_cpp;}
+                // TODO: these three
                 | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); }
                 | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); }
                 | expression KW_IN expression  { $$ = in_type_check($1, $3); }
-                | expression AND expression    { $$ = and_or_type_check($1, $3); }
-                | expression OR expression     { $$ = and_or_type_check($1, $3); }
+
+                | expression AND expression    { $$ = and_or_type_check($1, $3); $$->repr_cpp = $1->repr_cpp + " && " + $3->repr_cpp;}
+                | expression OR expression     { $$ = and_or_type_check($1, $3); $$->repr_cpp = $1->repr_cpp + " || " + $3->repr_cpp;}
                 | IDENT {
                     Var * vste = current_scope->lookup(*$1);
                     if(!vste) {
@@ -578,6 +589,7 @@ expression      : '(' expression ')' {
                     }
 
                     $$ = new Expr(vste->type, true);
+                    $$->repr_cpp = *$1;
                 }
                 | constant {
                     auto t = new Type();
@@ -589,12 +601,35 @@ expression      : '(' expression ')' {
                         t->push_type(vt, 0, 0, NULL);
                     }
                     $$ = new Expr(t, false);
+                    switch($1->type) {
+                        case CT_CHAR:
+                            $$->repr_cpp = "'" + string(1, $1->lit_char) + "'";
+                            break;
+                        case CT_FLOAT:
+                            $$->repr_cpp = to_string($1->lit_float);
+                            break;
+                        case CT_INT:
+                            $$->repr_cpp = to_string($1->lit_int);
+                            break;
+                        case CT_STR:
+                            $$->repr_cpp = "\"" + *$1->lit_str + "\"";
+                            break;
+                        case CT_BOOL:
+                            $$->repr_cpp = $1->bl ? "true" : "false";
+                            break;
+                        case CT_VAR:
+                            $$->repr_cpp = $1->var->name; // CPP does not have ::
+                            break;
+                        default:
+                            yyerror("Unknown constant type.");
+                    }
                 }
                 | KW_THIS {
                     if(method_of) {
                         auto t = new Type();
                         t->push_type(STRUCT, 0, 0, new Aux(method_of));
                         $$ = new Expr(t, true);
+                        $$->repr_cpp = "this";
                     } else {
                         yyerror(GREEN_ESCAPE "this" RESET_ESCAPE " can only be used in a struct method.");
                         $$ = NULL;
@@ -608,13 +643,18 @@ expression      : '(' expression ')' {
 
 cart_value      : '(' cart_value_list ')' {
                     Type * t = new Type();
-                    // vector<InnerType *> arr($2->size());
                     auto arr = new vector<Type *>($2->size());
                     for(int i = 0; i < $2->size(); i++) {
                         (*arr)[i] = (*$2)[i];
                     }
                     t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = new Expr(t, false);
+                    $$->repr_cpp = "{";
+                    for(int i = 0; i < $2->size(); i++) {
+                        if(i) $$->repr_cpp += ", ";
+                        $$->repr_cpp += (*$2)[i]->repr_cpp;
+                    }
+                    $$->repr_cpp += "}";
                 }
                 ;
 
@@ -687,6 +727,12 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
+                    $$->repr_cpp = *$1 + "(";
+                    for(int i = 0; i < $3->size(); i++) {
+                        if(i) $$->repr_cpp += ", ";
+                        $$->repr_cpp += (*$3)[i]->repr_cpp;
+                    }
+                    $$->repr_cpp += ")";
                 }
                 | expression '.' IDENT '(' opt_expr_list ')' {
                     if (!$1) {
@@ -756,6 +802,7 @@ unary_operation : expression unary_op {
                         yyerror("Unary operation on non-int type.");
                     }
                     $$ = new Expr($1, false);
+                    $$->repr_cpp = $1->repr_cpp + ($2 == INCR ? "++" : "--");
                 }
                 ;
 
@@ -777,6 +824,7 @@ array_access    : expression array_index {
                         break;
                     }
                     $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                    $$->repr_cpp = $1->repr_cpp + "[" + $2->repr_cpp + "]";
                 }
                 ;
 
@@ -795,6 +843,12 @@ array_decl      : '[' opt_expr_list ']' {
                         in->head = t->head;
                         in->push_type(BUF, 0, 1, NULL);
                         $$ = new Expr(in, false);
+                        $$->repr_cpp = "{";
+                        for(int i = 0; i < $2->size(); i++) {
+                            if(i) $$->repr_cpp += ", ";
+                            $$->repr_cpp += (*$2)[i]->repr_cpp;
+                        }
+                        $$->repr_cpp += "}";
                     }
                 array_decl_break:
                     break;

@@ -43,26 +43,26 @@ ws [\r\n\t ]
 
 %%
 
-{char_c} { 
-        seq_token("literal"); 
-        yylval.lit_char = yytext[1]; 
-        return LIT_CHAR; 
-    }
-{str_c} {
-        seq_token("literal"); 
-        yylval.lit_str = new std::string(yytext);
-        return LIT_STR; 
-    }
-{num} { 
-        seq_token("literal"); 
-        yylval.lit_int = atoi(yytext);
-        return LIT_INT; 
-    }
-{real} { 
-        seq_token("literal"); 
-        yylval.lit_float = atof(yytext);
-        return LIT_FLOAT; 
-    }
+{char_c}    { 
+                seq_token("literal"); 
+                yylval.lit_char = yytext[1]; 
+                return LIT_CHAR; 
+            }
+{str_c}     {
+                seq_token("literal"); 
+                yylval.lit_str = new std::string(yytext);
+                return LIT_STR; 
+            }
+{num}       { 
+                seq_token("literal"); 
+                yylval.lit_int = atoi(yytext);
+                return LIT_INT; 
+            }
+{real}      { 
+                seq_token("literal"); 
+                yylval.lit_float = atof(yytext);
+                return LIT_FLOAT; 
+            }
 
 if          { seq_token("reserved keyword"); return KW_IF; }
 else        { seq_token("reserved keyword"); return KW_ELSE; }
@@ -92,11 +92,11 @@ Group       { seq_token("reserved keyword"); return KW_GROUP; }
 Field       { seq_token("reserved keyword"); return KW_FIELD; }
 Space       { seq_token("reserved keyword"); return KW_SPACE; }
 
-{pdt} { 
-        seq_token("data type"); 
-        yylval.prim_type = get_pdt(yytext);
-        return PRIMITIVE_DTYPE; 
-    }
+{pdt}       { 
+                seq_token("data type"); 
+                yylval.prim_type = get_pdt(yytext);
+                return PRIMITIVE_DTYPE; 
+            }
 
 "++"        { seq_token("operator"); return INCR; }
 "--"        { seq_token("operator"); return DECR; }
@@ -109,31 +109,31 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
 {op}        { seq_token("operator"); return yytext[0]; } /* single character operators */
 
 {cmp_op}    {
-    seq_token("operator");
-    yylval.op = new std::string(yytext);
-    return CMP_OP;
-}
+                seq_token("operator");
+                yylval.op = new std::string(yytext);
+                return CMP_OP;
+            }
 {eq_op}     {
-    seq_token("operator");
-    yylval.op = new std::string(yytext);
-    return EQ_OP;
-}
+                seq_token("operator");
+                yylval.op = new std::string(yytext);
+                return EQ_OP;
+            }
 {assign_op} {
-    seq_token("operator");
-    return ASSIGN_OP;
-}
+                seq_token("operator");
+                return ASSIGN_OP;
+            }
 
 {spl}       { seq_token("special characters"); return yytext[0];} /* special characters */
 {punct}     { seq_token("punctuation"); return yytext[0];} /* punctuation */
 
-{id} { 
-        seq_token("ID"); 
-        yylval.ident = new std::string(strdup(yytext));
-        return IDENT;
-    } /* we need to change YYSTYPE to return ID.name. This after making sure lexer and parser work correctly. */
+{id}        { 
+                seq_token("ID"); 
+                yylval.ident = new std::string(strdup(yytext));
+                return IDENT;
+            }
 
-{ws} {}
-{comment} {}
+{ws}        {}
+{comment}   {}
 
 %%
 

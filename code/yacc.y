@@ -652,7 +652,7 @@ expression      : '(' expression ')' {
                     $$ = new Expr(t, false);
                     switch($1.type) {
                         case CT_CHAR:
-                            $$->repr = "'" + string(1, $1.lit_char) + "'";
+                            $$->repr = string(1, $1.lit_char);
                             break;
                         case CT_FLOAT:
                             $$->repr = to_string($1.lit_float);
@@ -661,7 +661,7 @@ expression      : '(' expression ')' {
                             $$->repr = to_string($1.lit_int);
                             break;
                         case CT_STR:
-                            $$->repr = "\"" + *$1.lit_str + "\"";
+                            $$->repr = *$1.lit_str;
                             break;
                         case CT_BOOL:
                             $$->repr = $1.bl ? "true" : "false";
@@ -969,8 +969,16 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     string out = "while (" + $3->repr + ")";
                     generateln(out);
                 } body {in_loop--;}
-                | KW_FOR '(' {generate("for ( ");} assignment {generate(*$4);} ';' {generate("; ");} loop_cond {generate($8->repr);} ';' {generate("; ");} loop_mut ')' {in_loop++; generate(") ");} body {in_loop--;}
-                | KW_FOR '(' {generate("for ( ");} start_table declaration ';' loop_cond {generate($7->repr);}  ';' {generate("; ");} loop_mut ')' {in_loop++;} body {in_loop--;} end_table
+                | KW_FOR '(' {generate("for ( ");} 
+                assignment {generate(*$4);} ';' {generate("; ");} 
+                loop_cond {generate($8->repr);} ';' {generate("; ");} 
+                loop_mut ')' {in_loop++; generate(") ");} 
+                body {in_loop--;}
+                | KW_FOR '(' {generate("for ( ");} 
+                start_table declaration ';' 
+                loop_cond {generate($7->repr);} ';' {generate("; ");} 
+                loop_mut ')' {in_loop++; generate(") ");} 
+                body {in_loop--;} end_table
                 | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
                     if($8->core() != BUF){
                         yyerror("Looping over non-buf type.");

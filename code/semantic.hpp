@@ -181,7 +181,7 @@ private:
     Expr();
 public:
     bool is_lvalue;
-    std::string repr_cpp;
+    std::string repr;
     Expr(Type * t, bool is_lvalue);
 };
 

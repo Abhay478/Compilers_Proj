@@ -6,6 +6,10 @@ forge (a: Foo) as (b: u32) {
     b = a.x;
 }
 
+fn foo(): u32 {
+    return 4;
+}
+
 fn main() {
     let q: Foo;
     q.x = 10;

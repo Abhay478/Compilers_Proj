@@ -8,16 +8,13 @@ fn fib(n: u32) : [u64] {
         b = c;
         out += [c];
     }
-    return;
-
-    return 3;
 
     return out;
 }
 
 struct two_tup {
     val: u64,
-    aux: u64,
+    aux: u64
 }
 
 claim two_tup is Group {
@@ -59,8 +56,6 @@ fn main() {
     print("This is main.");
     let b: [u64] = fib(30);
     // print(b);
-
-    while(b[0] > "p") {}
 
     let a: two_tup = [1, 2] as (two_tup);
     // print(a);

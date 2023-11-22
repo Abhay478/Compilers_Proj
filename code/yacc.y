@@ -11,6 +11,7 @@
     int in_loop = 0;
     int in_cond = 0;
     int in_forg = 0;
+    int forge_count = 0;  // For generating unique names for forges.
     Scope * current_scope = NULL;
     Struct * method_of = NULL;
     Claim * current_claim = NULL;
@@ -24,6 +25,8 @@
     void generate(const char *);
     void generateln(string &s);
     void generateln(const char *);
+
+    Var * forge_out;
 
 %}
 %code requires {
@@ -58,7 +61,10 @@
     Var * var;
     std::vector<std::string> * ident_list_type;
     int count;
-    Function * func;
+    struct {
+        Function * entry; 
+        std::string * repr;
+    } func;
     GenericInner * targ;
     std::vector<GenericInner *> * targ_list;
     bool bl;
@@ -112,6 +118,10 @@
 %type <exp_list> cart_value_list
 %type <exp_list> cart_value_list_
 %type <exp_list> opt_expr_list
+%type <expr> type_var_list
+%type <expr> type_var_list_
+%type <expr> param_list
+%type <expr> attr_list
 
 
 %type <type> type
@@ -178,7 +188,19 @@ end_block       : '}' {
                     generateln("}");
                 }
 
-body            : start_block start_table statements end_table end_block
+body            : start_block start_table {
+                    if(in_forg) {
+                        string s = forge_out->type->repr_cpp() + " " + forge_out->name + ";";
+                        gen_line(s);
+                    }
+                } statements {
+                    if(in_forg) {
+                        string s = "return " + forge_out->name + ";";
+                        gen_line(s);
+                        forge_out = NULL;
+                    }
+                }
+                end_table end_block
                 ;
 
 statements      : statement statements
@@ -1171,7 +1193,8 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         VarSymbolTable * params = current_scope->vars;
 
                         Function * entry = new Function(*$2, params, NULL);
-                        $$ = entry;
+                        $$.entry = entry;
+                        $$.repr = new string(*$2 + "(" + ($4 ? $4->repr : "") + ")");
                     }
                 }
 
@@ -1184,29 +1207,47 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         Function * fste = new Function(*$4, params, NULL);
                         sste->methods->insert(fste);
 
-                        $$ = fste;
+                        $$.entry = fste;
+                        $$.repr = new string(*$2 + "::" + *$4 + "(" + $6->repr + ")");
                     }
                 }
                 ;
 
 function_header :  fh_stub ':' type {
-                    if($1) {
-                        $1->return_type = $3;
-                        func_st.insert($1);
+                    if($1.entry) {
+                        $1.entry->return_type = $3;
+                        func_st.insert($1.entry);
+                        string header = $3->repr_cpp() + " " + *($1.repr);
+                        gen_line(header);
+                        // We ain't putting this stuff 
                     }
                     current_func = $3;
                 }
                 | fh_stub {
-                    if($1) func_st.insert($1);
+                    if($1.entry) {
+                        func_st.insert($1.entry);
+                        string header = "void " + *($1.repr);
+                        gen_line(header);
+                    }
                     current_func = new Type();
                     current_func->push_type(VOID, 0, 0, NULL);
                 }
                 ;
 
-type_var_list   : type_var ',' type_var_list 
-                | type_var 
-                | epsilon 
+type_var_list   : type_var_list_
+                | epsilon {$$ = NULL;}
                 ;
+
+type_var_list_ : type_var_list_ ',' type_var {
+                    $$ = $1;
+                    $$->repr += ", " + $3->type->repr_cpp() + " " + $3->name;
+                }
+                | type_var {
+                    Expr * e = new Expr($1->type, true); // Tentative.
+                    e->repr = $1->type->repr_cpp() + " " + $1->name;
+                    $$ = e;
+                }
+                ;            
 
 param_list      : type_var_list 
                 ;
@@ -1269,10 +1310,21 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
                         yyerror("Forge must have a return type.");
                         break;
                     }
+                    if (!$4) {
+                        yyerror("Forge must have parameters.");
+                        break;
+                    }
                     VarSymbolTable * params = current_scope->parent->vars;
-                    Function * entry = new Function("", params, $9->type);
+                    Function * entry = new Function("forge_" + to_string(forge_count), params, $9->type);
                     forge_st.insert(entry);
                     in_forg = 1;
+
+                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->repr + ")";
+                    gen_line(header);
+
+                    forge_count++;
+                    forge_out = $9;
+
                 } body end_table end_table {in_forg = 0;}
                 ;
 

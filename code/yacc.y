@@ -33,6 +33,7 @@
     #include "../code/semantic.hpp"
 }
 %union {
+    std::string * repr;
     std::string * ident;
     int lit_int;
     double lit_float;
@@ -103,6 +104,8 @@
 %left '.'
 
 %type <cons> constant
+
+%type <repr> assignment
 
 %type <op> assign_op
 %type <expr> expression
@@ -208,7 +211,10 @@ statements      : statement statements
                 ;
 
 statement       : declaration ';'
-                | assignment ';'
+                | assignment ';' { 
+                    $1 += ';';
+                    generateln(*$1);
+                }
                 | unary_operation ';' {
                     $1->repr += ';';
                     generateln($1->repr);
@@ -318,8 +324,8 @@ type_arg        : type {
 declaration     : KW_LET decl_list
                 ;
 
-decl_list       : decl_item
-                | decl_item ',' decl_list 
+decl_list       : decl_item {generateln(";");}
+                | decl_item {generateln(";");} ',' decl_list 
                 ;
 
 decl_item       : type_var {
@@ -327,8 +333,8 @@ decl_item       : type_var {
                         break;
                     }
 
-                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + ";";
-                    generateln(repr_cpp);
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name;
+                    generate(repr_cpp);
                 }
                 | type_var '=' expression {
                     if(!$1) {
@@ -342,8 +348,8 @@ decl_item       : type_var {
                         break;
                     }
 
-                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr + ";";
-                    generateln(repr_cpp);
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr;
+                    generate(repr_cpp);
                 }
                 ;
 
@@ -423,8 +429,8 @@ assignment      : expression assign_op expression  {
                         yyerror("Type mismatch in assignment.");
                         break;
                     }
-                    string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr + ";";
-                    generateln(repr_cpp);
+                    string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr;
+                    *$$ = repr_cpp;
                 }
                 ;
 
@@ -963,15 +969,18 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     string out = "while (" + $3->repr + ")";
                     generateln(out);
                 } body {in_loop--;}
-                | KW_FOR '(' assignment ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;}
-                | KW_FOR '(' start_table declaration ';' loop_cond ';' loop_mut ')' {in_loop++;} body {in_loop--;} end_table
-                | KW_FOR start_table IDENT KW_IN expression {
-                    if($5->core() != BUF){
+                | KW_FOR '(' {generate("for ( ");} assignment {generate(*$4);} ';' {generate("; ");} loop_cond {generate($8->repr);} ';' {generate("; ");} loop_mut ')' {in_loop++; generate(") ");} body {in_loop--;}
+                | KW_FOR '(' {generate("for ( ");} start_table declaration ';' loop_cond {generate($7->repr);}  ';' {generate("; ");} loop_mut ')' {in_loop++;} body {in_loop--;} end_table
+                | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
+                    if($8->core() != BUF){
                         yyerror("Looping over non-buf type.");
                         break;
                     }
-                    Type * t = $5->pop_type();
-                    current_scope->insert(new Var(*$3, t));
+                    Type * t = $8->pop_type();
+                    current_scope->insert(new Var(*$4, t));
+
+                    //Code-gen:
+                    generate($8->repr);
 
                 } {in_loop++;} body {in_loop--;} end_table
                 ;
@@ -987,9 +996,9 @@ loop_cond       : expression {
                 }
                 ;
 
-loop_mut        : unary_operation
-                | assignment
-                | epsilon
+loop_mut        : unary_operation {generate($1->repr);}
+                | assignment {generate(*$1);}
+                | epsilon{generate(" ");}
                 ;
 
 switch_case     : KW_SWITCH '(' expression ')' start_block sc_blocks sc_default end_block {

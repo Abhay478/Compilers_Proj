@@ -1,7 +1,7 @@
 %require "3.6"
 %{
     #include <stdint.h>
-    #include "semantic.hpp"
+    #include "../code/semantic.hpp"
     extern int yylex();
     void yyerror(const char* s);
     FILE * token_stream;
@@ -18,7 +18,7 @@
 
 %}
 %code requires {
-    #include "semantic.hpp"
+    #include "../code/semantic.hpp"
 }
 %union {
     std::string * ident;

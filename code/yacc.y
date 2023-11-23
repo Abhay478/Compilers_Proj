@@ -54,6 +54,7 @@
     } cons;
     Type * type;
     std::vector<Type *> * type_list;
+    std::vector<CType> * sc_type_list;
     Expr * expr;
     std::vector<Expr *> * exp_list;
     Archetypes archetype; 
@@ -132,7 +133,7 @@
 %type <type> generic
 %type <type> type_def
 %type <type_list> type_list
-%type <type_list> sc_blocks
+%type <sc_type_list> sc_blocks
 
 
 %type <archetype> archetype
@@ -1009,30 +1010,55 @@ loop_mut        : unary_operation {generate($1->repr);}
                 | epsilon{generate(" ");}
                 ;
 
-switch_case     : KW_SWITCH '(' expression ')' start_block sc_blocks sc_default end_block {
-                    if(!$3) break;
-                    for(auto i: *$6) {
-                        if(typecmp($3, i)) {
+switch_case     : KW_SWITCH '(' {generate("switch( ");} expression {
+                  if(!$4) break;
+                  generate($4->repr);
+                  // expression type must be int char or enum
+                  int type = $4->core();
+                  if(!(type == INT || type == FLOAT || type == ENUM)){
+                    yyerror("Switch case expression can have int, char or enum datatype only.");
+                  }
+                  } ')' {generate(" )");} start_block sc_blocks sc_default end_block {
+                    int exp_type = $4->core();
+                    for(CType i: *$9) {
+                        if((i != CT_INT && exp_type == INT) || (i != CT_CHAR && exp_type == CHAR) || (i != CT_VAR && exp_type == ENUM)) {
                             yyerror("Case type mismatch.");
                             break;
                         }
                     }
                 }
                 ;
-sc_default      : KW_DEFAULT ARROW body
+sc_default      : KW_DEFAULT ARROW {generate("default: ");} body
                 | epsilon
                 ;
 
-sc_blocks       : sc_blocks KW_CASE expression ARROW body {
+sc_blocks       : sc_blocks KW_CASE constant ARROW body {
                     $$ = $1;
-                    if(!$3) {
-                        break;
+                    // if(!$3) {
+                    //     break;
+                    // }
+                    $$->push_back($3.type);
+
+                    string out = "case ";
+                    if($3.type == CT_INT){
+                        out = out + to_string($3.lit_int) + ": ";
+                        generate(out);
                     }
-                    $$->push_back($3);
+                    else if($3.type == CT_CHAR){
+                        out = out + $3.lit_char + ": ";
+                        generate(out);
+                    }
+                    else if($3.type == CT_VAR){
+                        out = out + $3->tag + ": ";
+                        generate(out);
+                    }
+                    else{
+                        yyerror("Case constant can only be an integer, character or Enum variant.");
+                    }
                 }
                 | epsilon {
                     // $$ = new vector<Type *>();
-                    vector<Type *> *arr = new vector<Type *>(0, NULL);
+                    vector<Ctype> *arr = new vector<CType>(0, NULL);
                     $$ = arr;
                 }
                 ; // NOTE: Does not cascade

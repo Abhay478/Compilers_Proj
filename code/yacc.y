@@ -669,7 +669,7 @@ expression      : '(' expression ')' {
                             $$->repr = $1.bl ? "true" : "false";
                             break;
                         case CT_VAR:
-                            $$->repr = $1.var->tag; // CPP does not have ::
+                            $$->repr = $1.var->val; // CPP does not have ::
                             break;
                         default:
                             yyerror("Unknown constant type.");

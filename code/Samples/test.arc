@@ -40,8 +40,8 @@ fn main() {
   let c: u32 = foo();
 
   switch(a) {
-		case Bar::Zero => { b = 0;}
-    case Bar::One => {b = 1;}
+		case Bar::One => { b = 1;}
+    case Bar::Two => {b = 2;}
     default => {print("Default case");}
    }
   for(a = 0 as (Bar); a as (u32) < 4; a = (a as (u32) + 1) as (Bar)){

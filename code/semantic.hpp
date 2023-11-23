@@ -265,9 +265,20 @@ struct Struct {
     std::string name;
     std::vector<Var *> fields; 
     FunctionSymbolTable * methods;
+    std::vector<Archetypes> claimd;
     Struct(std::string name, std::vector<Var *> fields);
     Type * make_struct_type();
     Var* fieldLookup(std::string);
+    Function * method_lookup(std::string) {
+        return methods->lookup(name);
+    }
+    int add_claim(Archetypes archetype) {
+        if(!std::find(this->claimd.begin(), this->claimd.end(), archetype).base()) {
+            claimd.push_back(archetype); 
+            return 1;
+        }
+        return 0;
+    }
 };
 
 
@@ -280,14 +291,19 @@ struct StructSymbolTable {
 struct Enum {
     std::string name;
     std::vector<std::string> fields;
+    std::vector<Archetypes> claimd;
     Enum(std::string name, std::vector<std::string> fields);
+    int add_claim(Archetypes archetype) {
+        if(!std::find(this->claimd.begin(), this->claimd.end(), archetype).base()) {
+            claimd.push_back(archetype); 
+            return 1;
+        }
+        return 0;
+    }
 };
 
 /// @brief Only one of these.
 struct EnumSymbolTable {
-    // Enum ** entries;
-    // int size;
-    // int capacity;
     std::vector<Enum *> entries;
     int insert(Enum * este);
     Enum * lookup(std::string name);
@@ -356,6 +372,17 @@ Expr * eq_op_type_check_arithmetic(Expr *t1, Expr *t2);
 Expr * in_type_check(Expr *t1, Expr *t2);
 VarTypes convert_constType_to_varType(CType t);
 
+/******
+ * Codegen functions
+*/
+void generateln(const char *s);
+void generate_h(const char *s);
+void generate_h(std::string &s);
+void generateln_h(const char *s);
+void generateln_h(std::string &s);
+
+void generate_structs();
+void generate_enums();
 
 /***********************************************
  * Globals

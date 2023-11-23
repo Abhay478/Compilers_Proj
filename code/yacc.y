@@ -6,6 +6,7 @@
     void yyerror(const char* s);
     FILE * token_stream;
     FILE * output_stream;
+    FILE * struct_stream;
     // flags
     Type * current_func = NULL;
     int in_loop = 0;
@@ -160,7 +161,7 @@
 %start program
 
 %%
-program         : {generateln("#include<bits/stdc++.h>\nusing namespace std;"); } start_table P end_table
+program         : {generateln("#include<bits/stdc++.h>\nusing namespace std;\n#include\"a.hpp\"\n"); } start_table P end_table
 
 P               : epsilon
                 | P declaration ';'
@@ -616,10 +617,10 @@ expression      : '(' expression ')' {
                     }
                 }
                 | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr; }
-                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " / " + $3->repr; }
+                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr + ".inv()"; }
                 | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " % " + $3->repr;}
-                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + " + $3->repr;}
-                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " - " + $3->repr;}
+                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + " + $3->repr;}
+                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + -(" + $3->repr + ")";}
                 | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " > " + $3->repr;}
                 | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " < " + $3->repr;}
                 | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
@@ -669,7 +670,7 @@ expression      : '(' expression ')' {
                             $$->repr = $1.bl ? "true" : "false";
                             break;
                         case CT_VAR:
-                            $$->repr = $1.var->val; // CPP does not have ::
+                            $$->repr = $1.var->tag + "::" + $1.var->val; // CPP does not have ::
                             break;
                         default:
                             yyerror("Unknown constant type.");
@@ -1069,6 +1070,10 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                         Enum * entry = enum_st.lookup(*$2);
                         if(!entry) yyerror("No such type.");
                         else {
+                            if(!entry->add_claim($4)) {
+                                yyerror("Claim already exists.");
+                                break;
+                            }
                             Type * t = new Type();
                             t->push_type(ENUM, 0, 1, new Aux(entry));
                             Claim * claim = claim_st.lookup(t, $4);
@@ -1076,12 +1081,15 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                         }
                     } 
                     else {
+                        if(!entry->add_claim($4)) {
+                            yyerror("Claim already exists.");
+                            break;
+                        }
                         Type * t = new Type();
                         t->push_type(STRUCT, 0, 1, new Aux(entry));
                         Claim * claim = claim_st.lookup(t, $4);
                         if(!claim) {$$ = new Claim(t, $4);}
-                    }
-                    
+                    }   
                 }
                 ; 
 
@@ -1299,7 +1307,7 @@ struct          : KW_STRUCT IDENT {
                     string out = "struct ";
                     out += *$2;
                     generate(out);
-                    } start_block start_table attr_list end_table end_block {
+                } start_block start_table attr_list end_table end_block {
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
                         yyerror("Existing struct with same name");
@@ -1321,10 +1329,10 @@ attr_list       : type_var_list
                 ;
 
 enum            : KW_ENUM IDENT {
-                    string out = "enum ";
+                    string out = "enum class ";
                     out += *$2;
                     generate(out);
-                    } start_block variant_list end_block {
+                } start_block variant_list end_block {
                     // if preexisting struct or enum, error
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
@@ -1435,39 +1443,15 @@ epsilon         : ;
 
 bool error = false;
 
-bool last_ln = true;
-
-void generate(const char *s) {
-    if (last_ln) {
-        for (int i = 0; i < indent; i++) {
-            fprintf(output_stream, "    ");
-        }
-    }
-    fprintf(output_stream, "%s", s);
-    last_ln = false;
-}
-
-void generate(string &s) {
-    generate(s.c_str());
-}
-
-void generateln(const char *s) {
-    generate(s);
-    fprintf(output_stream, "\n");
-    last_ln = true;
-}
-
-void generateln(string &s) {
-    generateln(s.c_str());
-}
-
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
     output_stream = fopen("a.cpp", "w");
+    struct_stream = fopen("a.hpp", "w");
     init_symbol_tables();
     yyparse();
     fclose(token_stream);
     fclose(output_stream);
+    fclose(struct_stream);
     if (error) {
         // TODO: uncomment this once complete
         // remove("a.cpp");

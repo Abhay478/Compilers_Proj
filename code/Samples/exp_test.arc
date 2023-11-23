@@ -1,24 +1,44 @@
 struct Foo {
-    x: u32
+    x: i32
 }
 
-forge (a: Foo) as (b: u32) {
-    b = a.x;
+enum Bar {
+    One,
+    Two
 }
 
-fn foo(): u32 {
+fn foo(a: Bar): i32 {
+    let a: u32;
     return 4;
 }
 
-fn main() {
-    let q: Foo;
-    q.x = 10;
-    let a: u32 = q as (u32);
-    let b: [u32] = [1, 2, 3];
-    if(a in b) {
-        print("eh");
+fn main(): i32 {
+    let u: Foo;
+    u.x = 3;
+    let pfft: &Foo = &u;
+
+    let q: Bar = Bar::One;
+    let v: [Bar] = [q];
+    let z: Bar = v[0];
+
+    switch(z) {
+        case Bar::One => {
+            return 3;
+        }
+        default => {
+            return 0;
+        }
+    }
+
+    if(u.x > 1) {
+        return 0;
+    }
+    else if (u.x == -1) {
+        return 0;
     }
     else {
-        print("pfft");
+        return u.x;
     }
+
+    return 0;
 }

@@ -11,10 +11,10 @@ PDT get_pdt(char * s) {
         };
         break;
         case 'i': switch(s[1]) {
-            case '8': return U8;
-            case '1': return U16; 
-            case '6': return U64;
-            case '3': return U32;
+            case '8': return I8;
+            case '1': return I16; 
+            case '6': return I64;
+            case '3': return I32;
         };
         break;
         case 'f': return PDT_FLOAT;

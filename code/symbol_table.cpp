@@ -402,6 +402,16 @@ int ClaimSymbolTable::insert(Claim *cste) {
 }
 
 Claim *ClaimSymbolTable::lookup(Type *type, Archetypes archetype) {
+    if(type->core() == CART && (archetype == GROUP || archetype == RING)) {
+        auto cart = type->head->cart;
+        for(auto it : *cart) {
+            auto c = this->lookup(it, archetype);
+            if(!c) {
+                return NULL;
+            }
+        }
+        return new Claim(type, archetype);
+    }
     for (auto i : this->entries) {
         if (!typecmp(i->type, type, true) && i->archetype == archetype) {
             return i;

@@ -11,7 +11,7 @@
     Type * current_func = NULL;
     int in_loop = 0;
     int in_cond = 0;
-    int in_forg = 0;
+    int in_forg = 0
     int forge_count = 0;  // For generating unique names for forges.
     Scope * current_scope = NULL;
     Struct * method_of = NULL;
@@ -27,8 +27,9 @@
     void generateln(string &s);
     void generateln(const char *);
 
-    Var * forge_out;
+    Var * out;
     Scope * forge_scope = NULL;
+    Scope * rule_scope = NULL;
 
 %}
 %code requires {
@@ -196,13 +197,13 @@ end_block       : '}' {
                 }
 
 body            : start_block  {
-                    if(current_scope == forge_scope) {
-                        string s = forge_out->type->repr_cpp() + " " + forge_out->name + ";";
+                    if(current_scope == forge_scope || current_scope == rule_scope) {
+                        string s = out->type->repr_cpp() + " " + out->name + ";";
                         generateln(s);
                     }
                 } start_table statements end_table {
-                    if(current_scope == forge_scope) {
-                        string s = "return " + forge_out->name + ";";
+                    if(current_scope == forge_scope || current_scope == rule_scope) {
+                        string s = "return " + out->name + ";";
                         generateln(s);
                     }
                 } end_block
@@ -335,7 +336,7 @@ decl_item       : type_var {
                         break;
                     }
 
-                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name;
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->repr_cpp();
                     generate(repr_cpp);
                 }
                 | type_var '=' expression {
@@ -350,7 +351,7 @@ decl_item       : type_var {
                         break;
                     }
 
-                    string repr_cpp = $1->type->repr_cpp() + " " + $1->name + " = " + $3->repr;
+                    string repr_cpp = $1->type->repr_cpp() + " " + $1->repr_cpp() + " = " + $3->repr;
                     generate(repr_cpp);
                 }
                 ;
@@ -589,30 +590,9 @@ expression      : '(' expression ')' {
                         yyerror("Both operands to " RED_ESCAPE "@" RESET_ESCAPE " must be spaces.");
                     } else {
                         if(!typecmp($1, $3)) {
-                            // same type, don't need to check for forge
                             Type * t = cste1->over;
                             $$ = new Expr(t, false);
-                            break;
-                        }
-
-                        // both types are different, check for forge between innards.
-                        auto f1 = $1->pop_type();
-                        auto f2 = $3->pop_type(); 
-                        Function * temp = forge_st.lookup(f1, f2);
-                        Function * fste = temp ? temp : forge_st.lookup(f2, f1);
-                        if(!fste){
-                            yyerror("Use of " RED_ESCAPE "@" RESET_ESCAPE " over incompatible spaces.");
-                        }
-                        else{
-                            Type * temp = fste->return_type;
-                            Type * t = temp->pop_type(); 
-                            $$ = new Expr(t, false);
-                            /***
-                             * IMPORTANT
-                             * In Type *, if the head claims SPACE, the field it is a space over will be in the next pointer.
-                             * Hence the pop_type() call.
-                             * In a Claim, this is not so - there is a separate field.
-                            */
+                            $$->repr = "dot(" + $1->repr + ", " + $3->repr + ")";
                         }
                     }
                 }
@@ -641,7 +621,7 @@ expression      : '(' expression ')' {
                     }
 
                     $$ = new Expr(vste->type, true);
-                    $$->repr = *$1;
+                    $$->repr = vste->repr_cpp();
                 }
                 | constant {
                     auto t = new Type();
@@ -954,8 +934,8 @@ conditional     : KW_IF '(' expression ')' {
                     }
                     if($3->core() != BOOL) yyerror("predicate must be boolean");
 
-                    string out = "if (" + $3->repr + ")";
-                    generateln(out);
+                    string out = "if (" + $3->repr + ") ";
+                    generate(out);
                 } {in_cond = 1;} if_body 
                 ;
 
@@ -1032,7 +1012,7 @@ switch_case     : KW_SWITCH '(' {generate("switch( ");} expression {
                 }
                 // DO NOT move the header into a separate non-terminal. Weird segfaults.
                 ;
-sc_default      : KW_DEFAULT ARROW {generate("default: ");} body
+sc_default      : KW_DEFAULT ARROW {generate("default: ");} body {generateln("break;");}
                 | epsilon
                 ;
 case            : KW_CASE constant ARROW {
@@ -1044,7 +1024,7 @@ case            : KW_CASE constant ARROW {
                         out += $2.lit_char;
                     }
                     else if($2.type == CT_VAR){
-                        out += $2.var->tag;
+                        out += $2.var->tag + "::" + $2.var->val;
                     }
                     else{
                         yyerror("Case constant can only be an integer, character or Enum variant.");
@@ -1052,7 +1032,7 @@ case            : KW_CASE constant ARROW {
                     }
                     out += ": ";
                     generate(out);
-                } body {$$ = $2;}
+                } body {$$ = $2; generateln("break;");}
                 ;
 
 sc_blocks       : sc_blocks case {
@@ -1164,7 +1144,7 @@ rule_list       : rule_list tbl_rule
 tbl_rule        : start_table rule end_table
                 ;
 
-rule            : additive_rule
+rule            : additive_rule 
                 | mult_rule
                 | identity_rule
                 | negation_rule
@@ -1172,45 +1152,82 @@ rule            : additive_rule
                 ;
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
+                    rule_scope = current_scope;
+                    auto t = current_claim->type;
                     if(current_claim->archetype != GROUP) {
                         yyerror("Additive rule must be in a group.");
                         break;
                     }
-                    current_scope->insert(new Var(*$2, current_claim->type));
-                    current_scope->insert(new Var(*$4, current_claim->type));
-                    current_scope->insert(new Var(*$6, current_claim->type));
-                } ARROW body
+                    auto v1 = new Var(*$2, t);
+                    auto v2 = new Var(*$4, t);
+                    auto v3 = new Var(*$6, t);
+                    current_scope->insert(v1);
+                    current_scope->insert(v2);
+                    current_scope->insert(v3);
+
+                    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
+                    generateln(h);
+                } ARROW body {
+                    rule_scope = NULL;
+                    generateln("}");
+                }
                 ;
 
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
+                    rule_scope = current_scope;
+                    auto t = current_claim->type;
                     if(current_claim->archetype == RING) {
-                        current_scope->insert(new Var(*$2, current_claim->type));
-                        current_scope->insert(new Var(*$4, current_claim->type));
-                        current_scope->insert(new Var(*$6, current_claim->type));
+                        auto v1 = new Var(*$2, t);
+                        auto v2 = new Var(*$4, t);
+                        auto v3 = new Var(*$6, t);
+                        current_scope->insert(v1);
+                        current_scope->insert(v2);
+                        current_scope->insert(v3);
+                        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
+                        generateln(h);
                     } else if(current_claim->archetype == SPACE) {
-                        Type * t = current_claim->type->pop_type();
-                        current_scope->insert(new Var(*$2, current_claim->type));
-                        current_scope->insert(new Var(*$4, t));
-                        current_scope->insert(new Var(*$6, current_claim->type));
+                        Type * t_in = t->pop_type();
+                        auto v1 = new Var(*$2, t);
+                        auto v2 = new Var(*$4, t_in);
+                        auto v3 = new Var(*$6, t);
+                        current_scope->insert(v1);
+                        current_scope->insert(v2);
+                        current_scope->insert(v3);
+                        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
+                        generateln(h);
                     } else {
                         yyerror("Multiplicative rule must be in a ring or space.");
                     }
                     
-                } ARROW body
+                } ARROW body {
+                    rule_scope = NULL;
+                    generateln("}");
+                }
                 ;
 
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
-                    current_scope->insert(new Var(*$2, current_claim->type));
-                } ARROW body {
+                    Type * t = current_claim->type;
+                    current_scope->insert(new Var(*$2, t));
                     if(current_claim->archetype == GROUP) {
                         if($4 != 0) yyerror("Identity rule must be 0.");
+                        else {
+                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() {";
+                            generateln(s);
+                        }
                     }
                     else if(current_claim->archetype == RING) {
                         if($4 != 1) yyerror("Identity rule must be 1.");
+                        else {
+                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() {";
+                            generateln(s);
+                        }
                     }
                     else {
                         yyerror("Cannot have identity rule in field or space.");
                     }   
+
+                } ARROW body {
+                    generateln("}");
                 }
                 ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
 
@@ -1219,9 +1236,15 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' {
                         yyerror("Negation rule must be in a group.");
                         break;
                     }
-                    current_scope->insert(new Var(*$2, current_claim->type));
-                    current_scope->insert(new Var(*$5, current_claim->type));
-                } ARROW body
+                    auto v1 = new Var(*$2, current_claim->type);
+                    auto v2 = new Var(*$5, current_claim->type);
+                    current_scope->insert(v1);
+                    current_scope->insert(v2);
+                    string s = current_claim->type->repr_cpp() + " operator-(" + current_claim->type->repr_cpp() + " " + v2->repr_cpp() + ") {";
+                    generateln(s);
+                } ARROW body {
+                    generateln("}");
+                }
                 ;
 
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
@@ -1229,9 +1252,13 @@ inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
                         yyerror("Inverse rule must be in a field.");
                         break;
                     }
+                    if($4 != 1) yyerror("Inverse rule must be 1/x");
                     current_scope->insert(new Var(*$2, current_claim->type));
                     current_scope->insert(new Var(*$6, current_claim->type));
-                } ARROW body {if($4 != 1) yyerror("Inverse rule must be 1/x");}
+                    string s = current_claim->type->repr_cpp() + " inv(" + current_claim->type->repr_cpp() + " " + *$6 + ") {";
+                } ARROW body {
+                    generateln("}");
+                }
                 ; // LIT_INT must be 1
 
 function        : start_table function_header body end_table {method_of = NULL; current_func = NULL;}
@@ -1291,10 +1318,10 @@ type_var_list   : type_var_list_
 
 type_var_list_ : type_var_list_ ',' type_var {
                     $$ = $1;
-                    *$$ += "; " + $3->type->repr_cpp() + " " + $3->name;
+                    *$$ += "; " + $3->type->repr_cpp() + " " + $3->repr_cpp();
                 }
                 | type_var {
-                    $$ = new string($1->type->repr_cpp() + " " + $1->name);
+                    $$ = new string($1->type->repr_cpp() + " " + $1->repr_cpp());
                 }
                 ;            
 
@@ -1302,15 +1329,11 @@ param_list      : type_var_list {
                     $$ = $1;
                     if(!$$) break;
                     replace($$->begin(), $$->end(), ';', ',');
-                    generateln(*$$);
+                    // generateln(*$$);
                 }
                 ;
 
-struct          : KW_STRUCT IDENT {
-                    string out = "struct ";
-                    out += *$2;
-                    generate(out);
-                } start_block start_table attr_list end_table end_block {
+struct          : KW_STRUCT IDENT '{' start_table attr_list end_table '}' {
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
                         yyerror("Existing struct with same name");
@@ -1321,28 +1344,21 @@ struct          : KW_STRUCT IDENT {
                         yyerror("Existing enum with same name");
                         break;
                     }
-                    Struct * entry = new Struct(*$2, $7->entries);
+                    Struct * entry = new Struct(*$2, $6->entries);
                     struct_st.insert(entry);
-
-                    generateln(";");
                 }
                 ;
 
 attr_list       : type_var_list {
                     $$ = $1;
-                    // replace($$->begin(), $$->end(), ";", ";\n");
                     if($$) {
                         *$$ += ";"; 
-                        generateln(*$$);
+                        // generateln(*$$);
                     }
                 }
                 ;
 
-enum            : KW_ENUM IDENT {
-                    string out = "enum class ";
-                    out += *$2;
-                    generate(out);
-                } start_block variant_list end_block {
+enum            : KW_ENUM IDENT '{' variant_list '}' {
                     // if preexisting struct or enum, error
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
@@ -1354,10 +1370,8 @@ enum            : KW_ENUM IDENT {
                         yyerror("Existing enum with same name");
                         break;
                     }
-                    Enum * entry = new Enum(*$2, *$5);
+                    Enum * entry = new Enum(*$2, *$4);
                     enum_st.insert(entry);
-
-                    generateln(";");
                 }
                 ;
 
@@ -1375,15 +1389,7 @@ ident_list      : ident_list ',' IDENT {
                 }
                 ;
 
-variant_list    : ident_list {
-                    $$ = $1;
-                    string out = "";
-                    for(int i = 0; i < (*$1).size()-1; i++){
-                        out = out + (*$1)[i] + ", ";
-                    }
-                    out += (*$1)[(*$1).size() - 1];
-                    generateln(out);
-                    }
+variant_list    : ident_list 
                 ;
 
 forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' type_var ')' {
@@ -1404,10 +1410,10 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
                     generateln(header);
 
                     forge_count++;
-                    forge_out = $9;
+                    out = $9;
                     forge_scope = current_scope;
 
-                } body end_table end_table {in_forg = 0; forge_out = NULL; forge_scope = NULL;}
+                } body end_table end_table {in_forg = 0; out = NULL; forge_scope = NULL;}
                 ;
 
 cart            : '(' type ',' ')' {

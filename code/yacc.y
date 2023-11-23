@@ -106,8 +106,6 @@
 
 %type <cons> constant
 
-%type <repr> assignment
-
 %type <op> assign_op
 %type <expr> expression
 %type <expr> cart_value
@@ -116,6 +114,8 @@
 %type <expr> call
 %type <expr> unary_operation
 %type <expr> loop_cond
+%type <expr> assignment
+
 
 %type <exp_list> expr_list
 %type <exp_list> expr_list_
@@ -158,7 +158,7 @@
 %start program
 
 %%
-program         : start_table P end_table
+program         : {generateln("#include<bits/stdc++.h>\nusing namespace std;"); } start_table P end_table
 
 P               : epsilon
                 | P declaration ';'
@@ -213,8 +213,8 @@ statements      : statement statements
 
 statement       : declaration ';'
                 | assignment ';' { 
-                    $1 += ';';
-                    generateln(*$1);
+                    $1->repr += ';';
+                    generateln($1->repr);
                 }
                 | unary_operation ';' {
                     $1->repr += ';';
@@ -431,7 +431,7 @@ assignment      : expression assign_op expression  {
                         break;
                     }
                     string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr;
-                    *$$ = repr_cpp;
+                    $$->repr = repr_cpp;
                 }
                 ;
 
@@ -971,7 +971,7 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     generateln(out);
                 } body {in_loop--;}
                 | KW_FOR '(' {generate("for ( ");} 
-                assignment {generate(*$4);} ';' {generate("; ");} 
+                assignment {generate($4->repr);} ';' {generate("; ");} 
                 loop_cond {generate($8->repr);} ';' {generate("; ");} 
                 loop_mut ')' {in_loop++; generate(") ");} 
                 body {in_loop--;}
@@ -1006,7 +1006,7 @@ loop_cond       : expression {
                 ;
 
 loop_mut        : unary_operation {generate($1->repr);}
-                | assignment {generate(*$1);}
+                | assignment {generate($1->repr);}
                 | epsilon{generate(" ");}
                 ;
 
@@ -1032,13 +1032,7 @@ sc_default      : KW_DEFAULT ARROW {generate("default: ");} body
                 | epsilon
                 ;
 
-sc_blocks       : sc_blocks KW_CASE constant ARROW body {
-                    $$ = $1;
-                    // if(!$3) {
-                    //     break;
-                    // }
-                    $$->push_back($3.type);
-
+sc_blocks       : sc_blocks KW_CASE constant ARROW {
                     string out = "case ";
                     if($3.type == CT_INT){
                         out = out + to_string($3.lit_int) + ": ";
@@ -1049,16 +1043,22 @@ sc_blocks       : sc_blocks KW_CASE constant ARROW body {
                         generate(out);
                     }
                     else if($3.type == CT_VAR){
-                        out = out + $3->tag + ": ";
+                        out = out + $3.var->tag + ": ";
                         generate(out);
                     }
                     else{
                         yyerror("Case constant can only be an integer, character or Enum variant.");
                     }
+                } body {
+                    $$ = $1;
+                    // if(!$3) {
+                    //     break;
+                    // }
+                    $$->push_back($3.type);
                 }
                 | epsilon {
                     // $$ = new vector<Type *>();
-                    vector<Ctype> *arr = new vector<CType>(0, NULL);
+                    vector<CType> *arr = new vector<CType>(0);
                     $$ = arr;
                 }
                 ; // NOTE: Does not cascade
@@ -1277,13 +1277,13 @@ function_header :  fh_stub ':' type {
                 }
                 ;
 
-type_var_list   : type_var_list_
+type_var_list   : type_var_list_ {$$->repr += ";"; generateln($$->repr);}
                 | epsilon {$$ = NULL;}
                 ;
 
 type_var_list_ : type_var_list_ ',' type_var {
                     $$ = $1;
-                    $$->repr += ", " + $3->type->repr_cpp() + " " + $3->name;
+                    $$->repr += "; " + $3->type->repr_cpp() + " " + $3->name;
                 }
                 | type_var {
                     Expr * e = new Expr($1->type, true); // Tentative.
@@ -1295,7 +1295,11 @@ type_var_list_ : type_var_list_ ',' type_var {
 param_list      : type_var_list 
                 ;
 
-struct          : KW_STRUCT IDENT start_block start_table attr_list end_table end_block {
+struct          : KW_STRUCT IDENT {
+                    string out = "struct ";
+                    out += *$2;
+                    generate(out);
+                    } start_block start_table attr_list end_table end_block {
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
                         yyerror("Existing struct with same name");
@@ -1306,15 +1310,21 @@ struct          : KW_STRUCT IDENT start_block start_table attr_list end_table en
                         yyerror("Existing enum with same name");
                         break;
                     }
-                    Struct * entry = new Struct(*$2, $6->entries);
+                    Struct * entry = new Struct(*$2, $7->entries);
                     struct_st.insert(entry);
+
+                    generateln(";");
                 }
                 ;
 
 attr_list       : type_var_list
                 ;
 
-enum            : KW_ENUM IDENT start_block variant_list end_block {
+enum            : KW_ENUM IDENT {
+                    string out = "enum ";
+                    out += *$2;
+                    generate(out);
+                    } start_block variant_list end_block {
                     // if preexisting struct or enum, error
                     Struct *sste = struct_st.lookup(*$2);
                     if(sste) {
@@ -1326,8 +1336,10 @@ enum            : KW_ENUM IDENT start_block variant_list end_block {
                         yyerror("Existing enum with same name");
                         break;
                     }
-                    Enum * entry = new Enum(*$2, *$4);
+                    Enum * entry = new Enum(*$2, *$5);
                     enum_st.insert(entry);
+
+                    generateln(";");
                 }
                 ;
 
@@ -1345,7 +1357,15 @@ ident_list      : ident_list ',' IDENT {
                 }
                 ;
 
-variant_list    : ident_list
+variant_list    : ident_list {
+                    $$ = $1;
+                    string out = "";
+                    for(int i = 0; i < (*$1).size()-1; i++){
+                        out = out + (*$1)[i] + ", ";
+                    }
+                    out += (*$1)[(*$1).size() - 1];
+                    generateln(out);
+                    }
                 ;
 
 forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' type_var ')' {

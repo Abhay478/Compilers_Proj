@@ -266,6 +266,8 @@ struct Struct {
     std::vector<Var *> fields; 
     FunctionSymbolTable * methods;
     std::vector<Archetypes> claimd;
+    bool builtin;
+
     Struct(std::string name, std::vector<Var *> fields);
     Type * make_struct_type();
     Var* fieldLookup(std::string);

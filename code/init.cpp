@@ -102,6 +102,7 @@ static void init_struct_st() {
     vector<string> types = {"BigInt", "BigRational", "BigComplexRational"};
     for (auto i : types) {
         auto sste = new Struct(i, {});
+        sste->builtin = true;
         struct_st.insert(sste);
     }
 }
@@ -143,9 +144,6 @@ static void init_claim_st() {
 }
 
 static void init_forge_st() {
-    //auto print_params = make_params({new Var("str", make_type(PDT_STR))});
-    //auto print = new Function("print", print_params, make_type(PDT_VOID));
-    //func_st.insert(print);
 
     // forge int as str
     auto forge_int_str_params = make_params({new Var("n", make_type(I32))});

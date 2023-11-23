@@ -269,6 +269,7 @@ Var * Scope::lookup(string name) {
 Struct::Struct(string name, vector<Var *> fields) {
     this->name = name;
     this->fields = fields;
+    this->methods = new FunctionSymbolTable();
 }
 
 Type *Struct::make_struct_type() {

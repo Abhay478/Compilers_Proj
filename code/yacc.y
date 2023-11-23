@@ -125,10 +125,10 @@
 %type <exp_list> cart_value_list
 %type <exp_list> cart_value_list_
 %type <exp_list> opt_expr_list
-%type <expr> type_var_list
-%type <expr> type_var_list_
-%type <expr> param_list
-%type <expr> attr_list
+%type <repr> type_var_list
+%type <repr> type_var_list_
+%type <repr> param_list
+%type <repr> attr_list
 
 
 %type <type> type
@@ -1245,7 +1245,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
 
                         Function * entry = new Function(*$2, params, NULL);
                         $$.entry = entry;
-                        $$.repr = new string(*$2 + "(" + ($4 ? $4->repr : "") + ")");
+                        $$.repr = new string(*$2 + "(" + ($4 ? *$4 : "") + ")");
                     }
                 }
 
@@ -1259,7 +1259,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         sste->methods->insert(fste);
 
                         $$.entry = fste;
-                        $$.repr = new string(*$2 + "::" + *$4 + "(" + $6->repr + ")");
+                        $$.repr = new string(*$2 + "::" + *$4 + "(" + *$6 + ")");
                     }
                 }
                 ;
@@ -1285,22 +1285,25 @@ function_header :  fh_stub ':' type {
                 }
                 ;
 
-type_var_list   : type_var_list_ {$$->repr += ";"; generateln($$->repr);}
+type_var_list   : type_var_list_
                 | epsilon {$$ = NULL;}
                 ;
 
 type_var_list_ : type_var_list_ ',' type_var {
                     $$ = $1;
-                    $$->repr += "; " + $3->type->repr_cpp() + " " + $3->name;
+                    *$$ += "; " + $3->type->repr_cpp() + " " + $3->name;
                 }
                 | type_var {
-                    Expr * e = new Expr($1->type, true); // Tentative.
-                    e->repr = $1->type->repr_cpp() + " " + $1->name;
-                    $$ = e;
+                    $$ = new string($1->type->repr_cpp() + " " + $1->name);
                 }
                 ;            
 
-param_list      : type_var_list 
+param_list      : type_var_list {
+                    $$ = $1;
+                    if(!$$) break;
+                    replace($$->begin(), $$->end(), ';', ',');
+                    generateln(*$$);
+                }
                 ;
 
 struct          : KW_STRUCT IDENT {
@@ -1325,7 +1328,14 @@ struct          : KW_STRUCT IDENT {
                 }
                 ;
 
-attr_list       : type_var_list
+attr_list       : type_var_list {
+                    $$ = $1;
+                    // replace($$->begin(), $$->end(), ";", ";\n");
+                    if($$) {
+                        *$$ += ";"; 
+                        generateln(*$$);
+                    }
+                }
                 ;
 
 enum            : KW_ENUM IDENT {
@@ -1390,7 +1400,7 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
                     forge_st.insert(entry);
                     in_forg = 1;
 
-                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->repr + ")";
+                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + *$4 + ")";
                     generateln(header);
 
                     forge_count++;
@@ -1449,6 +1459,8 @@ int main() {
     struct_stream = fopen("a.hpp", "w");
     init_symbol_tables();
     yyparse();
+    generate_structs();
+    generate_enums();
     fclose(token_stream);
     fclose(output_stream);
     fclose(struct_stream);

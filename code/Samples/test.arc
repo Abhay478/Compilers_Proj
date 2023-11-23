@@ -18,11 +18,13 @@ fn foo(): u32 {
 
 fn main() {
   let b: u8;
-  let a: u32;
+  let a: Bar;
+  a = Bar::One;
   let c: u32 = foo();
 
-  switch((a+c)%2) {
-		case 0 => { b = 0;}
+  switch(a) {
+		case Bar::Zero => { b = 0;}
+    case Bar::One => {b = 1;}
     default => {print("Default case");}
    }
 

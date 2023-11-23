@@ -11,7 +11,7 @@
     Type * current_func = NULL;
     int in_loop = 0;
     int in_cond = 0;
-    int in_forg = 0
+    int in_forg = 0;
     int forge_count = 0;  // For generating unique names for forges.
     Scope * current_scope = NULL;
     Struct * method_of = NULL;

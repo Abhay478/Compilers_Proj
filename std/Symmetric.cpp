@@ -1,8 +1,7 @@
 // TODO: vector to Symmetric
 template <int N>
-class Symmetric {
+struct Symmetric {
     int perm[N];
-public:
     static Symmetric zero() {
         Symmetric<N> ret;
         for (int i = 0; i < N; i++) {

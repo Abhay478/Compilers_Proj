@@ -1,10 +1,9 @@
 template <int N>
-class Dihedral {
+struct Dihedral {
     int r;
     bool s;
     Dihedral() : r(0), s(false) {}
     Dihedral(int r_, bool s) : r(r_ >= 0 ? r_ % N : (r_ % N + N) % N), s(s) {}
-public:
     static Dihedral zero() {
         return Dihedral();
     }

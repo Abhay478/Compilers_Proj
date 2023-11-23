@@ -1,8 +1,7 @@
 // TODO: vector to Alternating
 template <int N>
-class Alternating {
+struct Alternating {
     int perm[N];
-public:
     static Alternating zero() {
         Alternating<N> ret;
         for (int i = 0; i < N; i++) {

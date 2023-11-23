@@ -12,10 +12,9 @@ constexpr bool is_prime() {
 }
 
 template <int N>
-class Cyclic {
+struct Cyclic {
     int r;
     Cyclic(int r_) : r(r_ >= 0 ? r_ % N : (r_ % N + N) % N) {}
-public:
     static Cyclic zero() {
         return Cyclic(0);
     }

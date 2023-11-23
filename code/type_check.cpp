@@ -74,7 +74,7 @@ Expr *div_type_check_arithmetic(Expr *t1, Expr *t2) {
 // both types must be int
 Expr *modulus_type_check_arithmetic(Expr *t1, Expr *t2) {
     if (!t1 || !t2) return NULL;
-
+    printf("modulus type check\n");
     if (t1->core() != INT || t2->core() != INT) {
         yyerror("Modulus requires both operands to be int types");
         return NULL;

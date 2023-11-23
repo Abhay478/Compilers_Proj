@@ -27,6 +27,7 @@
     void generateln(const char *);
 
     Var * forge_out;
+    Scope * forge_scope = NULL;
 
 %}
 %code requires {
@@ -105,6 +106,7 @@
 %left '.'
 
 %type <cons> constant
+%type <cons> case
 
 %type <op> assign_op
 %type <expr> expression
@@ -192,19 +194,17 @@ end_block       : '}' {
                     generateln("}");
                 }
 
-body            : start_block start_table {
-                    if(in_forg) {
+body            : start_block  {
+                    if(current_scope == forge_scope) {
                         string s = forge_out->type->repr_cpp() + " " + forge_out->name + ";";
                         generateln(s);
                     }
-                } statements {
-                    if(in_forg) {
+                } start_table statements end_table {
+                    if(current_scope == forge_scope) {
                         string s = "return " + forge_out->name + ";";
                         generateln(s);
-                        forge_out = NULL;
                     }
-                }
-                end_table end_block
+                } end_block
                 ;
 
 statements      : statement statements
@@ -460,7 +460,7 @@ constant        : LIT_CHAR {$$.lit_char = $1; $$.type = CT_CHAR;}
 
 expression      : '(' expression ')' {
                     $$ = $2;
-                    $$->repr = "(" + $2->repr + ")";
+                    if($$) $$->repr = "(" + $2->repr + ")";
                 }
                 | array_access
                 | '!' expression {
@@ -567,6 +567,7 @@ expression      : '(' expression ')' {
                     Function * fste = forge_st.lookup($1, $4);
                     if(!fste){
                         yyerror("No forge found");
+                        // break;
                     }
                     else{
                         Type * t = fste->return_type;
@@ -614,21 +615,21 @@ expression      : '(' expression ')' {
                         }
                     }
                 }
-                | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); $$->repr = $1->repr + " * " + $3->repr; }
-                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); $$->repr = $1->repr + " / " + $3->repr; }
-                | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); $$->repr = $1->repr + " % " + $3->repr;}
-                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); $$->repr = $1->repr + " + " + $3->repr;}
-                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); $$->repr = $1->repr + " - " + $3->repr;}
-                | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " > " + $3->repr;}
-                | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " < " + $3->repr;}
-                | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
-                | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
+                | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr; }
+                | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " / " + $3->repr; }
+                | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " % " + $3->repr;}
+                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + " + $3->repr;}
+                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " - " + $3->repr;}
+                | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " > " + $3->repr;}
+                | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " < " + $3->repr;}
+                | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
+                | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
                 | expression KW_IN expression  { 
                     $$ = in_type_check($1, $3); 
-                    $$->repr = "(std::find(" + $3->repr + ".begin(), " + $3->repr + ".end(), " + $1->repr + "))";
+                    if($$) $$->repr = "(std::find(" + $3->repr + ".begin(), " + $3->repr + ".end(), " + $1->repr + "))";
                 }
-                | expression AND expression    { $$ = and_or_type_check($1, $3); $$->repr = $1->repr + " && " + $3->repr;}
-                | expression OR expression     { $$ = and_or_type_check($1, $3); $$->repr = $1->repr + " || " + $3->repr;}
+                | expression AND expression    { $$ = and_or_type_check($1, $3); if($$) $$->repr = $1->repr + " && " + $3->repr;}
+                | expression OR expression     { $$ = and_or_type_check($1, $3); if($$) $$->repr = $1->repr + " || " + $3->repr;}
                 | IDENT {
                     Var * vste = current_scope->lookup(*$1);
                     if(!vste) {
@@ -1011,14 +1012,15 @@ loop_mut        : unary_operation {generate($1->repr);}
                 ;
 
 switch_case     : KW_SWITCH '(' {generate("switch( ");} expression {
-                  if(!$4) break;
-                  generate($4->repr);
-                  // expression type must be int char or enum
-                  int type = $4->core();
-                  if(!(type == INT || type == FLOAT || type == ENUM)){
-                    yyerror("Switch case expression can have int, char or enum datatype only.");
-                  }
-                  } ')' {generate(" )");} start_block sc_blocks sc_default end_block {
+                    if(!$4) break;
+                    generate($4->repr);
+                    // expression type must be int char or enum
+                    int type = $4->core();
+                    if(!(type == INT || type == FLOAT || type == ENUM)){
+                        yyerror("Switch argument can have integers, characters or enum variants only.");
+                    }
+                } ')' {generate(" )");} start_block sc_blocks sc_default end_block {
+                    if(!$4) {break;}
                     int exp_type = $4->core();
                     for(CType i: *$9) {
                         if((i != CT_INT && exp_type == INT) || (i != CT_CHAR && exp_type == CHAR) || (i != CT_VAR && exp_type == ENUM)) {
@@ -1027,39 +1029,37 @@ switch_case     : KW_SWITCH '(' {generate("switch( ");} expression {
                         }
                     }
                 }
+                // DO NOT move the header into a separate non-terminal. Weird segfaults.
                 ;
 sc_default      : KW_DEFAULT ARROW {generate("default: ");} body
                 | epsilon
                 ;
-
-sc_blocks       : sc_blocks KW_CASE constant ARROW {
+case            : KW_CASE constant ARROW {
                     string out = "case ";
-                    if($3.type == CT_INT){
-                        out = out + to_string($3.lit_int) + ": ";
-                        generate(out);
+                    if($2.type == CT_INT){
+                        out += to_string($2.lit_int);
                     }
-                    else if($3.type == CT_CHAR){
-                        out = out + $3.lit_char + ": ";
-                        generate(out);
+                    else if($2.type == CT_CHAR){
+                        out += $2.lit_char;
                     }
-                    else if($3.type == CT_VAR){
-                        out = out + $3.var->tag + ": ";
-                        generate(out);
+                    else if($2.type == CT_VAR){
+                        out += $2.var->tag;
                     }
                     else{
                         yyerror("Case constant can only be an integer, character or Enum variant.");
+                        break;
                     }
-                } body {
+                    out += ": ";
+                    generate(out);
+                } body {$$ = $2;}
+                ;
+
+sc_blocks       : sc_blocks case {
                     $$ = $1;
-                    // if(!$3) {
-                    //     break;
-                    // }
-                    $$->push_back($3.type);
+                    $$->push_back($2.type);
                 }
-                | epsilon {
-                    // $$ = new vector<Type *>();
-                    vector<CType> *arr = new vector<CType>(0);
-                    $$ = arr;
+                | case {
+                    $$ = new vector<CType>(1, $1.type); 
                 }
                 ; // NOTE: Does not cascade
 
@@ -1387,8 +1387,9 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
 
                     forge_count++;
                     forge_out = $9;
+                    forge_scope = current_scope;
 
-                } body end_table end_table {in_forg = 0;}
+                } body end_table end_table {in_forg = 0; forge_out = NULL; forge_scope = NULL;}
                 ;
 
 cart            : '(' type ',' ')' {

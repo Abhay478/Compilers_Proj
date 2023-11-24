@@ -123,7 +123,7 @@ Var * id_gen(string id, int val) {
     out = v;
     current_scope->insert(v);
     if(current_claim->archetype == GROUP) {
-        if(val != 0) {printf("Bad val.\n"); return NULL;}
+        if(val != 0) return NULL;
         string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() ";
         generate(s);
     }
@@ -172,7 +172,86 @@ vector<Var *> inv_gen(string inv, string op) {
     return {v1, v2};
 }
 
+void claim_with(Archetypes a, Function * entry1, Function * entry2) {
+    switch(a) {
+        case GROUP: {
+            auto v1 = add_gen("_sum", "_op1", "_op2");
+            generateln("{"); indent++;
+            string s = v1[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v1[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v1[2]->repr_cpp() + "));";
+            generateln(s);
+            s = "return " + v1[0]->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
 
+            auto v2 = neg_gen("_neg", "_op");
+            generateln("{"); indent++;
+            s = v2[0]->repr_cpp() + " = " + entry2->repr_cpp() + "(-" + entry1->repr_cpp() + "(" + v2[1]->repr_cpp() + "));";   
+            generateln(s);
+            s = "return " + v2[0]->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+
+            auto v3 = id_gen("_id", 0);
+            generateln("{"); indent++;
+            s = v3->repr_cpp() + " = " + entry1->repr_cpp() + "(0)" + ";";
+            generateln(s);
+            s = "return " + v3->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+
+            break;
+        }
+        case RING: {
+            auto v4 = mult_gen("_prod", "_op1", "_op2");
+            generateln("{"); indent++;
+            string s = v4[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v4[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v4[2]->repr_cpp() + "));";
+            generateln(s);
+            s = "return " + v4[0]->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+
+            auto v5 = id_gen("_id", 1);
+            generateln("{"); indent++;
+            s = v5->repr_cpp() + " = " + entry1->repr_cpp() + "(1)" + ";";
+            generateln(s);
+            s = "return " + v5->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+
+            break;
+        }
+        case FIELD: {
+            auto v6 = inv_gen("_inv", "_op");
+            generateln("{"); indent++;
+            string s = v6[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->return_type->repr_cpp() + "::inv(" + entry2->repr_cpp() + "(" + v6[1]->repr_cpp() + ")));";
+            generateln(s);
+            s = "return " + v6[0]->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+
+            break;
+        }
+        case SPACE: {
+            auto v7 = mult_gen("_prod", "_op1", "_op2");
+            generateln("{"); indent++;
+            string s = v7[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v7[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v7[2]->repr_cpp() + "));";
+            generateln(s);
+            s = "return " + v7[0]->repr_cpp() + ";";
+            generateln(s);
+            indent--;
+            generateln("}");
+            break;
+        }
+        default:
+            break;
+    }
+}
 /* int add_gen(Var * sum, Var * op1, Var * op2) {
     rule_scope = current_scope;
     auto t = current_claim->type;

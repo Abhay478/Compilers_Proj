@@ -271,8 +271,21 @@ struct Struct {
     }
     int add_claim(Archetypes archetype) {
         if(std::find(this->claimd.begin(), this->claimd.end(), archetype) == this->claimd.end()) {
-            claimd.push_back(archetype); 
-            return 0;
+            switch(archetype) {
+                case RING:
+                    if(std::find(this->claimd.begin(), this->claimd.end(), GROUP) == this->claimd.end()) {
+                        return -1;
+                    } return 0;
+                case FIELD:
+                    if(std::find(this->claimd.begin(), this->claimd.end(), RING) == this->claimd.end()) {
+                        return -1;
+                    } return 0;
+                case SPACE:
+                    if(std::find(this->claimd.begin(), this->claimd.end(), GROUP) == this->claimd.end()) {
+                        return -1;
+                    } return 0;
+                case GROUP: return 0;
+            }
         }
         return 1;
     }
@@ -383,6 +396,8 @@ std::vector<Var *> mult_gen(std::string prod, std::string op1, std::string op2);
 Var * id_gen(std::string id, int val);
 std::vector<Var *> neg_gen(std::string neg, std::string op);
 std::vector<Var *> inv_gen(std::string inv, std::string op);
+
+void claim_with(Archetypes a, Function * entry1, Function * entry2);
 
 void generate_structs();
 void generate_enums();

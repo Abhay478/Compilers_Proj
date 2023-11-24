@@ -1060,14 +1060,18 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
                         Enum * entry = enum_st.lookup(*$2);
-                        if(!entry)
-                        {
+                        if(!entry) {
                             yyerror("No such type.");
                             $$ = NULL;
                             break;
                         }
-                        if(entry->add_claim($4)) {
+                        int cl = entry->add_claim($4);
+                        if(cl == 1) {
                             yyerror("Claim already exists.");
+                            $$ = NULL;
+                            break;
+                        } else if (cl == -1) {
+                            yyerror("Claim dependencies missing.");
                             $$ = NULL;
                             break;
                         }
@@ -1218,34 +1222,6 @@ archetype_claim : claim_stub '{' type_def {
                                 generateln(s);
                                 indent--;
                                 generateln("}");
-
-                                auto v8 = add_gen("_sum", "_op1", "_op2");
-                                generateln("{"); indent++;
-                                s = v8[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v8[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v8[2]->repr_cpp() + "));";
-                                generateln(s);
-                                s = "return " + v8[0]->repr_cpp() + ";";
-                                generateln(s);
-                                indent--;
-                                generateln("}");
-
-                                auto v9 = neg_gen("_neg", "_op");
-                                generateln("{"); indent++;
-                                s = v9[0]->repr_cpp() + " = " + entry2->repr_cpp() + "(-" + entry1->repr_cpp() + "(" + v9[1]->repr_cpp() + "));";   
-                                generateln(s);
-                                s = "return " + v9[0]->repr_cpp() + ";";
-                                generateln(s);
-                                indent--;
-                                generateln("}");
-
-                                auto v10 = id_gen("_id", 0);
-                                generateln("{"); indent++;
-                                s = v10->repr_cpp() + " = " + entry1->repr_cpp() + "(0)" + ";";
-                                generateln(s);
-                                s = "return " + v10->repr_cpp() + ";";
-                                generateln(s);
-                                indent--;
-                                generateln("}");
-
                                 break;
                             }
                             default:

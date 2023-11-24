@@ -1160,22 +1160,22 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
 archetype_claim : claim_stub '{' type_def {
                     if(!$1) {
                         yyerror("Claim unsuccesful.");
+                        break;
                     }
-                    else {
                         // We do not need a copy constructor. current_claim is malloc'd in claim_stub.
-                        current_claim = $1;
-                        if ($3 && $1->archetype != SPACE) {
-                            yyerror("Cannot add inner types for flat archetypes.");
-                        } else if (!$3 && $1->archetype == SPACE) {
-                            yyerror("No inner types defined.");
-                        } else if ($3 && $1->archetype == SPACE) {
-                            current_claim->over = $3;
-                        }
-
-                        claim_st.insert(current_claim);
+                    current_claim = $1;
+                    if ($3 && $1->archetype != SPACE) {
+                        yyerror("Cannot add inner types for flat archetypes.");
+                    } else if (!$3 && $1->archetype == SPACE) {
+                        yyerror("No inner types defined.");
+                    } else if ($3 && $1->archetype == SPACE) {
+                        current_claim->over = $3;
                     }
+
+                    claim_st.insert(current_claim);
+
                 } rule_list '}' {
-                    if(!$5) break;
+                    if(!$1 || !$5) break;
                     auto v = *$5;
                     switch($1->archetype) {
                         case GROUP:
@@ -1373,6 +1373,7 @@ rule            : additive_rule {$$ = ADD;}
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
                     if(add_gen(*$2, *$4, *$6).empty()) {
                         yyerror("Additive rule must be in a group.");
+                        YYABORT;
                     }
                 } ARROW body {
                     rule_scope = NULL;
@@ -1384,6 +1385,7 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                     if(mult_gen(*$2, *$4, *$6).empty()) {
                         yyerror("Multiplicative rule must be in a ring or space.");
+                        YYABORT;
                     }
                     
                 } ARROW body {
@@ -1394,7 +1396,7 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                 ;
 
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
-                    if(id_gen(*$2, $4)) break;
+                    if(id_gen(*$2, $4)) {YYABORT;}
                     switch(current_claim->archetype) {
                         case GROUP:
                             yyerror("Identity must be 0.");
@@ -1419,6 +1421,7 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
 negation_rule   : '(' IDENT '=' '-' IDENT ')' {
                     if(neg_gen(*$2, *$5).empty()) {
                         yyerror("Negation rule must be in a group.");
+                        YYABORT;
                     }
                 } ARROW body {
                     rule_scope = NULL;
@@ -1430,6 +1433,7 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' {
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
                     if(inv_gen(*$2, *$6).empty()) {
                         yyerror("Inverse rule must be in a field.");
+                        YYABORT;
                     }
                 } ARROW body {
                     rule_scope = NULL;

@@ -60,6 +60,7 @@ extern Scope * rule_scope;
 extern Var * out;
 
 vector<Var *> add_gen(string sum, string op1, string op2) {
+    if(!current_claim) return {};
     rule_scope = current_scope;
     auto t = current_claim->type;
     if(current_claim->archetype != GROUP) {
@@ -81,6 +82,7 @@ vector<Var *> add_gen(string sum, string op1, string op2) {
 }
 
 vector<Var *> mult_gen(string prod, string op1, string op2) {
+    if(!current_claim) return {};
     rule_scope = current_scope;
     auto t = current_claim->type;
     Var * v1, * v2, * v3;
@@ -117,6 +119,7 @@ vector<Var *> mult_gen(string prod, string op1, string op2) {
 }
 
 Var * id_gen(string id, int val) {
+    if(!current_claim) return NULL;
     rule_scope = current_scope;
     Type * t = current_claim->type;
     auto v = new Var(id, t);
@@ -139,6 +142,7 @@ Var * id_gen(string id, int val) {
 }
 
 vector<Var *> neg_gen(string neg, string op) {
+    if(!current_claim) return {};
     rule_scope = current_scope;
     if(current_claim->archetype != GROUP) {
         return {};
@@ -156,6 +160,7 @@ vector<Var *> neg_gen(string neg, string op) {
 }
 
 vector<Var *> inv_gen(string inv, string op) {
+    if(!current_claim) return {};
     rule_scope = current_scope;
     if(current_claim->archetype != FIELD) {
         return {};

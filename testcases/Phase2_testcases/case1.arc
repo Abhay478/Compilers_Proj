@@ -22,8 +22,10 @@ fn main(): i32 {
     print("The maximum value is ");
     let max_val: str = maxVal as (str);
     print(max_val);
-    let factVal: u32 = factorial(5);
-    print("Factorial of 5 is ");
+    let inp: str = input("Enter value of number to calculate factorial of: \n");
+    let n: u32 = inp as (u32);
+    let factVal: u32 = factorial(n);
+    print("Factorial of n is ");
     let fact_val: str = factVal as (str);
     print(fact_val);
     return 0;

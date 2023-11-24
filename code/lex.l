@@ -120,6 +120,7 @@ Space       { seq_token("reserved keyword"); return KW_SPACE; }
             }
 {assign_op} {
                 seq_token("operator");
+                yylval.op = new std::string(yytext);
                 return ASSIGN_OP;
             }
 

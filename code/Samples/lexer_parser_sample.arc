@@ -6,7 +6,6 @@ fn fib(n: u32) : [u64] {
         let c: u32 = a + b;
         a = b;
         b = c;
-        out += [c];
     }
 
     return out;
@@ -36,30 +35,29 @@ claim two_tup is Group {
 
 forge (a: two_tup) as (b: (u64, u64)) {
     b = (a.val, a.aux);
-    return;
-    print("We are forging here.");
+    // print("We are forging here.");
 }
 
 forge (a: (u64, u64)) as (b: two_tup) {
     b.val = a.0;
     b.aux = a.1;
-    print("We are forging here also.");
+    // print("We are forging here also.");
 }
 
 forge (a: [u64]) as (b: two_tup) {
     b.val = a[0];
     b.aux = a[1];
-    print("We are forging here again.");
+    // print("We are forging here again.");
 }
 
-fn main() {
-    print("This is main.");
+fn main(): i32 {
+    // print("This is main.");
     let b: [u64] = fib(30);
-    // print(b);
+    // // print(b);
 
     let a: two_tup = [1, 2] as (two_tup);
-    // print(a);
+    // // print(a);
     let tup: (u64, u64) = a as ((u64, u64));
-    // print(tup);
+    // // print(tup);
 
 }

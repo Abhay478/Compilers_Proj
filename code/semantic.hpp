@@ -8,10 +8,6 @@
 #ifndef _SEMANTIC_H
 #define _SEMANTIC_H
 
-//! TODO
-//! - Initialise symbol table with builtin functions/types and generics - that would be 3 symbol tables.
-//! - Predeclare forge output variable?
-
 
 /***********************************************
  * Struct declarations.
@@ -114,9 +110,6 @@ union Aux {
     Aux(Enum * este) {this->este = este;}
     Aux(std::vector<Type *> * cart) {this->cart = cart;}
     Aux(Generic * gste, std::vector<GenericInner *> *types) {this->gste = gste; this->types = types;}
-
-    int foo();
-
 };
 
 struct GenericInner {

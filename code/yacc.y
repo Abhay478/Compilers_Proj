@@ -73,6 +73,16 @@
     GenericInner * targ;
     std::vector<GenericInner *> * targ_list;
     bool bl;
+    struct {
+        bool is_slice;
+        union {
+            std::string * repr;
+            struct {
+                std::string * start;
+                std::string * end;
+            } slice;
+        };
+    } acc;
 }
 
 // keywords
@@ -121,7 +131,6 @@
 %type <expr> assignment
 
 
-%type <exp_list> expr_list
 %type <exp_list> expr_list_
 %type <exp_list> cart_value_list
 %type <exp_list> cart_value_list_
@@ -150,7 +159,7 @@
 %type <ident_list_type> ident_list
 %type <ident_list_type> variant_list
 
-%type <count> array_index
+%type <acc> array_index
 
 %type <func> fh_stub
 
@@ -357,13 +366,13 @@ decl_item       : type_var {
                 ;
 
 type_var        : IDENT ':' type {
-                    auto out = new Var(*$1, $3);
-                    if (current_scope->insert(out)) {
+                    auto newvar = new Var(*$1, $3);
+                    if (current_scope->insert(newvar)) {
                         string err = "Variable " + *$1 + " already defined.";
                         yyerror(err.c_str());
                         $$ = NULL;
                     } else {
-                        $$ = out;
+                        $$ = newvar;
                     }
                 }
                 ;
@@ -556,7 +565,7 @@ expression      : '(' expression ')' {
                             Type * t = new Type();
                             t->head = (*c)[$3]->head;
                             $$ = new Expr(t, $1->is_lvalue);
-                            $$->repr = $1->repr + "." + to_string($3);
+                            $$->repr = "std::get<" + to_string($3) + ">(" + $1->repr + ")";
                         }
                     }
                 }         
@@ -576,23 +585,18 @@ expression      : '(' expression ')' {
                         $$->repr = fste->name + "(" + $1->repr + ")";
                     }
                 }
-                // TODO: Don't even ask.
                 | expression '@' expression // claim space 
                 {
                     if (!$1 || !$3) {
                         $$ = NULL;
                         break;
                     }
-                    Claim * cste1 = claim_st.lookup($1, SPACE);
-                    Claim * cste2 = claim_st.lookup($3, SPACE);
-                    if(!cste1 || !cste2){
-                        yyerror("Both operands to " RED_ESCAPE "@" RESET_ESCAPE " must be spaces.");
-                    } else {
-                        if(!typecmp($1, $3)) {
-                            Type * t = cste1->over;
-                            $$ = new Expr(t, false);
-                            $$->repr = "dot(" + $1->repr + ", " + $3->repr + ")";
+                    if($1->core() == GEN && $1->head->gste->name == "Vec") {
+                        if(typecmp($1, $3)) {
+                            yyerror("Type mismatch in vector dot product.");
+                            break;
                         }
+                        $$ = new Expr((*$1->head->types)[0]->type, false);
                     }
                 }
                 | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr; }
@@ -716,6 +720,10 @@ cart_value_list_: cart_value_list_ ',' expression {
                 ;
 
 return_stmt     : KW_RETURN expression {
+                    if(in_forg) {
+                        yyerror("Cannot return expression from forge.");
+                        break;
+                    }
                     if(!current_func) {
                         yyerror("Returning outside function.");
                     } else if(!current_func->head) {
@@ -725,11 +733,13 @@ return_stmt     : KW_RETURN expression {
                         yyerror("Type mismatch in return.");
                     }
 
-                    string out = "return " + $2->repr + ";";
-                    generateln(out);
+                    string gen = "return " + $2->repr + ";";
+                    generateln(gen);
                 } // Check if compatible with current function return type.
                 | KW_RETURN {
                     if(in_forg) {
+                        string s = "return " + out->repr_cpp() + ";";
+                        generateln(s);
                         break;
                     }
                     if(!current_func) {
@@ -763,7 +773,7 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                    $$->repr = *$1 + "(";
+                    $$->repr = "f_" + *$1 + "(";
                     for(int i = 0; i < $3->size(); i++) {
                         if(i) $$->repr += ", ";
                         $$->repr += (*$3)[i]->repr;
@@ -799,7 +809,13 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                }// member functions 
+                    $$->repr = $1->repr + "::m_" + *$3 + "(";
+                    for(int i = 0; i < $5->size(); i++) {
+                        if(i) $$->repr += ", ";
+                        $$->repr += (*$5)[i]->repr;
+                    }
+                    $$->repr += ")";
+                } // member functions 
                 ;
 
 opt_expr_list   : expr_list_
@@ -807,10 +823,6 @@ opt_expr_list   : expr_list_
                     vector<Expr *> *arr = new vector<Expr *>();
                     $$ = arr;
                 }
-                ;
-
-expr_list       : expr_list_ ','
-                | expr_list_
                 ;
 
 expr_list_      : expr_list_ ',' expression {
@@ -853,14 +865,14 @@ array_access    : expression array_index {
                         $$ = NULL;
                         break;
                     }
-                    if ($2 > 1) {
-                        yyerror("Buf index must contain exactly one dimension.\n" BLUE_ESCAPE
-                                "    Note" RESET_ESCAPE ": For `a: [[T]]`, use a[i][j] syntax.");
-                        $$ = NULL;
-                        break;
+                    if(!$2.is_slice) {
+                        $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                        $$->repr = $1->repr + *$2.repr;
                     }
-                    $$ = new Expr($1->pop_type(), $1->is_lvalue);
-                    $$->repr = $1->repr + "[" + to_string($2) + "]";
+                    else {
+                        $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                        $$->repr = "slice(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
+                    }
                 }
                 ;
 
@@ -904,26 +916,26 @@ array_decl      : '[' opt_expr_list ']' {
                 }
                 ;
 
-array_index     : '[' expr_list ']' // Access using commas, like a[1, 2] instead of a[1][2]. More mathy, more convenient.
-                {
-                    $$ = $2->size();
-                    for(auto i: (*$2)) {
-                        if(i->core() != INT) {
-                            yyerror("Array index must be an integer.");
-                            break;
-                        }
+array_index     : '[' expression ']' {
+                    if($2->core() != INT) {
+                        yyerror("Array index must be an integer.");
+                        break;
                     }
+                    $$.is_slice = false;
+                    $$.repr = new string("[" + $2->repr + "]");
+
                 }
                 | '[' expression SLICE expression ']' // subarray access 
                 {
                     if(!$2 || !$4) {
-                        $$ = 0;
                         break;
                     }
                     if($2->core() != INT || $4->core() != INT) {
                         yyerror("Slice operands must be integers.");
                     }
-                    $$ = 1;
+                    $$.is_slice = true;
+                    $$.slice.start = &$2->repr;
+                    $$.slice.end = &$4->repr;
                 }
                 ;
 
@@ -933,8 +945,8 @@ conditional     : KW_IF '(' expression ')' {
                     }
                     if($3->core() != BOOL) yyerror("predicate must be boolean");
 
-                    string out = "if (" + $3->repr + ") ";
-                    generate(out);
+                    string gen = "if (" + $3->repr + ") ";
+                    generate(gen);
                 } {in_cond = 1;} if_body 
                 ;
 
@@ -948,8 +960,8 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     if(!$3) {
                         break;
                     }
-                    string out = "while (" + $3->repr + ")";
-                    generateln(out);
+                    string gen = "while (" + $3->repr + ")";
+                    generateln(gen);
                 } body {in_loop--;}
                 | KW_FOR '(' {generate("for ( ");} 
                 assignment {generate($4->repr);} ';' {generate("; ");} 
@@ -1015,22 +1027,22 @@ sc_default      : KW_DEFAULT ARROW {generate("default: ");} body {generateln("br
                 | epsilon
                 ;
 case            : KW_CASE constant ARROW {
-                    string out = "case ";
+                    string gen = "case ";
                     if($2.type == CT_INT){
-                        out += to_string($2.lit_int);
+                        gen += to_string($2.lit_int);
                     }
                     else if($2.type == CT_CHAR){
-                        out += $2.lit_char;
+                        gen += $2.lit_char;
                     }
                     else if($2.type == CT_VAR){
-                        out += $2.var->tag + "::" + $2.var->val;
+                        gen += $2.var->tag + "::" + $2.var->val;
                     }
                     else{
                         yyerror("Case constant can only be an integer, character or Enum variant.");
                         break;
                     }
-                    out += ": ";
-                    generate(out);
+                    gen += ": ";
+                    generate(gen);
                 } body {$$ = $2; generateln("break;");}
                 ;
 
@@ -1072,7 +1084,7 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                 }
                 ; 
 
-archetype_claim : claim_stub start_block type_def {
+archetype_claim : claim_stub '{' type_def {
                     if(!$1) {
                         yyerror("Claim unsuccesful.");
                     }
@@ -1089,7 +1101,7 @@ archetype_claim : claim_stub start_block type_def {
 
                         claim_st.insert(current_claim);
                     }
-                } rule_list end_block {
+                } rule_list '}' {
                     current_claim = NULL;
                 }
                 | claim_stub KW_WITH '(' ident_list ')' ';' {
@@ -1152,7 +1164,6 @@ rule            : additive_rule
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
                     rule_scope = current_scope;
-                    printf("additive rule\n");
                     auto t = current_claim->type;
                     if(current_claim->archetype != GROUP) {
                         yyerror("Additive rule must be in a group.");
@@ -1165,11 +1176,14 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
                     current_scope->insert(v2);
                     current_scope->insert(v3);
 
+                    out = v1;
+
                     string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
                     generateln(h);
                 } ARROW body {
                     rule_scope = NULL;
                     generateln("}");
+                    out = NULL;
                 }
                 ;
 
@@ -1183,6 +1197,9 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                         current_scope->insert(v1);
                         current_scope->insert(v2);
                         current_scope->insert(v3);
+
+                        out = v1;
+
                         string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
                         generateln(h);
                     } else if(current_claim->archetype == SPACE) {
@@ -1193,6 +1210,9 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                         current_scope->insert(v1);
                         current_scope->insert(v2);
                         current_scope->insert(v3);
+
+                        out = v1;
+
                         string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
                         generateln(h);
                     } else {
@@ -1202,11 +1222,14 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                 } ARROW body {
                     rule_scope = NULL;
                     generateln("}");
+                    out = NULL;
                 }
                 ;
 
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
+                    rule_scope = current_scope;
                     Type * t = current_claim->type;
+                    out = new Var(*$2, t);
                     current_scope->insert(new Var(*$2, t));
                     if(current_claim->archetype == GROUP) {
                         if($4 != 0) yyerror("Identity rule must be 0.");
@@ -1227,11 +1250,14 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
                     }   
 
                 } ARROW body {
+                    rule_scope = NULL;
                     generateln("}");
+                    out = NULL;
                 }
                 ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
 
 negation_rule   : '(' IDENT '=' '-' IDENT ')' {
+                    rule_scope = current_scope;
                     if(current_claim->archetype != GROUP) {
                         yyerror("Negation rule must be in a group.");
                         break;
@@ -1240,10 +1266,15 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' {
                     auto v2 = new Var(*$5, current_claim->type);
                     current_scope->insert(v1);
                     current_scope->insert(v2);
+
+                    out = v1;
+
                     string s = current_claim->type->repr_cpp() + " operator-(" + current_claim->type->repr_cpp() + " " + v2->repr_cpp() + ") {";
                     generateln(s);
                 } ARROW body {
+                    rule_scope = NULL;
                     generateln("}");
+                    out = NULL;
                 }
                 ;
 
@@ -1272,7 +1303,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
 
                         Function * entry = new Function(*$2, params, NULL);
                         $$.entry = entry;
-                        $$.repr = new string(*$2 + "(" + ($4 ? *$4 : "") + ")");
+                        $$.repr = new string("f_" + *$2 + "(" + ($4 ? *$4 : "") + ")");
                     }
                 }
 
@@ -1286,7 +1317,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         sste->methods->insert(fste);
 
                         $$.entry = fste;
-                        $$.repr = new string(*$2 + "::" + *$4 + "(" + *$6 + ")");
+                        $$.repr = new string(*$2 + "::m_" + *$4 + "(" + *$6 + ")");
                     }
                 }
                 ;

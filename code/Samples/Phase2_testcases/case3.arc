@@ -19,7 +19,7 @@ fn fibonacci(n: u32): [u32] {
     let fib: [u32] = [0, 1];
     for (let i: u32 = 2; i < n; i++) {
         let next: u32 = fib[i - 1] + fib[i - 2];
-        fib.push(next);
+        push(fib, next);
     }
     return fib;
 }

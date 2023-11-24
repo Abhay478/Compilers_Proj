@@ -1,37 +1,81 @@
-struct Vector2D {
-    x: float,
-    y: float
+enum Bar {
+    Zero,
+    One,
+    Two
 }
 
-claim Vector2D is Space {
-    (result = a * k) => {
-        result.x = a.x * k;
-        result.y = a.y * k;
+let Z0: Cyclic<3>;
+let Z1: Cyclic<3>;
+let Z2: Cyclic<3>;
+
+forge (cyc: Cyclic<3>) as (b: Bar) {
+    let a: u8 = cyc as (u8);
+    if(a == 0) {
+        b = Bar::Zero;
+    }
+    if(a == 1) {
+        b = Bar::One;
+    }
+    else {
+        b = Bar::Two;
     }
 }
 
-forge (arr: [float]) as (vec: Vector2D) {
-    vec.x = arr[0];
-    vec.y = arr[1];
+forge (a: Bar) as (b: Cyclic<3>) {
+    if(a == Bar::Zero) {
+        b = Z0;
+    }
+    else if(a == Bar::One) {
+        b = Z1;
+    }
+    else {
+        b = Z2;
+    }
 }
 
-fn vectorMagnitude(vec: Vector2D): float {
-    return (vec.x * vec.x + vec.y * vec.y).sqrt();
-}
-
-fn main(): i32 {
-    let v1: Vector2D = [3.0, 4.0] as (Vector2D);
-    let v2: Vector2D = v1 * 2.0; // Scaling the vector
-
-    let mag: float = vectorMagnitude(v2);
-    print("Magnitude of v2: ");
-    print(mag);
-
-    if (mag > 10.0) {
-        print("Large vector");
-    } else {
-        print("Small vector");
+claim Bar is Group {
+    (c = x + y) => {
+        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
+    }
+    (c = 0) => {
+        c = Bar::Zero;
     }
 
-    return 0;
+    (c = -x) => {
+        c = (- (x as (Cyclic<3>))) as (Bar);
+    }
+}
+
+struct Foo {
+    a: u8,
+    var: Bar
+}
+
+forge (a: u8) as (out: Foo) {
+    out.a = a;
+    out.var = Bar::Zero;
+}
+
+forge (arg: (u8, Bar)) as (out: Foo) {
+    out.a = arg.0;
+    out.var = arg.1;
+}
+
+claim Foo is Group {
+    (out = x + y) => {
+        out.a = x.a + y.a;
+        out.var = x.var + y.var;
+    }
+
+    (c = 0) => {
+        c = (0, Bar::Zero) as (Foo);
+    }
+}
+
+fn main() {
+    print("Hello world.\n");
+    let q: Foo = 0 as (Foo);
+    let qq: Foo = 1 as (Foo);
+
+    let qqq: Foo = q + qq;
 }

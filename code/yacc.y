@@ -531,7 +531,7 @@ expression      : '(' expression ')' {
                 | expression '.' IDENT {
                     InnerType * it = $1->head;
                     string refs = "";
-                    while(t->core_type == REF) {
+                    while(it->core_type == REF) {
                         it = it->next;
                         refs += "*";
                     }
@@ -550,8 +550,8 @@ expression      : '(' expression ')' {
                         if(!v){
                             yyerror("Field of struct doesn't exist");
                         }
-                        $$ = new Expr(v->type, t->is_lvalue);
-                        $$->repr = "(" + refs + "(" $1->repr + "))" + "." + *$3;
+                        $$ = new Expr(v->type, $1->is_lvalue);
+                        $$->repr = "(" + refs + "(" + $1->repr + "))" + "." + *$3;
                     }
                 } // struct access, lookup in table
                 | expression '.' LIT_INT 

@@ -33,6 +33,7 @@ forge (a: Bar) as (b: Cyclic<3>) {
     }
 }
 
+// cannot claim for enum. Sad.
 claim Bar is Group {
     (c = x + y) => {
         c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
@@ -40,7 +41,6 @@ claim Bar is Group {
     (c = 0) => {
         c = Bar::Zero;
     }
-
     (c = x) => {
         c = (- (x as (Cyclic<3>))) as (Bar);
     }

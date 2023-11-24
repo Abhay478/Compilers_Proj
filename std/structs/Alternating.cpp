@@ -1,32 +1,32 @@
-// TODO: vector to Symmetric
+// TODO: vector to Alternating
 template <int N>
-struct Symmetric {
+struct Alternating {
     int perm[N];
-    static Symmetric zero() {
-        Symmetric<N> ret;
+    static Alternating zero() {
+        Alternating<N> ret;
         for (int i = 0; i < N; i++) {
             ret.perm[i] = i;
         }
         return ret;
     }
 
-    Symmetric<N> operator+(const Symmetric<N> s) const {
-        Symmetric<N> ret;
+    Alternating<N> operator+(const Alternating<N> s) const {
+        Alternating<N> ret;
         for (int i = 0; i < N; i++) {
             ret.perm[i] = perm[s.perm[i]];
         }
         return ret;
     }
 
-    Symmetric<N> operator-() const {
-        Symmetric<N> ret;
+    Alternating<N> operator-() const {
+        Alternating<N> ret;
         for (int i = 0; i < N; i++) {
             ret.perm[perm[i]] = i;
         }
         return ret;
     }
 
-    bool operator==(const Symmetric<N> s) const {
+    bool operator==(const Alternating<N> s) const {
         for (int i = 0; i < N; i++) {
             if (perm[i] != s.perm[i]) {
                 return false;
@@ -34,13 +34,13 @@ struct Symmetric {
         }
         return true;
     }
-    bool operator!=(const Symmetric<N> s) const {
+    bool operator!=(const Alternating<N> s) const {
         return !(*this == s);
     }
 };
-
+/*
 static void check() {
-    auto zero = Symmetric<5>::zero();
+    auto zero = Alternating<5>::zero();
     auto a = zero + zero;
     auto b = -zero;
-}
+}*/

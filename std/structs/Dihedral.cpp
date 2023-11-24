@@ -22,9 +22,9 @@ struct Dihedral {
         return r != d.r || s != d.s;
     }
 };
-
+/*
 static void check() {
     auto zero = Dihedral<5>::zero();
     auto a = zero + zero;
     auto b = -zero;
-}
+}*/

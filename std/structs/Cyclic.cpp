@@ -59,7 +59,7 @@ struct Cyclic {
         return r != c.r;
     }
 };
-
+/*
 static void check() {
     auto zero = Cyclic<5>::zero();
     auto one = Cyclic<5>::one();
@@ -72,4 +72,4 @@ static void check() {
         auto zero = Cyclic<6>::zero();
         // auto inv = zero.inv();
     }
-}
+}*/

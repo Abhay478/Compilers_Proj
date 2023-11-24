@@ -87,6 +87,16 @@ All the operators have the same meaning as in C, with enhanced functionality for
     max = c;
   }
   ```
+- The `switch` case conditional is also provided, similar to C. The keyword `switch` is used followed by an expression in parantheses, whose value can be of integer, character, or enum variant type only (Similar to C).
+- The case constants consist of the keyword `case` followed by the case constant (integer, character or enum variant type, and also the same type of the value returned by the switch case expression), followed by the arrow operator (=>). Each case block is enclosed in curly braces. The default case is optional.
+- The syntax:
+  ```
+  let a: u32 = 5001;
+  switch(a%2) {
+      case 0 => { b = Parity::Even;}
+      case 1 => { b = Parity::Odd; }
+    }
+  ```
 
 ## Loops
 
@@ -131,182 +141,187 @@ All the operators have the same meaning as in C, with enhanced functionality for
 
 ## Forges
 
-Functions provided by the language to convert between types (similar to Python's `int('123')` and `str(123)`)
+- Functions provided by the language to convert between types (similar to Python's `int('123')` and `str(123)`)
 
-Forges are Archetypes' equivalent to constructors. They are defined using the `forge` keyword, similar to functions, and casting can be done using the `as` keyword.
+- Forges are Archetypes' equivalent to constructors. They are defined using the `forge` keyword, similar to functions, and casting can be done using the `as` keyword.
 
-```
-enum Parity {
-  Even,
-  Odd
-}
+- THe syntax is:
 
-forge (a: u8) as Parity {
-  if (a % 2 == 0) {
-    return Parity::Even;
-  } else {
-    return Parity::Odd;
+  ```
+  enum Parity {
+    Even,
+    Odd
   }
-}
 
-forge (a: u8, b: u8) as Parity {
-  if (a % 2 == 0 && b % 2 == 0) {
-    return Parity::Even;
-  } else {
-    return Parity::Odd;
+  forge (a: u8) as (b: Parity) {
+    if (a % 2 == 0) {
+      b = Parity::Even;
+    } else {
+      b = Parity::Odd;
+    }
   }
-}
 
-fn main() {
-  let a: Parity = 1 as (Parity);
-    // a is now Parity::Odd
-  let b: Parity = (1, 2) as (Parity);
-    // b is now Parity::Odd
-}
-```
+  forge (a: (u8, u8)) as (c: Parity) {
+    if (a.0 % 2 == 0 && a.1 % 2 == 0) {
+      c = Parity::Even;
+    } else {
+      c = Parity::Odd;
+    }
+  }
 
-- Forges like `(Buf<Buf<T>>) as (Matrix)` are used for more complex type conversion.
+  fn main() : i32 {
+    let a: Parity = 1 as (Parity);
+      // a is now Parity::Odd
+    let x: (u8, u8) = (1,2);
+    let b: Parity = x as (Parity);
+      // b is now Parity::Odd
+  }
+  ```
+
+- Forges like `(a: [[u32]]) as (b: Matrix)` are used for more complex type conversion.
   ```
   let b: Matrix<u32> = ([[1, 2, 3], [4, 5, 6]]) as (Matrix<u32>); // 2x3 matrix
   ```
 
 # Type system
 
-We have devised a rich and flexible type system to aid in expressing complex algebraic concepts. They work with the diverse Forges to allow the programmer to express their ideas in a concise and elegant manner.
+- We have devised a rich and flexible type system to aid in expressing complex algebraic concepts. They work with the diverse Forges to allow the programmer to express their ideas in a concise and elegant manner.
 
 ## Structs
 
-Definition:
+- Definition:
 
-```
-struct Foo {
-  field1: str,
-  field2: u32,
-}
-```
+  ```
+  struct Foo {
+    field1: str,
+    field2: u32,
+  }
+  ```
 
-Note that the trailing comma is optional.
+- Note that the trailing comma is optional.
 
-To access a field, use the `.` operator. 
+- To access a field, use the `.` operator. 
 
-```
-let u: Foo; // declaration
-u.field1 = 1; // assignment
-```
+  ```
+  let u: Foo; // declaration
+  u.field1 = 1; // assignment
+  ```
 
-The same operator can be used to access fields, even from references to structs. 
+- The same operator can be used to access fields, even from references to structs. 
 
-```
-let u: Foo;
-let v: &name = &u;
-v.field1 = 1;
-```
+  ```
+  let u: Foo;
+  let v: &name = &u;
+  v.field1 = 1;
+  ```
 
 ## Enums
 
-```
-enum Bar {
-  Variant1,
-  Variant2,
-}
-```
+- Definition:
 
-Note that the trailing comma is optional.
+  ```
+  enum Bar {
+    Variant1,
+    Variant2,
+  }
+  ```
 
-Use the `::` operator to depict enum variants. 
+- Note that the trailing comma is optional.
 
-```
-let u: Bar = Bar::Variant1;
-```
+- Use the `::` operator to depict enum variants. 
+
+  ```
+  let u: Bar = Bar::Variant1;
+  ```
 
 # Archetypes
 
-Archetypes are a powerful tool to allow the programmer to `claim` that their type satisfies the
+- Archetypes are a powerful tool to allow the programmer to `claim` that their type satisfies the
 requirements for some algebraic structure. They are similar to traits in Rust. Unlike Rust,
 Archetype has exactly 4 Archetypes (`Group`, `Ring`, `Field`, `Space`).
 
 ## `claim`ing Archetypes
 
-Each Archetype has a set of operations that must be implemented. These operations are discussed in
+- Each Archetype has a set of operations that must be implemented. These operations are discussed in
 the below sections for each Archetype.
 
-To claim that a type satisfies an Archetype, one uses the `claim` keyword. This is similar to Rust's
+- To claim that a type satisfies an Archetype, one uses the `claim` keyword. This is similar to Rust's
 `impl Trait` syntax.
 
-For example, to claim that a type `Foo` satisfies the `Group` Archetype:
+- For example, to claim that a type `Foo` satisfies the `Group` Archetype:
 
-```
-struct Foo {
-  z1: bool,
-  z2: bool,
-}
+  ```
+  struct Foo {
+    z1: bool,
+    z2: bool,
+  }
 
-// Claim that Foo is a Group (Z2 x Z2)
-claim Foo is Group {
-  (foo = a + b) => {
-    foo.z1 = a.z1 != b.z1;
-    foo.z2 = a.z2 != b.z2;
-  }
-  
-  (foo = 0) => {
-    foo.z1 = false;
-    foo.z2 = false;
-  }
-  
-  (foo = -a) => {
-    foo.z1 = a.z1;
-    foo.z2 = a.z2;
-  }
-};
-```
+  // Claim that Foo is a Group (Z2 x Z2)
+  claim Foo is Group {
+    (foo = a + b) => {
+      foo.z1 = a.z1 != b.z1;
+      foo.z2 = a.z2 != b.z2;
+    }
+    
+    (foo = 0) => {
+      foo.z1 = false;
+      foo.z2 = false;
+    }
+    
+    (foo = -a) => {
+      foo.z1 = a.z1;
+      foo.z2 = a.z2;
+    }
+  };
+  ```
 
-While in the above example Foo is a `struct`, `claim` can also accept `enum`s. Archetypes cannot be
+- While in the above example Foo is a `struct`, `claim` can also accept `enum`s. Archetypes cannot be
 implemented for system types, but some default implementations are provided.
 
-An alternate way to claim an archetype is through an isomorphism. If there is an existing type that
+- An alternate way to claim an archetype is through an isomorphism. If there is an existing type that
 implements the Archetype, and there is an isomorphism between the two types, then the Archetype can
 be claimed using the `claim ... with ...` syntax:
 
-```
-struct Foo { ... }
-struct Bar { ... }
+  ```
+  struct Foo { ... }
+  struct Bar { ... }
 
-claim Bar is Group { ... }
+  claim Bar is Group { ... }
 
-fn foo_to_bar(foo: Foo): Bar { ... }
-fn bar_to_foo(bar: Bar): Foo { ... }
+  fn foo_to_bar(foo: Foo): Bar { ... }
+  fn bar_to_foo(bar: Bar): Foo { ... }
 
-claim Foo is Group with (foo_to_bar, bar_to_foo);
-```
+  claim Foo is Group with (foo_to_bar, bar_to_foo);
+  ```
 
-Both `foo_to_bar` and `bar_to_foo` must be isomorphisms, and should be inverses of each other.
+- Both `foo_to_bar` and `bar_to_foo` must be isomorphisms, and should be inverses of each other.
 
 ## Group
 
-A group is defined as a set $S$ and an operation $+$ which satisfies the following
+- A group is defined as a set $S$ and an operation $+$ which satisfies the following
 bounds:
 
-- Closure: $∀ a, b ∈ S$, $a + b ∈ S$.
-- Associativity: $a + (b + c) = (a + b) + c$
-- identity:
-  - $∃ 0 ∈ S$ such that $a + 0 = 0 + a = a$ for all $a ∈ S$
-- inverse:
-  - $∀ a ∈ S$ there exists $(-a) ∈ S$ such that $a + (-a) = 0$
+  - Closure: $∀ a, b ∈ S$, $a + b ∈ S$.
+  - Associativity: $a + (b + c) = (a + b) + c$
+  - identity:
+    - $∃ 0 ∈ S$ such that $a + 0 = 0 + a = a$ for all $a ∈ S$
+  - inverse:
+    - $∀ a ∈ S$ there exists $(-a) ∈ S$ such that $a + (-a) = 0$
 
-A `Group` may be `claim`ed in our language (see below) by specifying an operation which satisfies
+- A `Group` may be `claim`ed in our language (see below) by specifying an operation which satisfies
 these bounds, as well as an identity element and the inverse operation.
 
-Some examples of `Group`s are:
+- Some examples of `Group`s are:
 
-| Group       | Provided Type                | Description                                       |
-| ---         | ---                          | ---                                               |
-| $Z_{n}$     | `Cyclic<n: u32>`             | Cyclic group                                      |
-| $S_{n}$     | `Symmetric<n>`               | Symmetric group                                   |
-| $A_{n}$     | `Alternating<n>`             | Alternating group                                 |
-| $D_{2n}$    | `Dihedral<n>`                | Dihedral group                                    |
-| $GL_{n}[F]$ | `InvMat<n, F: claims Field>` | Invertible $n \times n$ matrices over a field $F$ |
+  | Group       | Provided Type                | Description                                       |
+  | ---         | ---                          | ---                                               |
+  | $Z_{n}$     | `Cyclic<n: u32>`             | Cyclic group                                      |
+  | $S_{n}$     | `Symmetric<n>`               | Symmetric group                                   |
+  | $A_{n}$     | `Alternating<n>`             | Alternating group                                 |
+  | $D_{2n}$    | `Dihedral<n>`                | Dihedral group                                    |
+  | $GL_{n}[F]$ | `InvMat<n, F: claims Field>` | Invertible $n \times n$ matrices over a field $F$ |
 
-Note that `claims` is not a keyword. It is simply used within this document to indicate that the
+- Note that `claims` is not a keyword. It is simply used within this document to indicate that the
 type argument `F` must be a `Field`.
 
 #### To `claim`

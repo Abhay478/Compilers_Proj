@@ -1,4 +1,4 @@
-#include <type_traits>
+#include <stdexcept>
 
 // template function is_prime
 template <int N>
@@ -23,8 +23,10 @@ struct Cyclic {
     }
 
     // inv() only exists if N is prime
-    typename std::enable_if<is_prime<N>(), Cyclic<N>>::type
-    inv() const {
+    Cyclic<N> inv() const {
+        if constexpr (!is_prime<N>()) {
+            throw std::runtime_error("inv() only exists if N is prime");
+        }
         // modinv(r, N) using extended euclidean algorithm
         int a = r, b = N, x = 1, y = 0;
         while (a != 1) {
@@ -39,21 +41,21 @@ struct Cyclic {
         return Cyclic(x);
     }
 
-    Cyclic<N> operator+(const Cyclic<N>& c) const {
+    Cyclic<N> operator+(const Cyclic<N> c) const {
         return Cyclic<N>((r + c.r) % N);
     }
     Cyclic<N> operator-() const {
         return Cyclic<N>(-r);
     }
 
-    Cyclic<N> operator*(const Cyclic<N>& c) const {
+    Cyclic<N> operator*(const Cyclic<N> c) const {
         return Cyclic<N>((r * c.r) % N);
     }
 
-    bool operator==(const Cyclic<N>& c) const {
+    bool operator==(const Cyclic<N> c) const {
         return r == c.r;
     }
-    bool operator!=(const Cyclic<N>& c) const {
+    bool operator!=(const Cyclic<N> c) const {
         return r != c.r;
     }
 };

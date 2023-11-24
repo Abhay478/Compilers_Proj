@@ -7,7 +7,7 @@ template <typename T>
 struct Matrix {
     vector<vector<T>> a;
     Matrix(int m, int n) : a(m, vector<T>(n)) {}
-    Matrix(const vector<vector<T>>& a_) {
+    Matrix(const vector<vector<T>> a_) {
         if (a_.empty()) {
             a = a_;
             return;
@@ -72,7 +72,7 @@ struct Matrix {
         return ret;
     }
 
-    Matrix operator+(const Matrix& m) const {
+    Matrix operator+(const Matrix m) const {
         if (a.size() != m.a.size() || a[0].size() != m.a[0].size()) {
             throw runtime_error("Cannot add/mul Matrix: inconsistent size");
         }
@@ -95,7 +95,7 @@ struct Matrix {
         return ret;
     }
 
-    Matrix operator*(const Matrix& m) const {
+    Matrix operator*(const Matrix m) const {
         if (a[0].size() != m.a.size()) {
             throw runtime_error("Cannot mul/div Matrix: inconsistent size");
         }

@@ -8,17 +8,17 @@ struct Dihedral {
         return Dihedral();
     }
 
-    Dihedral<N> operator+(const Dihedral<N>& d) const {
+    Dihedral<N> operator+(const Dihedral<N> d) const {
         return Dihedral<N>((r + d.r) % N, s ^ d.s);
     }
     Dihedral<N> operator-() const {
         return Dihedral<N>(r, !s);
     }
 
-    bool operator==(const Dihedral<N>& d) const {
+    bool operator==(const Dihedral<N> d) const {
         return r == d.r && s == d.s;
     }
-    bool operator!=(const Dihedral<N>& d) const {
+    bool operator!=(const Dihedral<N> d) const {
         return r != d.r || s != d.s;
     }
 };

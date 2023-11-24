@@ -10,7 +10,7 @@ struct Alternating {
         return ret;
     }
 
-    Alternating<N> operator+(const Alternating<N>& s) const {
+    Alternating<N> operator+(const Alternating<N> s) const {
         Alternating<N> ret;
         for (int i = 0; i < N; i++) {
             ret.perm[i] = perm[s.perm[i]];
@@ -26,7 +26,7 @@ struct Alternating {
         return ret;
     }
 
-    bool operator==(const Alternating<N>& s) const {
+    bool operator==(const Alternating<N> s) const {
         for (int i = 0; i < N; i++) {
             if (perm[i] != s.perm[i]) {
                 return false;
@@ -34,7 +34,7 @@ struct Alternating {
         }
         return true;
     }
-    bool operator!=(const Alternating<N>& s) const {
+    bool operator!=(const Alternating<N> s) const {
         return !(*this == s);
     }
 };

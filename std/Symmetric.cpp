@@ -10,7 +10,7 @@ struct Symmetric {
         return ret;
     }
 
-    Symmetric<N> operator+(const Symmetric<N>& s) const {
+    Symmetric<N> operator+(const Symmetric<N> s) const {
         Symmetric<N> ret;
         for (int i = 0; i < N; i++) {
             ret.perm[i] = perm[s.perm[i]];
@@ -26,7 +26,7 @@ struct Symmetric {
         return ret;
     }
 
-    bool operator==(const Symmetric<N>& s) const {
+    bool operator==(const Symmetric<N> s) const {
         for (int i = 0; i < N; i++) {
             if (perm[i] != s.perm[i]) {
                 return false;
@@ -34,7 +34,7 @@ struct Symmetric {
         }
         return true;
     }
-    bool operator!=(const Symmetric<N>& s) const {
+    bool operator!=(const Symmetric<N> s) const {
         return !(*this == s);
     }
 };

@@ -20,6 +20,8 @@ The main challenge in designing Archetype was to create a type system that is bo
 
 - Implementing Generics
 - Implementing Forges, a powerful user-defined way to cast between types.
+- Enum Functionality: We had originally allowed enums to do a lot more - however, C++ does not have a corresponding feature, so we had to remove it.
+
 
 ### Providing standard library
 

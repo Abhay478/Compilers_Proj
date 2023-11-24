@@ -1133,48 +1133,24 @@ sc_blocks       : sc_blocks case {
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
-                        Enum * entry = enum_st.lookup(*$2);
-                        if(!entry) {
-                            yyerror("No such type.");
-                            $$ = NULL;
-                            break;
-                        }
-                        int cl = entry->add_claim($4);
-                        if(cl == 1) {
-                            yyerror("Claim already exists.");
-                            $$ = NULL;
-                            break;
-                        } else if (cl == -1) {
-                            yyerror("Claim dependencies missing.");
-                            $$ = NULL;
-                            break;
-                        }
-
-                        Type * t = new Type();
-                        t->push_type(ENUM, 0, 1, new Aux(entry));
-                        Claim * claim = claim_st.lookup(t, $4);
-                        if(!claim) {
-                            $$ = new Claim(t, $4); // Can copy Type, as InnerType is malloc'd.
-                        } else {
-                            $$ = NULL;
-                        }
-                    } else {
-                        int cl = entry->add_claim($4);
-                        if(cl == 1) {
-                            yyerror("Claim already exists.");
-                            $$ = NULL;
-                            break;
-                        } else if (cl == -1) {
-                            yyerror("Claim dependencies missing.");
-                            $$ = NULL;
-                            break;
-                        }
-                        Type * t = new Type();
-                        t->push_type(STRUCT, 0, 1, new Aux(entry));
-                        Claim * claim = claim_st.lookup(t, $4);
-                        if(!claim) {$$ = new Claim(t, $4);}
-                        else {$$ = NULL;}
-                    }   
+                        $$ = NULL;
+                        break;
+                    } 
+                    int cl = entry->add_claim($4);
+                    if(cl == 1) {
+                        yyerror("Claim already exists.");
+                        $$ = NULL;
+                        break;
+                    } else if (cl == -1) {
+                        yyerror("Claim dependencies missing.");
+                        $$ = NULL;
+                        break;
+                    }
+                    Type * t = new Type();
+                    t->push_type(STRUCT, 0, 1, new Aux(entry));
+                    Claim * claim = claim_st.lookup(t, $4);
+                    if(!claim) {$$ = new Claim(t, $4);}
+                    else {$$ = NULL;}
                 }
                 ; 
 

@@ -289,17 +289,11 @@ void generate_structs() {
         for(auto claim : sste->claimd) {
             switch(claim) {
                 case GROUP: {
-                    // auto add = sste->name + " operator+(const " + sste->name + " & other) const;";
-                    // generateln_h(add);
-                    // auto neg = sste->name + " operator-() const;";  
-                    // generateln_h(neg);
                     auto zero = sste->name + " zero();";
                     generateln_h(zero);
                     break;
                 }
                 case RING: {
-                    // auto mul = sste->name + " operator*(const " + sste->name + " & other) const;";
-                    // generateln_h(mul);
                     auto one = sste->name + " one();";
                     generateln_h(one);
                     break;
@@ -333,26 +327,23 @@ void generate_enums() {
         for(auto claim : este->claimd) {
             switch(claim) {
                 case GROUP: {
-                    auto add = este->name + " operator+(const " + este->name + " & other) const;";
-                    generateln_h(add);
-                    auto neg = este->name + " operator-() const;";  
-                    generateln_h(neg);
+                    auto zero = este->name + " zero();";
+                    generateln_h(zero);
                     break;
                 }
                 case RING: {
-                    auto mul = este->name + " operator*(const " + este->name + " & other) const;";
-                    generateln_h(mul);
+                    auto one = este->name + " one();";
+                    generateln_h(one);
                     break;
                 }
                 case FIELD: {
-                    auto div = este->name + " inv() const;";
+                    auto div = "static " + este->name + " inv(" + este->name + ");";
                     generateln_h(div);
                     break;
                 }
                 case SPACE: {
                     break;
                 }
-            
             }
         }
         

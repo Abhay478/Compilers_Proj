@@ -34,11 +34,11 @@ forge (a: Bar) as (b: Cyclic<3>) {
 }
 
 claim Bar is Group {
-    (c = x + y) => {
-        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
-    }
     (c = 0) => {
         c = Bar::Zero;
+    }
+    (c = x + y) => {
+        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
     }
 
     (c = -x) => {
@@ -62,13 +62,17 @@ forge (arg: (u8, Bar)) as (out: Foo) {
 }
 
 claim Foo is Group {
+    (c = 0) => {
+        c = (0, Bar::Zero) as (Foo);
+    }
+
     (out = x + y) => {
         out.a = x.a + y.a;
         out.var = x.var + y.var;
     }
 
-    (c = 0) => {
-        c = (0, Bar::Zero) as (Foo);
+    (c = -a) => {
+        c = (-(a.a), -(a.var)) as (Foo);
     }
 }
 

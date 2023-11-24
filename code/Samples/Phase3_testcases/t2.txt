@@ -1,0 +1,103 @@
+enum Day_of_the_week{
+    Sunday,
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday
+}
+
+enum Month_of_the_year{
+    January,
+    February,
+    March,
+    April,
+    May,
+    June,
+    July,
+    August,
+    September,
+    October,
+    November,
+    December
+}
+
+struct Date{
+    day: Day_of_the_week, 
+    month: Month_of_the_year
+}
+
+forge (a: u8) as (b: Day_of_the_week){
+    switch(a){
+        case 0 => {b = Day_of_the_week::Sunday; }
+        case 1 => {b = Day_of_the_week::Monday; }
+        case 2 => {b = Day_of_the_week::Tuesday; }
+        case 3 => {b = Day_of_the_week::Wednesday; }
+        case 4 => {b = Day_of_the_week::Thursday; }
+        case 5 => {b = Day_of_the_week::Friday; }
+        case 6 => {b = Day_of_the_week::Saturday; }
+        default => {print("Day not possible!"); }
+    }
+}
+
+forge (a: u8) as (b: Month_of_the_year){
+    switch(a){
+        case 0 => {b = Month_of_the_year::January; }
+        case 1 => {b = Month_of_the_year::February; }
+        case 2 => {b = Month_of_the_year::March; }
+        case 3 => {b = Month_of_the_year::April; }
+        case 4 => {b = Month_of_the_year::May; }
+        case 5 => {b = Month_of_the_year::June; }
+        case 6 => {b = Month_of_the_year::July; }
+        case 7 => {b = Month_of_the_year::August; }
+        case 8 => {b = Month_of_the_year::September; }
+        case 9 => {b = Month_of_the_year::October; }
+        case 10 => {b = Month_of_the_year::November; }
+        case 11 => {b = Month_of_the_year::December; }
+        default => {print("Month not possible!"); }
+    }
+}
+
+fn foo(): u32 {
+    return 2;
+}
+
+fn is_my_bday(arr: [Date], bday: Date): bool {
+    let date: Date;
+    for date in arr {
+        if(date.day == bday.day && date.month == bday.month){
+            return true;
+        }
+    }
+    return false;
+}
+
+fn main() : i32 {
+    let a1: Date;
+    a1.day = 3 as (Day_of_the_week);
+    a1.month = 1 as (Month_of_the_year);
+
+    let a2: Date;
+    a2.day = 6 as (Day_of_the_week);
+    a2.month = 2 as (Month_of_the_year);
+
+    let a3: Date;
+    a3.day = 4 as (Day_of_the_week);
+    a3.month = 11 as (Month_of_the_year);
+
+    let my_bday: Date;
+    my_bday.day = 5 as (Day_of_the_week);
+    my_bday.month = 3 as (Month_of_the_year);
+
+    let arr: [Date] = [a1, a2, a3];
+
+    let b: bool = is_my_bday(arr, my_bday);
+    
+    if(b){
+        print("My bday is in the list!");
+    }
+    else{
+        print("My bday is not in the list!");
+    }
+}

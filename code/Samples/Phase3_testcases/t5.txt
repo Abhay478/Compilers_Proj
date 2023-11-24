@@ -1,0 +1,32 @@
+struct Foo{
+    a: i32,
+    b: str,
+    c: char,
+    d: [[u8]],
+    e: (u16, u16, char)
+}
+
+fn foo(): u32 {
+    let arr: [u32] = [1, 2, 3, 4];
+    let sum: u16 = 0;
+    for i in arr
+    {
+        switch(i){
+            case 1 => {print("1");}
+            case 2 => {print("2");}
+            case 3 => {print("3");}
+            case 4 => {print("4");}
+            default => {print("default");}
+        }
+        sum += i;
+    }
+    return sum;
+}
+
+fn main() : i32 {
+    let a: u32;
+    let b = foo();
+    for(a = 3; a < 5; a++) {
+        b++;
+    }
+}

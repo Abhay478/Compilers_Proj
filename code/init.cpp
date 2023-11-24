@@ -66,22 +66,41 @@ static Type *make_cart(vector<Type *> types) {
 ///     panic(str) -> void
 ///     push([T], T) -> void
 static void init_func_st() {
-    auto str_arg = new Var("str", make_type(PDT_STR));
+    auto str_t = make_type(PDT_STR);
+    auto str_arg = new Var("str", str_t);
     auto void_type = make_type(PDT_VOID);
 
-    auto print_params = make_params({str_arg});
-    auto print = new Function("print", print_params, void_type);
+    auto str_param = make_params({str_arg});
+
+    auto print = new Function("print", str_param, void_type);
     func_st.insert(print);
 
-    auto panic_params = make_params({str_arg});
-    auto panic = new Function("print", panic_params, void_type);
+    auto panic = new Function("panic", str_param, void_type);
     func_st.insert(panic);
+
+    auto input = new Function("input", str_param, str_t);
+    func_st.insert(input);
 
     auto buf = make_placeholder();
     buf->push_type(BUF, 0, 0, NULL);
-    auto push_params = make_params({new Var("buf", buf), new Var("elem", make_placeholder())});
+    auto buf_arg = new Var("buf", buf);
+    auto push_params = make_params({buf_arg, new Var("elem", make_placeholder())});
     auto push = new Function("push", push_params, void_type);
     func_st.insert(push);
+
+    auto pop_params = make_params({buf_arg});
+    auto pop = new Function("pop", pop_params, make_placeholder());
+    func_st.insert(pop);
+
+    // slice(buf, int, int) -> buf
+    auto slice_params = make_params({buf_arg, new Var("start", make_type(I32)), new Var("end", make_type(I32))});
+    auto slice = new Function("slice", slice_params, buf);
+    func_st.insert(slice);
+
+    // dot(buf, buf) -> T
+    auto dot_params = make_params({buf_arg, buf_arg});
+    auto dot = new Function("dot", dot_params, make_placeholder());
+    func_st.insert(dot);
 }
 
 ///     Dihedral<n: int>

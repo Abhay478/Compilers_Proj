@@ -36,7 +36,7 @@ T f_pop(std::vector<T>& vec) {
 }
 
 template<typename T>
-std::vector<T> slice(std::vector<T> vec, int start, int end) {
+std::vector<T> f_slice(std::vector<T> vec, int start, int end) {
     if (start < 0 || end < 0 || start > end) {
         f_panic("Invalid slice");
     } else if (end > vec.size()) {

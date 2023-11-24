@@ -111,11 +111,11 @@ Type *Type::pop_type() {
 // find the first placeholder in t
 // and replace it with repl
 // deep copy
-InnerType *replace_placeholder(InnerType *t, InnerType *repl) {
+InnerType *replace_placeholder(InnerType *t, GenericInner *repl) {
     InnerType *ret = NULL;
     switch (t->core_type) {
         case PLACEHOLDER:
-            return repl;
+            return repl->type->head;
         case BUF:
         case REF:
             ret = new InnerType(t->core_type, t->offset, t->size);
@@ -128,7 +128,12 @@ InnerType *replace_placeholder(InnerType *t, InnerType *repl) {
                 auto it = (*t->types)[i];
                 GenericInner *inner;
                 if (it->is_int) {
-                    inner = new GenericInner(it->lit_int);
+                    if (it->lit_int == -1) {
+                        // placeholder
+                        inner = repl;
+                    } else {
+                        inner = new GenericInner(it->lit_int);
+                    }
                 } else {
                     auto rep = replace_placeholder(it->type->head, repl);
                     auto type = new Type();
@@ -162,12 +167,12 @@ InnerType *replace_placeholder(InnerType *t, InnerType *repl) {
 // if t1 has a placeholder, get the matching type from t2
 // assumes t1 and t2 match in all other ways
 // if no placeholder in t1, return NULL
-Type *placeholder_equiv(InnerType *t1, InnerType *t2) {
+GenericInner *placeholder_equiv(InnerType *t1, InnerType *t2) {
     while (t1 && t2) {
         if (t1->core_type == PLACEHOLDER) {
             auto ret = new Type();
             ret->head = t2;
-            return ret;
+            return new GenericInner(ret);
         }
 
         if (t1->core_type == CART) {
@@ -188,6 +193,10 @@ Type *placeholder_equiv(InnerType *t1, InnerType *t2) {
                 auto v1i = (*v1)[i];
                 auto v2i = (*v2)[i];
                 if (v1i->is_int) {
+                    if (v1i->lit_int == -1) {
+                        // placeholder
+                        return new GenericInner(v2i->lit_int);
+                    }
                     continue;
                 }
                 auto ret = placeholder_equiv(v1i->type->head, v2i->type->head);
@@ -352,8 +361,8 @@ Function *FunctionSymbolTable::lookup(string name) {
 }
 
 // if return type has a placeholder, get the matching type from args
-Type * Function::get_return_type(std::vector<Type *> * args) {
-    Type * repl = NULL;
+Type * Function::get_return_type(std::vector<Type *> * args, Type * ret_type) {
+    GenericInner * repl = NULL;
     for (int i = 0; i < args->size(); i++) {
         auto arg = (*args)[i]->head;
         auto equiv = placeholder_equiv(this->params->entries[i]->type->head, arg);
@@ -361,8 +370,16 @@ Type * Function::get_return_type(std::vector<Type *> * args) {
             // arg has placeholder
             if (repl) {
                 // multiple args have placeholders, so they must match
-                if (typecmp(repl, equiv)) {
-                    // corresponding types don't match
+                if (repl->is_int && equiv->is_int) {
+                    if (repl->lit_int != equiv->lit_int) {
+                        // corresponding types don't match
+                        return NULL;
+                    }
+                } else if (repl->is_int || equiv->is_int) {
+                    // one is a placeholder and the other is not
+                    return NULL;
+                } else if (typecmp(repl->type, equiv->type)) {
+                    // both are types, but they don't match
                     return NULL;
                 }
             }
@@ -376,16 +393,25 @@ Type * Function::get_return_type(std::vector<Type *> * args) {
     }
     if (!repl) {
         // no args had placeholders
-        throw "function with generic return type but no generic args";
+        // check if return type has a placeholder
+        if (ret_type == NULL) {
+            // no return type given
+            return NULL;
+        }
+        auto ret = placeholder_equiv(this->return_type->head, ret_type->head);
+        if (ret) {
+            // return type has placeholder
+            return ret_type;
+        }
     }
     // replace placeholder in return type with type from args
-    auto t = replace_placeholder(this->return_type->head, repl->head);
-    auto ret_type = new Type();
-    ret_type->head = t;
-    return ret_type;
+    auto t = replace_placeholder(this->return_type->head, repl);
+    auto ty = new Type();
+    ty->head = t;
+    return ty;
 }
 
-Type * Function::get_return_type(std::vector<Expr *> * args) {
+Type * Function::get_return_type(std::vector<Expr *> * args, Type *ret_type) {
     // convert args to vector of types
     auto types = new vector<Type *>();
     for (auto i : *args) {
@@ -393,7 +419,7 @@ Type * Function::get_return_type(std::vector<Expr *> * args) {
         t->head = i->head;
         types->push_back(t);
     }
-    return this->get_return_type(types);
+    return this->get_return_type(types, ret_type);
 }
 
 std::string Function::repr_cpp() {
@@ -518,6 +544,7 @@ Type *get_param_type(Function *f) {
     return t;
 }
 
+// return a forge to convert t1 to t2
 Function * ForgeSymbolTable::lookup(Type *t1, Type *t2) {
     FunctionSymbolTable *f = &this->inner;
     for (auto i : f->entries) {
@@ -527,8 +554,16 @@ Function * ForgeSymbolTable::lookup(Type *t1, Type *t2) {
             auto pl2 = placeholder_equiv(i->return_type->head, t2->head);
             if (pl1 && pl2) {
                 // both had placeholders, so corresponding types must match
-                if (typecmp(pl1->head, pl2->head)) {
-                    // corresponding types don't match
+                if (pl1->is_int && pl2->is_int) {
+                    if (pl1->lit_int != pl2->lit_int) {
+                        // corresponding types don't match
+                        continue;
+                    }
+                } else if (pl1->is_int || pl2->is_int) {
+                    // one is a placeholder and the other is not
+                    continue;
+                } else if (typecmp(pl1->type->head, pl2->type->head)) {
+                    // both are types, but they don't match
                     continue;
                 }
             }

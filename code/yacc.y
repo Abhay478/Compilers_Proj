@@ -317,7 +317,6 @@ generic         : IDENT '<' type_args '>' {
                     }
 
                     $$ = new Type();
-                    printf("Here.\n");
                     $$->push_type(GEN, 0, 0, new Aux(gste, arr)); 
                 }
                 ;
@@ -615,7 +614,7 @@ expression      : '(' expression ')' {
                     // TODO: return type
                     auto args = new vector<Type *>();
                     args->push_back($4);
-                    auto t = fste->get_return_type(args);
+                    auto t = fste->get_return_type(args, $4);
                     if(!t) {
                         yyerror("Type mismatch in forge call.");
                         break;
@@ -810,7 +809,7 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                    auto ret = entry->get_return_type($3);
+                    auto ret = entry->get_return_type($3, NULL);
                     if(!ret) {
                         yyerror("Type mismatch in function call.");
                         break;
@@ -861,7 +860,7 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                    auto ret = meth->get_return_type($5);
+                    auto ret = meth->get_return_type($5, NULL);
                     if(!ret) {
                         yyerror("Type mismatch in method call.");
                         break;
@@ -1420,7 +1419,6 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
                     switch(current_claim->archetype) {
                         case GROUP:
                             yyerror("Identity must be 0.");
-                            printf("%d\n", $4);
                             break;
                         case RING:
                             yyerror("Identity must be 1.");

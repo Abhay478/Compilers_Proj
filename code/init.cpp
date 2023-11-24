@@ -43,8 +43,16 @@ static VarSymbolTable *make_params(vector<Var *> params) {
 static Type *get_type(const char *name) {
     auto g = gen_st.lookup(name);
     if (g != NULL) {
+        auto types = new vector<GenericInner *>();
+        for (auto t : g->types) {
+            if (t.is_int) {
+                types->push_back(new GenericInner(-1));
+            } else {
+                types->push_back(new GenericInner(make_placeholder()));
+            }
+        }
         Type *t = new Type();
-        t->push_type(GEN, 0, 0, new Aux(g, NULL));
+        t->push_type(GEN, 0, 0, new Aux(g, types));
         return t;
     }
 
@@ -62,9 +70,12 @@ static Type *make_cart(vector<Type *> types) {
     return t;
 }
 
-///     print(str) -> void
-///     panic(str) -> void
-///     push([T], T) -> void
+///     print(str)              -> void
+///     panic(str)              -> void
+///     push([T], T)            -> void
+///     pop([T])                -> T
+///     slice([T], int, int)    -> [T]
+///     dot([T], [T])           -> T
 static void init_func_st() {
     auto str_t = make_type(PDT_STR);
     auto str_arg = new Var("str", str_t);
@@ -92,12 +103,10 @@ static void init_func_st() {
     auto pop = new Function("pop", pop_params, make_placeholder());
     func_st.insert(pop);
 
-    // slice(buf, int, int) -> buf
     auto slice_params = make_params({buf_arg, new Var("start", make_type(I32)), new Var("end", make_type(I32))});
     auto slice = new Function("slice", slice_params, buf);
     func_st.insert(slice);
 
-    // dot(buf, buf) -> T
     auto dot_params = make_params({buf_arg, buf_arg});
     auto dot = new Function("dot", dot_params, make_placeholder());
     func_st.insert(dot);

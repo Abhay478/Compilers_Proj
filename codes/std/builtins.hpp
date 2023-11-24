@@ -16,7 +16,7 @@ void f_panic(const std::string str) {
 std::string f_input(const std::string str) {
     std::cout << str;
     std::string input;
-    std::cin >> input;
+    std::getline(std::cin, input);
     return input;
 }
 

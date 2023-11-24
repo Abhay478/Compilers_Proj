@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 
-void print(const std::string& str);
-void panic(const std::string& str);
-std::string input(const std::string& str);
+void f_print(const std::string& str);
+void f_panic(const std::string& str);
+std::string f_input(const std::string& str);
 
 template<typename T>
 void push(std::vector<T>& vec, const T& val);

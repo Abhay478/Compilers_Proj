@@ -1229,8 +1229,9 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
                     rule_scope = current_scope;
                     Type * t = current_claim->type;
-                    out = new Var(*$2, t);
-                    current_scope->insert(new Var(*$2, t));
+                    auto v = new Var(*$2, t);
+                    out = v;
+                    current_scope->insert(v);
                     if(current_claim->archetype == GROUP) {
                         if($4 != 0) yyerror("Identity rule must be 0.");
                         else {
@@ -1284,8 +1285,11 @@ inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
                         break;
                     }
                     if($4 != 1) yyerror("Inverse rule must be 1/x");
-                    current_scope->insert(new Var(*$2, current_claim->type));
+                    auto v = new Var(*$2, current_claim->type);
+                    current_scope->insert(v);
                     current_scope->insert(new Var(*$6, current_claim->type));
+
+                    out = v;
                     string s = current_claim->type->repr_cpp() + " inv(" + current_claim->type->repr_cpp() + " " + *$6 + ") {";
                 } ARROW body {
                     generateln("}");
@@ -1303,7 +1307,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
 
                         Function * entry = new Function(*$2, params, NULL);
                         $$.entry = entry;
-                        $$.repr = new string("f_" + *$2 + "(" + ($4 ? *$4 : "") + ")");
+                        $$.repr = new string((*$2 != "main" ? "f_" : "") + *$2 + "(" + ($4 ? *$4 : "") + ")");
                     }
                 }
 

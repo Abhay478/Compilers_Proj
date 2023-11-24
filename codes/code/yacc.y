@@ -1403,7 +1403,7 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                 ;
 
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
-                    if(id_gen(*$2, $4)) {YYABORT;}
+                    if(id_gen(*$2, $4)) {break;}
                     switch(current_claim->archetype) {
                         case GROUP:
                             yyerror("Identity must be 0.");

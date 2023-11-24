@@ -419,11 +419,7 @@ void generate_structs() {
                     break;
                 }
                 case SPACE: {
-                    // auto add = sste->name + " operator+(const " + sste->name + " & other) const;";
-                    // generateln_h(add);
-                    // TODO: Scalar multiplication
-                    // auto mul = sste->name + " operator*(const " + sste. + " & other) const;";
-                    // generateln_h(mul);
+                    break;
                 }
             
             }
@@ -463,11 +459,7 @@ void generate_enums() {
                     break;
                 }
                 case SPACE: {
-                    auto add = este->name + " operator+(const " + este->name + " & other) const;";
-                    generateln_h(add);
-                    // TODO: Scalar multiplication
-                    // auto mul = este->name + " operator*(const " + este. + " & other) const;";
-                    // generateln_h(mul);
+                    break;
                 }
             
             }

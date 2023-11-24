@@ -528,25 +528,32 @@ expression      : '(' expression ')' {
                     $$ = new Expr(t, false);
                     $$->repr = "&" + $2->repr;
                 }
-                | expression '.' IDENT // struct access, lookup in table
-                {
-                    if (!$1) {
+                | expression '.' IDENT {
+                    InnerType * it = $1->head;
+                    string refs = "";
+                    while(t->core_type == REF) {
+                        it = it->next;
+                        refs += "*";
+                    }
+                    Type * t = new Type();
+                    t->head = it;
+                    if (!t) {
                         $$ = NULL;
                         break;
                     }
-                    if ($1->core() != STRUCT){
+                    if (t->core() != STRUCT){
                         yyerror("Field access on non-struct type.");
                         $$ = NULL;
                     } else {
-                        Struct * sste = $1->head->sste;
+                        Struct * sste = t->head->sste;
                         Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
                         }
-                        $$ = new Expr(v->type, $1->is_lvalue);
-                        $$->repr = $1->repr + "." + *$3;
+                        $$ = new Expr(v->type, t->is_lvalue);
+                        $$->repr = "(" + refs + "(" $1->repr + "))" + "." + *$3;
                     }
-                }
+                } // struct access, lookup in table
                 | expression '.' LIT_INT 
                 {
                     if (!$1) {
@@ -860,19 +867,32 @@ array_access    : expression array_index {
                         $$ = NULL;
                         break;
                     }
-                    if($1->core() != BUF) {
+                    if($1->core() == BUF) {
                         // TODO: Vec/Mat/InvMat
+                        
+                        if(!$2.is_slice) {
+                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            $$->repr = $1->repr + *$2.repr;
+                        }
+                        else {
+                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            $$->repr = "slice(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
+                        }
+                    }
+                    else if ($1->core() == STR) {
+                        if(!$2.is_slice) {
+                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            $$->repr = $1->repr + *$2.repr;
+                        }
+                        else {
+                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            $$->repr = "slice_str(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
+                        }
+                    } 
+                    else {
                         yyerror("Array access on non-array type.");
                         $$ = NULL;
                         break;
-                    }
-                    if(!$2.is_slice) {
-                        $$ = new Expr($1->pop_type(), $1->is_lvalue);
-                        $$->repr = $1->repr + *$2.repr;
-                    }
-                    else {
-                        $$ = new Expr($1->pop_type(), $1->is_lvalue);
-                        $$->repr = "slice(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
                     }
                 }
                 ;

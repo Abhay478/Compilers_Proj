@@ -8,8 +8,8 @@ let Z0: Cyclic<3>;
 let Z1: Cyclic<3>;
 let Z2: Cyclic<3>;
 
-forge (a: Cyclic<3>) as (b: Bar) {
-    let a: u8 = a as (u8);
+forge (cyc: Cyclic<3>) as (b: Bar) {
+    let a: u8 = cyc as (u8);
     if(a == 0) {
         b = Bar::Zero;
     }
@@ -56,9 +56,9 @@ forge (a: u8) as (out: Foo) {
     out.var = Bar::Zero;
 }
 
-forge (a: u8, var: Bar) as (out: Foo) {
-    out.a = a;
-    out.var = var;
+forge (arg: (u8, Bar)) as (out: Foo) {
+    out.a = arg.0;
+    out.var = arg.1;
 }
 
 claim Foo is Group {
@@ -78,6 +78,4 @@ fn main() {
     let qq: Foo = 1 as (Foo);
 
     let qqq: Foo = q + qq;
-
-    print(qqq as (str));
 }

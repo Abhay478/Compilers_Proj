@@ -10,7 +10,7 @@ geometry: margin=2cm
 
 # Introduction
 
-- We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetype. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
+We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetype. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
 
 # Syntax
 
@@ -25,7 +25,7 @@ geometry: margin=2cm
 
 ## Statement types
 
-- Declaration: Must begin with the `let` keyword. The type of the variable must be specified after the variable name, with colon as the separator.
+- Declaration: A declatation must begin with the `let` keyword. The type of the variable must be specified after the variable name, with seperated by a colon.
   ```
   let a: u32;
   let b: str, c: bool, d: float;
@@ -75,28 +75,35 @@ geometry: margin=2cm
 
 - The keywords `if` and `else` are used as in standard languages. Not all types may be compared using relational operators. However, they may appear as part of the predicate. 
 - The body of statements is enclosed in curly braces.
-- The syntax:
-  ```
-  let a: u32, b: u32, c: u32;
-  let max: u32;
-  if (a > b && a > c) {
+
+### The syntax:
+
+```
+let a: u32, b: u32, c: u32;
+let max: u32;
+if (a > b && a > c) {
     max = a;
-  } else if (b > c) {
+} else if (b > c) {
     max = b;
-  } else {
+} else {
     max = c;
-  }
-  ```
-- The `switch` case conditional is also provided, similar to C. The keyword `switch` is used followed by an expression in parantheses, whose value can be of integer, character, or enum variant type only (Similar to C).
+}
+```
+
+## Switch-Case
+
+- The `switch` case conditional is also provided, similar to C. The keyword `switch` is used followed by an expression in parentheses, whose value can be of integer, character, or enum variant type only.
 - The case constants consist of the keyword `case` followed by the case constant (integer, character or enum variant type, and also the same type of the value returned by the switch case expression), followed by the arrow operator (=>). Each case block is enclosed in curly braces. The default case is optional.
-- The syntax:
-  ```
-  let a: u32 = 5001;
-  switch(a%2) {
-      case 0 => { b = Parity::Even;}
-      case 1 => { b = Parity::Odd; }
-    }
-  ```
+
+### Syntax:
+
+```
+let a: u32 = 5001;
+switch(a%2) {
+	case 0 => { b = Parity::Even;}
+	case 1 => { b = Parity::Odd; }
+}
+```
 
 ## Loops
 
@@ -145,7 +152,7 @@ geometry: margin=2cm
 
 - Forges are Archetypes' equivalent to constructors. They are defined using the `forge` keyword, similar to functions, and casting can be done using the `as` keyword.
 
-- The syntax is:
+### Syntax
 
   ```
   enum Parity {
@@ -198,7 +205,7 @@ geometry: margin=2cm
   }
   ```
 
-- Note that the trailing comma is optional.
+Note that the trailing comma is optional.
 
 - To access a field, use the `.` operator. 
 
@@ -207,7 +214,7 @@ geometry: margin=2cm
   u.field1 = 1; // assignment
   ```
 
-- The same operator can be used to access fields, even from references to structs. 
+- The same operator can be used to access fields from references to structs. 
 
   ```
   let u: Foo;
@@ -238,7 +245,7 @@ geometry: margin=2cm
 
 - Archetypes are a powerful tool to allow the programmer to `claim` that their type satisfies the
 requirements for some algebraic structure. They are similar to traits in Rust. Unlike Rust,
-Archetype has exactly 4 Archetypes (`Group`, `Ring`, `Field`, `Space`).
+Archetype has exactly 4 Archetypes, `Group`, `Ring`, `Field`, `Space`.
 
 ## `claim`ing Archetypes
 
@@ -436,28 +443,12 @@ definition.
 #### To `claim`
 
   ```
-
-  claim Foo is Space {
-    Field = (insert field F here);
-    
-    // Here u and v are Foo, a is Field
-    // 0 is the additive identity of Foo, not Field
-
-    (w = u + v) => {}
-
-    (w = -u) => {}
-
-    (w = 0) => {}
-
     (w = a * u) => {}
-     
-  }
   ```
 
 ### Inner products
 
-- This is automatically implemented for `Vec<F: claims Field>` as the `@` operator, using the dot
-product.
+This is automatically implemented for `Vec<F: claims Field>` as the `@` operator, using the dot product.
 
   ```
   let a: Vec<u64> = [1, 2, 3];
@@ -465,7 +456,7 @@ product.
   let c: u64 = a @ b; // Inner product
   ```
 
-- If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
+<!-- - If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.   -->
 
 ### Cartesian Products
 
@@ -556,90 +547,87 @@ multiplication or element-wise addition. The syntax is as follows: (Note that th
 # Sample Code
 
 - Note that Archetype code uses the `.arc` extension.
+```
+enum Bar {
+    Zero,
+    One,
+    Two
+}
 
-  ```
-  enum Bar {
-      Zero,
-      One,
-      Two
-  }
+let Z0: Cyclic<3>;
+let Z1: Cyclic<3>;
+let Z2: Cyclic<3>;
 
-  let Z0: Cyclic<3>;
-  let Z1: Cyclic<3>;
-  let Z2: Cyclic<3>;
+forge (cyc: Cyclic<3>) as (b: Bar) {
+    let a: u8 = cyc as (u8);
+    if(a == 0) {
+        b = Bar::Zero;
+    }
+    if(a == 1) {
+        b = Bar::One;
+    }
+    else {
+        b = Bar::Two;
+    }
+}
 
-  forge (a: Cyclic<3>) as (b: Bar) {
-      let a: u8 = a as (u8);
-      if(a == 0) {
-          b = Bar::Zero;
-      }
-      if(a == 1) {
-          b = Bar::One;
-      }
-      else {
-          b = Bar::Two;
-      }
-  }
+forge (a: Bar) as (b: Cyclic<3>) {
+    if(a == Bar::Zero) {
+        b = Z0;
+    }
+    else if(a == Bar::One) {
+        b = Z1;
+    }
+    else {
+        b = Z2;
+    }
+}
 
-  forge (a: Bar) as (b: Cyclic<3>) {
-      if(a == Bar::Zero) {
-          b = Z0;
-      }
-      else if(a == Bar::One) {
-          b = Z1;
-      }
-      else {
-          b = Z2;
-      }
-  }
+claim Bar is Group {
+    (c = x + y) => {
+        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
+    }
+    (c = 0) => {
+        c = Bar::Zero;
+    }
 
-  claim Bar is Group {
-      (c = x + y) => {
-          c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
-      }
-      (c = 0) => {
-          c = Bar::Zero;
-      }
+    (c = -x) => {
+        c = (- (x as (Cyclic<3>))) as (Bar);
+    }
+}
 
-      (c = -x) => {
-          c = (- (x as (Cyclic<3>))) as (Bar);
-      }
-  }
+struct Foo {
+    a: u8,
+    var: Bar
+}
 
-  struct Foo {
-      a: u8,
-      var: Bar
-  }
+forge (a: u8) as (out: Foo) {
+    out.a = a;
+    out.var = Bar::Zero;
+}
 
-  forge (a: u8) as (out: Foo) {
-      out.a = a;
-      out.var = Bar::Zero;
-  }
+forge (arg: (u8, Bar)) as (out: Foo) {
+    out.a = arg.0;
+    out.var = arg.1;
+}
 
-  forge (a: u8, var: Bar) as (out: Foo) {
-      out.a = a;
-      out.var = var;
-  }
+claim Foo is Group {
+    (out = x + y) => {
+        out.a = x.a + y.a;
+        out.var = x.var + y.var;
+    }
 
-  claim Foo is Group {
-      (out = x + y) => {
-          out.a = x.a + y.a;
-          out.var = x.var + y.var;
-      }
+    (c = 0) => {
+        c = (0, Bar::Zero) as (Foo);
+    }
+}
 
-      (c = 0) => {
-          c = (0, Bar::Zero) as (Foo);
-      }
-  }
+fn main() {
+    print("Hello world.\n");
+    let q: Foo = 0 as (Foo);
+    let qq: Foo = 1 as (Foo);
 
-  fn main() {
-      print("Hello world.\n");
-      let q: Foo = 0 as (Foo);
-      let qq: Foo = 1 as (Foo);
+    let qqq: Foo = q + qq;
+}
 
-      let qqq: Foo = q + qq;
-
-      print(qqq as (str));
-  }
-
-  ```
+```

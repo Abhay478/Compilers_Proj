@@ -20,6 +20,15 @@ std::string f_input(const std::string str) {
     return input;
 }
 
+std::string f_slice_str(const std::string str, int start, int end) {
+    if (start < 0 || end < 0 || start > end) {
+        f_panic("Invalid slice");
+    } else if (end > str.size()) {
+        f_panic("Slice out of bounds");
+    }
+    return str.substr(start, end - start);
+}
+
 template<typename T>
 void f_push(std::vector<T>& vec, const T val) {
     vec.push_back(val);

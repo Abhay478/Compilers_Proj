@@ -1041,17 +1041,20 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     loop_cond {generate($9->repr);} ';' {generate("; ");} 
                     loop_mut ')' {in_loop++; generate(") ");} 
                     body {in_loop--;} end_table
-                | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
-                    if($8->core() != BUF){
+                | KW_FOR start_table type_var KW_IN expression {
+                    if($5->core() != BUF){
                         yyerror("Looping over non-buf type.");
                         break;
                     }
                     // TODO: new Var
-                    Type * t = $8->pop_type();
-                    current_scope->insert(new Var(*$4, t));
-
-                    generate($8->repr);
-                    generate(")");
+                    Type * t = $5->pop_type();
+                    if(typecmp($3->type, t)) {
+                        yyerror("Type mismatch in loop declaration.");
+                        break;
+                    }
+                    // current_scope->insert(new Var(*$4, t));
+                    string s = "for (auto " + $3->repr_cpp() + " : " + $5->repr + ")";
+                    generate(s);
 
                 } {in_loop++;} body {in_loop--;} end_table
                 ;

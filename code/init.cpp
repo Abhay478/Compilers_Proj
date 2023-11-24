@@ -14,8 +14,8 @@
 ///     Matrix<n: int, F: Field>
 ///     Polynomial<F: Field>
 ///   fields:
-///     BigRational
-///     BigComplexRational
+///     Rational
+///     Complex
 
 #include "semantic.hpp"
 
@@ -96,10 +96,10 @@ static void init_gen_st() {
 }
 
 ///     BigInt
-///     BigRational
-///     BigComplexRational
+///     Rational
+///     Complex
 static void init_struct_st() {
-    vector<string> types = {"BigInt", "BigRational", "BigComplexRational"};
+    vector<string> types = {"BigInt", "Rational", "Complex"};
     for (auto i : types) {
         auto sste = new Struct(i, {});
         sste->builtin = true;
@@ -118,12 +118,12 @@ static void init_struct_st() {
 ///     Matrix<n: int, F: Field>
 ///     Polynomial<F: Field>
 ///   fields:
-///     BigRational
-///     BigComplexRational
+///     Rational
+///     Complex
 static void init_claim_st() {
     vector<const char *> groups = {"Dihedral", "Symmetric", "Alternating", "InvMat"};
     vector<const char *> rings = {"Cyclic", "BigInt", "Matrix", "Polynomial"};
-    vector<const char *> fields = {"BigRational", "BigComplexRational"};
+    vector<const char *> fields = {"Rational", "Complex"};
 
     // accumulate all types
     rings.insert(rings.end(), fields.begin(), fields.end());
@@ -150,13 +150,13 @@ static void init_forge_st() {
     auto forge_int_str = new Function("", forge_int_str_params, make_type(PDT_STR));
     forge_st.insert(forge_int_str);
 
-    // forge (int, int) as BigRational
+    // forge (int, int) as Rational
     auto forge_int_int_big_rational_params = make_params({new Var("n", make_type(I32)), new Var("d", make_type(I32))});
-    auto forge_int_int_big_rational = new Function("", forge_int_int_big_rational_params, get_type("BigRational"));
+    auto forge_int_int_big_rational = new Function("", forge_int_int_big_rational_params, get_type("Rational"));
     forge_st.insert(forge_int_int_big_rational);
 
-    // forge BigRational as (int, int)
-    auto forge_big_rational_int_int_params = make_params({new Var("r", get_type("BigRational"))});
+    // forge Rational as (int, int)
+    auto forge_big_rational_int_int_params = make_params({new Var("r", get_type("Rational"))});
     auto ret = make_cart({make_type(I32), make_type(I32)});
     auto forge_big_rational_int_int = new Function("", forge_big_rational_int_int_params, ret);
     forge_st.insert(forge_big_rational_int_int);

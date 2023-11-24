@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #ifndef _SEMANTIC_H
 #define _SEMANTIC_H
@@ -268,11 +269,11 @@ struct Struct {
         return methods->lookup(name);
     }
     int add_claim(Archetypes archetype) {
-        if(!std::find(this->claimd.begin(), this->claimd.end(), archetype).base()) {
+        if(std::find(this->claimd.begin(), this->claimd.end(), archetype) == this->claimd.end()) {
             claimd.push_back(archetype); 
-            return 1;
+            return 0;
         }
-        return 0;
+        return 1;
     }
 };
 
@@ -289,11 +290,11 @@ struct Enum {
     std::vector<Archetypes> claimd;
     Enum(std::string name, std::vector<std::string> fields);
     int add_claim(Archetypes archetype) {
-        if(!std::find(this->claimd.begin(), this->claimd.end(), archetype).base()) {
+        if(std::find(this->claimd.begin(), this->claimd.end(), archetype) == this->claimd.end()) {
             claimd.push_back(archetype); 
-            return 1;
+            return 0;
         }
-        return 0;
+        return 1;
     }
 };
 

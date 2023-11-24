@@ -8,11 +8,12 @@
     FILE * output_stream;
     FILE * struct_stream;
     // flags
-    Type * current_func = NULL;
-    int in_loop = 0;
-    int in_cond = 0;
-    int in_forg = 0;
+    int in_loop = 0; // loop depth counter, for break and continue
+    int in_cond = 0; // flag, for if-else
+    int in_forg = 0; // flag, for forge
+    int in_rule = 0; // flag, for rule
     int forge_count = 0;  // For generating unique names for forges.
+    Type * current_func = NULL;
     Scope * current_scope = NULL;
     Struct * method_of = NULL;
     Claim * current_claim = NULL;
@@ -171,7 +172,7 @@
 %start program
 
 %%
-program         : {generateln("#include<bits/stdc++.h>\nusing namespace std;\n#include\"a.hpp\"\n"); } start_table P end_table
+program         :  start_table P end_table
 
 P               : epsilon
                 | P declaration ';'
@@ -602,8 +603,8 @@ expression      : '(' expression ')' {
                 | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr; }
                 | expression '/' expression    { $$ = div_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr + ".inv()"; }
                 | expression '%' expression    { $$ = modulus_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " % " + $3->repr;}
-                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + " + $3->repr;}
-                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + -(" + $3->repr + ")";}
+                | expression '+' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + " + $3->repr;}
+                | expression '-' expression    { $$ = add_sub_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " + -(" + $3->repr + ")";}
                 | expression '>' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " > " + $3->repr;}
                 | expression '<' expression    { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " < " + $3->repr;}
                 | expression CMP_OP expression { $$ = cmp_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
@@ -720,8 +721,8 @@ cart_value_list_: cart_value_list_ ',' expression {
                 ;
 
 return_stmt     : KW_RETURN expression {
-                    if(in_forg) {
-                        yyerror("Cannot return expression from forge.");
+                    if(in_forg || in_rule) {
+                        yyerror("Cannot return expression from forges or rules.");
                         break;
                     }
                     if(!current_func) {
@@ -737,7 +738,7 @@ return_stmt     : KW_RETURN expression {
                     generateln(gen);
                 } // Check if compatible with current function return type.
                 | KW_RETURN {
-                    if(in_forg) {
+                    if(in_forg || in_rule) {
                         string s = "return " + out->repr_cpp() + ";";
                         generateln(s);
                         break;
@@ -963,14 +964,14 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     string gen = "while (" + $3->repr + ")";
                     generateln(gen);
                 } body {in_loop--;}
-                | KW_FOR '(' {generate("for ( ");} 
+                | KW_FOR '(' {generate("for (");} 
                 assignment {generate($4->repr);} ';' {generate("; ");} 
                 loop_cond {generate($8->repr);} ';' {generate("; ");} 
                 loop_mut ')' {in_loop++; generate(") ");} 
                 body {in_loop--;}
-                | KW_FOR '(' {generate("for ( ");} 
-                start_table declaration ';' 
-                loop_cond {generate($7->repr);} ';' {generate("; ");} 
+                | KW_FOR '(' {generate("for (");} 
+                start_table KW_LET decl_item {generate("; ");} ';' 
+                loop_cond {generate($9->repr);} ';' {generate("; ");} 
                 loop_mut ')' {in_loop++; generate(") ");} 
                 body {in_loop--;} end_table
                 | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
@@ -1059,27 +1060,38 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
                         Enum * entry = enum_st.lookup(*$2);
-                        if(!entry) yyerror("No such type.");
-                        else {
-                            if(!entry->add_claim($4)) {
-                                yyerror("Claim already exists.");
-                                break;
-                            }
-                            Type * t = new Type();
-                            t->push_type(ENUM, 0, 1, new Aux(entry));
-                            Claim * claim = claim_st.lookup(t, $4);
-                            if(!claim) {$$ = new Claim(t, $4);} // Can copy Type, as InnerType is malloc'd.
+                        if(!entry)
+                        {
+                            yyerror("No such type.");
+                            $$ = NULL;
+                            break;
+                        }
+                        if(entry->add_claim($4)) {
+                            yyerror("Claim already exists.");
+                            $$ = NULL;
+                            break;
+                        }
+
+                        Type * t = new Type();
+                        t->push_type(ENUM, 0, 1, new Aux(entry));
+                        Claim * claim = claim_st.lookup(t, $4);
+                        if(!claim) {
+                            $$ = new Claim(t, $4); // Can copy Type, as InnerType is malloc'd.
+                        } else {
+                            $$ = NULL;
                         }
                     } 
                     else {
-                        if(!entry->add_claim($4)) {
+                        if(entry->add_claim($4)) {
                             yyerror("Claim already exists.");
+                            $$ = NULL;
                             break;
                         }
                         Type * t = new Type();
                         t->push_type(STRUCT, 0, 1, new Aux(entry));
                         Claim * claim = claim_st.lookup(t, $4);
                         if(!claim) {$$ = new Claim(t, $4);}
+                        else {$$ = NULL;}
                     }   
                 }
                 ; 
@@ -1152,7 +1164,7 @@ rule_list       : rule_list tbl_rule
                 | tbl_rule
                 ;
 
-tbl_rule        : start_table rule end_table
+tbl_rule        : start_table {in_rule=1;} rule {in_rule=0;} end_table
                 ;
 
 rule            : additive_rule 
@@ -1178,11 +1190,11 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
 
                     out = v1;
 
-                    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
-                    generateln(h);
+                    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+                    generate(h);
                 } ARROW body {
                     rule_scope = NULL;
-                    generateln("}");
+                    generateln("");
                     out = NULL;
                 }
                 ;
@@ -1200,8 +1212,8 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
 
                         out = v1;
 
-                        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
-                        generateln(h);
+                        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+                        generate(h);
                     } else if(current_claim->archetype == SPACE) {
                         Type * t_in = t->pop_type();
                         auto v1 = new Var(*$2, t);
@@ -1213,15 +1225,15 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
 
                         out = v1;
 
-                        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") {";
-                        generateln(h);
+                        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+                        generate(h);
                     } else {
                         yyerror("Multiplicative rule must be in a ring or space.");
                     }
                     
                 } ARROW body {
                     rule_scope = NULL;
-                    generateln("}");
+                    generateln("");
                     out = NULL;
                 }
                 ;
@@ -1235,15 +1247,15 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
                     if(current_claim->archetype == GROUP) {
                         if($4 != 0) yyerror("Identity rule must be 0.");
                         else {
-                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() {";
-                            generateln(s);
+                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() ";
+                            generate(s);
                         }
                     }
                     else if(current_claim->archetype == RING) {
                         if($4 != 1) yyerror("Identity rule must be 1.");
                         else {
-                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() {";
-                            generateln(s);
+                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() ";
+                            generate(s);
                         }
                     }
                     else {
@@ -1252,7 +1264,7 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
 
                 } ARROW body {
                     rule_scope = NULL;
-                    generateln("}");
+                    generateln("");
                     out = NULL;
                 }
                 ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
@@ -1270,16 +1282,17 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' {
 
                     out = v1;
 
-                    string s = current_claim->type->repr_cpp() + " operator-(" + current_claim->type->repr_cpp() + " " + v2->repr_cpp() + ") {";
-                    generateln(s);
+                    string s = current_claim->type->repr_cpp() + " operator-(" + current_claim->type->repr_cpp() + " " + v2->repr_cpp() + ") ";
+                    generate(s);
                 } ARROW body {
                     rule_scope = NULL;
-                    generateln("}");
+                    generateln("");
                     out = NULL;
                 }
                 ;
 
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
+                    rule_scope = current_scope;
                     if(current_claim->archetype != FIELD) {
                         yyerror("Inverse rule must be in a field.");
                         break;
@@ -1287,16 +1300,19 @@ inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
                     if($4 != 1) yyerror("Inverse rule must be 1/x");
                     auto v = new Var(*$2, current_claim->type);
                     current_scope->insert(v);
-                    current_scope->insert(new Var(*$6, current_claim->type));
+                    auto arg = new Var(*$6, current_claim->type);
+                    current_scope->insert(arg);
 
                     out = v;
-                    string s = current_claim->type->repr_cpp() + " inv(" + current_claim->type->repr_cpp() + " " + *$6 + ") {";
+                    string s = current_claim->type->repr_cpp() + " " + current_claim->type->repr_cpp() + "::inv(" + current_claim->type->repr_cpp() + " " + arg->repr_cpp() + ") ";
+                    generate(s);
                 } ARROW body {
-                    generateln("}");
+                    rule_scope = NULL;
+                    generateln("");
                 }
                 ; // LIT_INT must be 1
 
-function        : start_table function_header body end_table {method_of = NULL; current_func = NULL;}
+function        : start_table function_header body end_table {method_of = NULL; current_func = NULL; generateln("");}
                 ;
 
 fh_stub         : KW_FN IDENT '(' param_list ')' {
@@ -1307,7 +1323,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
 
                         Function * entry = new Function(*$2, params, NULL);
                         $$.entry = entry;
-                        $$.repr = new string((*$2 != "main" ? "f_" : "") + *$2 + "(" + ($4 ? *$4 : "") + ")");
+                        $$.repr = new string((*$2 != "main" ? "f_" : "") + *$2 + "(" + ($4 ? *$4 : "") + ") ");
                     }
                 }
 
@@ -1321,7 +1337,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         sste->methods->insert(fste);
 
                         $$.entry = fste;
-                        $$.repr = new string(*$2 + "::m_" + *$4 + "(" + *$6 + ")");
+                        $$.repr = new string(*$2 + "::m_" + *$4 + "(" + *$6 + ") ");
                     }
                 }
                 ;
@@ -1331,7 +1347,7 @@ function_header :  fh_stub ':' type {
                         $1.entry->return_type = $3;
                         func_st.insert($1.entry);
                         string header = $3->repr_cpp() + " " + *($1.repr);
-                        generateln(header);
+                        generate(header);
                         // We ain't putting this stuff 
                     }
                     current_func = $3;
@@ -1340,7 +1356,7 @@ function_header :  fh_stub ':' type {
                     if($1.entry) {
                         func_st.insert($1.entry);
                         string header = "void " + *($1.repr);
-                        generateln(header);
+                        generate(header);
                     }
                     current_func = new Type();
                     current_func->push_type(VOID, 0, 0, NULL);
@@ -1437,14 +1453,14 @@ forge           : start_table KW_FORGE '(' type_var ')' KW_AS start_table '(' ty
                     forge_st.insert(entry);
                     in_forg = 1;
 
-                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->type->repr_cpp() + " " + $4->repr_cpp() + ")";
-                    generateln(header);
+                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->type->repr_cpp() + " " + $4->repr_cpp() + ") ";
+                    generate(header);
 
                     forge_count++;
                     out = $9;
                     forge_scope = current_scope;
 
-                } body end_table end_table {in_forg = 0; out = NULL; forge_scope = NULL;}
+                } body end_table end_table {in_forg = 0; out = NULL; forge_scope = NULL; generateln("");}
                 ;
 
 cart            : '(' type ',' ')' {
@@ -1495,15 +1511,28 @@ int main() {
     output_stream = fopen("a.cpp", "w");
     struct_stream = fopen("a.hpp", "w");
     init_symbol_tables();
+
+    // headers
+    generateln_h("#include<bits/stdc++.h>");
+    generateln_h("#include \"std/forges.hpp\"");
+    generateln_h("using namespace std;\n");
+    generateln("#include \"a.hpp\"\n");
+
     yyparse();
+
     generate_structs();
     generate_enums();
+
     fclose(token_stream);
     fclose(output_stream);
     fclose(struct_stream);
+
     if (error) {
+        // if error, generated files are useless, so remove them
+        // but for now, keeping them for debugging
         // TODO: uncomment this once complete
         // remove("a.cpp");
+        // remove("a.hpp");
     }
     return error;
 }

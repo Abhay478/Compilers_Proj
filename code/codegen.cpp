@@ -82,6 +82,10 @@ void generate_structs() {
             generateln_h(t);
         }
 
+        // empty constructor
+        auto empty = sste->name + "() {}";
+        generateln_h(empty);
+
         for(auto claim : sste->claimd) {
             switch(claim) {
                 case GROUP: {
@@ -101,7 +105,7 @@ void generate_structs() {
                     break;
                 }
                 case FIELD: {
-                    auto div = sste->name + " inv() const;";
+                    auto div = "static " + sste->name + " inv(" + sste->name + ");";
                     generateln_h(div);
                     break;
                 }

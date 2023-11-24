@@ -20,6 +20,7 @@ claim two_tup is Group {
     (c = a + b) => {
         c.val = a.val + b.val;
         c.aux = a.aux + b.aux;
+        return;
     }
 
     (c = 0) => {

@@ -3,6 +3,7 @@
 
 struct Rational {
     mpz_class n, d;
+    Rational() : n(0), d(1) {}
     Rational(int n_) : n(n_), d(1) {}
     Rational(mpz_class n_) : n(n_), d(1) {}
     Rational(mpz_class n_, mpz_class d_) : n(n_), d(d_) {

@@ -1645,38 +1645,39 @@ bool error = false;
 int main() {
     token_stream = fopen("code/seq_tokens.txt", "w");
     output_stream = fopen("a.cpp", "w");
-    struct_stream = fopen("a.hpp", "w");
     init_symbol_tables();
 
     // headers
-    generateln_h("#include<bits/stdc++.h>");
-    generateln_h("#include \"std/forges.hpp\"");
-    generateln_h("using namespace std;\n");
     generateln("#include \"a.hpp\"\n");
 
     yyparse();
 
-    generate_enums();
-    generate_structs();
-
     fclose(token_stream);
     fclose(output_stream);
-    fclose(struct_stream);
 
     if (error) {
         // if error, generated files are useless, so remove them
-        // but for now, keeping them for debugging
-        // TODO: uncomment this once complete
-        // remove("a.cpp");
-        // remove("a.hpp");
+        remove("a.cpp");
+        remove("a.hpp");
+        return 1;
     }
-    return error;
+
+    // generate header file (enums and structs)
+    struct_stream = fopen("a.hpp", "w");
+    generateln_h("#include<bits/stdc++.h>");
+    generateln_h("#include \"std/forges.hpp\"");
+    generateln_h("using namespace std;\n");
+    generate_enums();
+    generate_structs();
+    fclose(struct_stream);
+
+    return 0;
 }
 
 extern int yylineno;
 
 void yyerror(const char* s) {
-    const char *m = GREEN_ESCAPE "Error" RESET_ESCAPE " on line %3d: %s\n";
+    const char *m = GREEN_ESCAPE "Error" RESET_ESCAPE " near line %3d: %s\n";
     fprintf(stderr, m, yylineno, s);
     error = true;
 }

@@ -1121,26 +1121,137 @@ archetype_claim : claim_stub '{' type_def {
                         yyerror("Claim unsuccesful.");
                     }
                     else {
-                        Function * entry1 = func_st.lookup((*$4)[0]);
-                        Function * entry2 = func_st.lookup((*$4)[1]);
-                        if(!entry1 || !entry2) yyerror("Function not found in symbol table.");
-                        else {
-                            if(typecmp(entry1->return_type, get_param_type(entry2)) || typecmp(entry2->return_type, get_param_type(entry1))) {
-                                yyerror("Function types do not match (should be inverses)");
-                                break;
-                            }
-                            if (typecmp(get_param_type(entry1), $1->type)) {
-                                yyerror("Function type does not match claim type.");
-                                break;
-                            }
-                            Type *other = entry2->return_type;
-                            // check if other claims claim_stub->archetype
-                            if(!claim_st.lookup(other, $1->archetype)) {
-                                yyerror("Type being claimed via function does not claim archetype.");
-                                break;
-                            }
-                            claim_st.insert($1);
+                        Function * entry1 = func_st.lookup((*$4)[0]); // This returns what we're claiming
+                        Function * entry2 = func_st.lookup((*$4)[1]); // This returns what's already claimed, accepts what we're claaiming
+
+                        if(!entry1 || !entry2) {
+                            yyerror("Function not found in symbol table.");
+                            break;
                         }
+                        if(typecmp(entry1->return_type, get_param_type(entry2)) || typecmp(entry2->return_type, get_param_type(entry1))) {
+                            yyerror("Function types do not match (should be inverses)");
+                            break;
+                        }
+                        if (typecmp(get_param_type(entry2), $1->type)) {
+                            yyerror("Function type does not match claim type.");
+                            break;
+                        }
+                        Type *other = entry2->return_type;
+                        // check if other claims claim_stub->archetype
+                        if(!claim_st.lookup(other, $1->archetype)) {
+                            yyerror("Type being claimed via function does not claim archetype.");
+                            break;
+                        }
+                        current_claim = $1;
+                        claim_st.insert($1);
+
+                        switch($1->archetype) {
+                            case GROUP: {
+                                auto v1 = add_gen("_sum", "_op1", "_op2");
+                                generateln("{"); indent++;
+                                string s = v1[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v1[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v1[2]->repr_cpp() + "));";
+                                generateln(s);
+                                s = "return " + v1[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v2 = neg_gen("_neg", "_op");
+                                generateln("{"); indent++;
+                                s = v2[0]->repr_cpp() + " = " + entry2->repr_cpp() + "(-" + entry1->repr_cpp() + "(" + v2[1]->repr_cpp() + "));";   
+                                generateln(s);
+                                s = "return " + v2[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v3 = id_gen("_id", 0);
+                                generateln("{"); indent++;
+                                s = v3->repr_cpp() + " = " + entry1->repr_cpp() + "(0)" + ";";
+                                generateln(s);
+                                s = "return " + v3->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                break;
+                            }
+                            case RING: {
+                                auto v4 = mult_gen("_prod", "_op1", "_op2");
+                                generateln("{"); indent++;
+                                string s = v4[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v4[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v4[2]->repr_cpp() + "));";
+                                generateln(s);
+                                s = "return " + v4[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v5 = id_gen("_id", 1);
+                                generateln("{"); indent++;
+                                s = v5->repr_cpp() + " = " + entry1->repr_cpp() + "(1)" + ";";
+                                generateln(s);
+                                s = "return " + v5->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                break;
+                            }
+                            case FIELD: {
+                                auto v6 = inv_gen("_inv", "_op");
+                                generateln("{"); indent++;
+                                string s = v6[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->return_type->repr_cpp() + "::inv(" + entry2->repr_cpp() + "(" + v6[1]->repr_cpp() + ")));";
+                                generateln(s);
+                                s = "return " + v6[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                break;
+                            }
+                            case SPACE: {
+                                auto v7 = mult_gen("_prod", "_op1", "_op2");
+                                generateln("{"); indent++;
+                                string s = v7[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v7[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v7[2]->repr_cpp() + "));";
+                                generateln(s);
+                                s = "return " + v7[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v8 = add_gen("_sum", "_op1", "_op2");
+                                generateln("{"); indent++;
+                                s = v8[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v8[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v8[2]->repr_cpp() + "));";
+                                generateln(s);
+                                s = "return " + v8[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v9 = neg_gen("_neg", "_op");
+                                generateln("{"); indent++;
+                                s = v9[0]->repr_cpp() + " = " + entry2->repr_cpp() + "(-" + entry1->repr_cpp() + "(" + v9[1]->repr_cpp() + "));";   
+                                generateln(s);
+                                s = "return " + v9[0]->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                auto v10 = id_gen("_id", 0);
+                                generateln("{"); indent++;
+                                s = v10->repr_cpp() + " = " + entry1->repr_cpp() + "(0)" + ";";
+                                generateln(s);
+                                s = "return " + v10->repr_cpp() + ";";
+                                generateln(s);
+                                indent--;
+                                generateln("}");
+
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+
                     }
 
                     current_claim = NULL;
@@ -1175,23 +1286,9 @@ rule            : additive_rule
                 ;
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
-                    rule_scope = current_scope;
-                    auto t = current_claim->type;
-                    if(current_claim->archetype != GROUP) {
+                    if(add_gen(*$2, *$4, *$6).empty()) {
                         yyerror("Additive rule must be in a group.");
-                        break;
                     }
-                    auto v1 = new Var(*$2, t);
-                    auto v2 = new Var(*$4, t);
-                    auto v3 = new Var(*$6, t);
-                    current_scope->insert(v1);
-                    current_scope->insert(v2);
-                    current_scope->insert(v3);
-
-                    out = v1;
-
-                    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
-                    generate(h);
                 } ARROW body {
                     rule_scope = NULL;
                     generateln("");
@@ -1200,34 +1297,7 @@ additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
                 ;
 
 mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
-                    rule_scope = current_scope;
-                    auto t = current_claim->type;
-                    if(current_claim->archetype == RING) {
-                        auto v1 = new Var(*$2, t);
-                        auto v2 = new Var(*$4, t);
-                        auto v3 = new Var(*$6, t);
-                        current_scope->insert(v1);
-                        current_scope->insert(v2);
-                        current_scope->insert(v3);
-
-                        out = v1;
-
-                        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
-                        generate(h);
-                    } else if(current_claim->archetype == SPACE) {
-                        Type * t_in = t->pop_type();
-                        auto v1 = new Var(*$2, t);
-                        auto v2 = new Var(*$4, t_in);
-                        auto v3 = new Var(*$6, t);
-                        current_scope->insert(v1);
-                        current_scope->insert(v2);
-                        current_scope->insert(v3);
-
-                        out = v1;
-
-                        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
-                        generate(h);
-                    } else {
+                    if(mult_gen(*$2, *$4, *$6).empty()) {
                         yyerror("Multiplicative rule must be in a ring or space.");
                     }
                     
@@ -1239,28 +1309,21 @@ mult_rule       : '(' IDENT '=' IDENT '*' IDENT ')' {
                 ;
 
 identity_rule   : '(' IDENT '=' LIT_INT ')' {
-                    rule_scope = current_scope;
-                    Type * t = current_claim->type;
-                    auto v = new Var(*$2, t);
-                    out = v;
-                    current_scope->insert(v);
-                    if(current_claim->archetype == GROUP) {
-                        if($4 != 0) yyerror("Identity rule must be 0.");
-                        else {
-                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() ";
-                            generate(s);
-                        }
+                    if(id_gen(*$2, $4)) break;
+                    switch(current_claim->archetype) {
+                        case GROUP:
+                            yyerror("Identity must be 0.");
+                            printf("%d\n", $4);
+                            break;
+                        case RING:
+                            yyerror("Identity must be 1.");
+                            break;
+                        case FIELD: case SPACE:
+                            yyerror("Identity rule must be in a group or ring.");
+                            break;
+                        default:
+                            break;
                     }
-                    else if(current_claim->archetype == RING) {
-                        if($4 != 1) yyerror("Identity rule must be 1.");
-                        else {
-                            string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() ";
-                            generate(s);
-                        }
-                    }
-                    else {
-                        yyerror("Cannot have identity rule in field or space.");
-                    }   
 
                 } ARROW body {
                     rule_scope = NULL;
@@ -1270,20 +1333,9 @@ identity_rule   : '(' IDENT '=' LIT_INT ')' {
                 ; // We don't need the type of IDENT in semantic, we copy-paste into final code.
 
 negation_rule   : '(' IDENT '=' '-' IDENT ')' {
-                    rule_scope = current_scope;
-                    if(current_claim->archetype != GROUP) {
+                    if(neg_gen(*$2, *$5).empty()) {
                         yyerror("Negation rule must be in a group.");
-                        break;
                     }
-                    auto v1 = new Var(*$2, current_claim->type);
-                    auto v2 = new Var(*$5, current_claim->type);
-                    current_scope->insert(v1);
-                    current_scope->insert(v2);
-
-                    out = v1;
-
-                    string s = current_claim->type->repr_cpp() + " operator-(" + current_claim->type->repr_cpp() + " " + v2->repr_cpp() + ") ";
-                    generate(s);
                 } ARROW body {
                     rule_scope = NULL;
                     generateln("");
@@ -1292,20 +1344,9 @@ negation_rule   : '(' IDENT '=' '-' IDENT ')' {
                 ;
 
 inverse_rule    : '(' IDENT '=' LIT_INT '/' IDENT ')' {
-                    rule_scope = current_scope;
-                    if(current_claim->archetype != FIELD) {
+                    if(inv_gen(*$2, *$6).empty()) {
                         yyerror("Inverse rule must be in a field.");
-                        break;
                     }
-                    if($4 != 1) yyerror("Inverse rule must be 1/x");
-                    auto v = new Var(*$2, current_claim->type);
-                    current_scope->insert(v);
-                    auto arg = new Var(*$6, current_claim->type);
-                    current_scope->insert(arg);
-
-                    out = v;
-                    string s = current_claim->type->repr_cpp() + " " + current_claim->type->repr_cpp() + "::inv(" + current_claim->type->repr_cpp() + " " + arg->repr_cpp() + ") ";
-                    generate(s);
                 } ARROW body {
                     rule_scope = NULL;
                     generateln("");

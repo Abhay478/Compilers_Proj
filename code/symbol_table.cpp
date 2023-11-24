@@ -252,6 +252,10 @@ Function *FunctionSymbolTable::lookup(string name) {
     return NULL;
 }
 
+std::string Function::repr_cpp() {
+    return "f_" + this->name;
+}
+
 Var * Scope::lookup(string name) {
     Var * vste = NULL;
     Scope * current = this;

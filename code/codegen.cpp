@@ -1,4 +1,5 @@
 #include "semantic.hpp"
+
 using namespace std;
 bool last_ln = true;
 extern FILE * output_stream;
@@ -52,6 +53,235 @@ void generateln_h(const char *s) {
 void generateln_h(string &s) {
     generateln_h(s.c_str());
 }
+
+extern Claim * current_claim;
+extern Scope * current_scope;
+extern Scope * rule_scope;
+extern Var * out;
+
+vector<Var *> add_gen(string sum, string op1, string op2) {
+    rule_scope = current_scope;
+    auto t = current_claim->type;
+    if(current_claim->archetype != GROUP) {
+        return {};
+    }
+    auto v1 = new Var(sum, t);
+    auto v2 = new Var(op1, t);
+    auto v3 = new Var(op2, t);
+    current_scope->insert(v1);
+    current_scope->insert(v2);
+    current_scope->insert(v3);
+
+    out = v1;
+
+    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+    generate(h);
+
+    return {v1, v2, v3};
+}
+
+vector<Var *> mult_gen(string prod, string op1, string op2) {
+    rule_scope = current_scope;
+    auto t = current_claim->type;
+    Var * v1, * v2, * v3;
+    if(current_claim->archetype == RING) {
+        v1 = new Var(prod, t);
+        v2 = new Var(op1, t);
+        v3 = new Var(op2, t);
+        current_scope->insert(v1);
+        current_scope->insert(v2);
+        current_scope->insert(v3);
+
+        out = v1;
+
+        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+        generate(h);
+    } else if(current_claim->archetype == SPACE) {
+        Type * t_in = t->pop_type();
+        v1 = new Var(prod, t);
+        v2 = new Var(op1, t_in);
+        v3 = new Var(op2, t);
+        current_scope->insert(v1);
+        current_scope->insert(v2);
+        current_scope->insert(v3);
+
+        out = v1;
+
+        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+        generate(h);
+    } else {
+        return {};
+    }
+
+    return {v1, v2, v3};
+}
+
+Var * id_gen(string id, int val) {
+    rule_scope = current_scope;
+    Type * t = current_claim->type;
+    auto v = new Var(id, t);
+    out = v;
+    current_scope->insert(v);
+    if(current_claim->archetype == GROUP) {
+        if(val != 0) {printf("Bad val.\n"); return NULL;}
+        string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() ";
+        generate(s);
+    }
+    else if(current_claim->archetype == RING) {
+        if(val != 1) return NULL;
+        string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() ";
+        generate(s);
+    }
+    else {
+        return NULL;
+    }   
+    return v;
+}
+
+vector<Var *> neg_gen(string neg, string op) {
+    rule_scope = current_scope;
+    if(current_claim->archetype != GROUP) {
+        return {};
+    }
+    Type * t = current_claim->type;
+    auto v1 = new Var(neg, t);
+    auto v2 = new Var(op, t);
+    current_scope->insert(v1);
+    current_scope->insert(v2);
+    out = v1;
+    string s = t->repr_cpp() + " " + t->repr_cpp() + "::operator-() ";
+    generate(s);
+
+    return {v1, v2};
+}
+
+vector<Var *> inv_gen(string inv, string op) {
+    rule_scope = current_scope;
+    if(current_claim->archetype != FIELD) {
+        return {};
+    }
+    Type * t = current_claim->type;
+    auto v1 = new Var(inv, t);
+    auto v2 = new Var(op, t);
+    current_scope->insert(v1);
+    current_scope->insert(v2);
+    out = v1;
+    string s = t->repr_cpp() + " " + t->repr_cpp() + "::inv(" + t->repr_cpp() + " " + v2->repr_cpp() + ") ";
+    generate(s);
+
+    return {v1, v2};
+}
+
+
+/* int add_gen(Var * sum, Var * op1, Var * op2) {
+    rule_scope = current_scope;
+    auto t = current_claim->type;
+    if(current_claim->archetype != GROUP) {
+        return 1;
+    }
+    current_scope->insert(sum);
+    current_scope->insert(op1);
+    current_scope->insert(op2);
+
+    out = sum;
+
+    string h = t->repr_cpp() + " operator+(" + t->repr_cpp() + " " + op1->repr_cpp() + ", " + t->repr_cpp() + " " + op2->repr_cpp() + ") ";
+    generate(h);
+
+    return 0;
+}
+
+int mult_gen(Var * prod, Var * op1, Var * op2) {
+    rule_scope = current_scope;
+    auto t = current_claim->type;
+    if(current_claim->archetype == RING) {
+        auto v1 = new Var(prod, t);
+        auto v2 = new Var(op1, t);
+        auto v3 = new Var(op2, t);
+        current_scope->insert(v1);
+        current_scope->insert(v2);
+        current_scope->insert(v3);
+
+        out = v1;
+
+        string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+        generate(h);
+    } else if(current_claim->archetype == SPACE) {
+        Type * t_in = t->pop_type();
+        auto v1 = new Var(prod, t);
+        auto v2 = new Var(op1, t_in);
+        auto v3 = new Var(op2, t);
+        current_scope->insert(v1);
+        current_scope->insert(v2);
+        current_scope->insert(v3);
+
+        out = v1;
+
+        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+        generate(h);
+    } else {
+        return 1;
+    }
+
+    return 0;
+}
+
+int id_gen(Var * id, int val) {
+    rule_scope = current_scope;
+    Type * t = current_claim->type;
+    auto v = new Var(id, t);
+    out = v;
+    current_scope->insert(v);
+    if(current_claim->archetype == GROUP) {
+        if(val != 0) return 1;
+        string s = t->repr_cpp() + " " + t->repr_cpp() + "::zero() ";
+        generate(s);
+    }
+    else if(current_claim->archetype == RING) {
+        if(val != 1) return 2;
+        string s = t->repr_cpp() + " " + t->repr_cpp() + "::one() ";
+        generate(s);
+    }
+    else {
+        return 3;
+    }   
+}
+
+int neg_gen(Var * neg, Var * op) {
+    rule_scope = current_scope;
+    if(current_claim->archetype != GROUP) {
+        return 1;
+    }
+    Type * t = current_claim->type;
+    auto v1 = new Var(neg, t);
+    auto v2 = new Var(op, t);
+    current_scope->insert(v1);
+    current_scope->insert(v2);
+    out = v1;
+    string s = t->repr_cpp() + " " + t->repr_cpp() + "::operator-() ";
+    generate(s);
+
+    return 0;
+}
+
+int inv_gen(Var * inv, Var * op) {
+    rule_scope = current_scope;
+    if(current_claim->archetype != FIELD) {
+        return 1;
+    }
+    Type * t = current_claim->type;
+    auto v1 = new Var(inv, t);
+    auto v2 = new Var(op, t);
+    current_scope->insert(v1);
+    current_scope->insert(v2);
+    out = v1;
+    string s = t->repr_cpp() + " " + t->repr_cpp() + "::inv(" + t->repr_cpp() + " " + v2->repr_cpp() + ") ";
+    generate(s);
+
+    return 0;
+}
+ */
+
 
 // So now, look through struct_st and enum_st and generate the appropriate code
 void generate_structs() {

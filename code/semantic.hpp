@@ -238,7 +238,8 @@ struct Function {
     std::string name;
     VarSymbolTable * params; // Too much work to remove.
     Type * return_type;
-
+    
+    std::string repr_cpp();
     Function(std::string name, VarSymbolTable * params, Type * return_type);
 };
 
@@ -376,6 +377,12 @@ void generate_h(const char *s);
 void generate_h(std::string &s);
 void generateln_h(const char *s);
 void generateln_h(std::string &s);
+
+std::vector<Var *> add_gen(std::string sum, std::string op1, std::string op2);
+std::vector<Var *> mult_gen(std::string prod, std::string op1, std::string op2);
+Var * id_gen(std::string id, int val);
+std::vector<Var *> neg_gen(std::string neg, std::string op);
+std::vector<Var *> inv_gen(std::string inv, std::string op);
 
 void generate_structs();
 void generate_enums();

@@ -1,6 +1,4 @@
 fn main(): i32 {
     let x: [i32];
     push(x, 1);
-
-    push(x, "a");
 }

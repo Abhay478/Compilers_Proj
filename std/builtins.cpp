@@ -43,3 +43,43 @@ void slice(std::vector<T>& vec, int start, int end) {
     }
     vec.erase(vec.begin() + start, vec.begin() + end);
 }
+
+template<typename T>
+T dot(const std::vector<T>& vec1, const std::vector<T>& vec2) {
+    if (vec1.size() != vec2.size()) {
+        panic("Size mismatch for @");
+    }
+    T sum = 0;
+    for (int i = 0; i < vec1.size(); i++) {
+        sum += vec1[i] * vec2[i];
+    }
+    return sum;
+}
+
+// For all types except integral types:
+template<typename T>
+typename std::enable_if<!std::is_integral<T>::value, T>::type _zero()
+{
+    T::zero();
+}
+
+// For integral types only:
+template<typename T>
+typename std::enable_if<std::is_integral<T>::value, T>::type _zero()
+{
+    return 0;
+}
+
+// For all types except integral types:
+template<typename T>
+typename std::enable_if<!std::is_integral<T>::value, T>::type _one()
+{
+    T::one();
+}
+
+// For integral types only:
+template<typename T>
+typename std::enable_if<std::is_integral<T>::value, T>::type _one()
+{
+    return 1;
+}

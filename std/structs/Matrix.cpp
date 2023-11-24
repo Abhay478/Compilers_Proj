@@ -109,4 +109,8 @@ struct Matrix {
         }
         return ret;
     }
+
+    std::vector<T>& operator[](int i) {
+        return a[i];
+    }
 };

@@ -1,33 +1,5 @@
 #include <vector>
 
-// For all types except integral types:
-template<typename T>
-typename std::enable_if<!std::is_integral<T>::value, T>::type _zero()
-{
-    T::zero();
-}
-
-// For integral types only:
-template<typename T>
-typename std::enable_if<std::is_integral<T>::value, T>::type _zero()
-{
-    return 0;
-}
-
-// For all types except integral types:
-template<typename T>
-typename std::enable_if<!std::is_integral<T>::value, T>::type _one()
-{
-    T::one();
-}
-
-// For integral types only:
-template<typename T>
-typename std::enable_if<std::is_integral<T>::value, T>::type _one()
-{
-    return 1;
-}
-
 template <typename T>
 struct Polynomial {
     std::vector<T> coeffs;

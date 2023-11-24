@@ -1,5 +1,3 @@
-// TODO: fix headers
-
 struct Complex {
     Rational r, i;
     Complex(Rational r_) : r(r_), i(Rational::zero()) {}

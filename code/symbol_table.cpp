@@ -228,10 +228,6 @@ int typecmp(InnerType *t1, InnerType *t2, bool ignore_gen) {
             for (int i = 0; i < t1->size; i++) {
                 Type * it1 = (*t1->cart)[i];
                 Type * it2 = (*t2->cart)[i];
-                // Type nt1;
-                // nt1.head = it1;
-                // Type nt2;
-                // nt2.head = it2;
                 if (typecmp(it1, it2)) { // Bhupendra Jogi.
                     return 1;
                 }

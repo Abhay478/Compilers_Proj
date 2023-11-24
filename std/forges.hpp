@@ -182,6 +182,11 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     return mat.a;
 }
 
+template<typename T>
+Matrix<T> forge_Matrix_T(const std::vector<std::vector<T>> mat) {
+    return Matrix<T>(mat);
+}
+
 // test: call all forges
 /*int main() {
     auto big = forge_BigInt("1234567890123456789012345678901234567890");

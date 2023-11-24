@@ -312,6 +312,7 @@ generic         : IDENT '<' type_args '>' {
                     }
 
                     $$ = new Type();
+                    printf("Here.\n");
                     $$->push_type(GEN, 0, 0, new Aux(gste, arr)); 
                 }
                 ;
@@ -338,7 +339,7 @@ type_arg        : type {
                 }
                 ;
 
-declaration     : KW_LET decl_list
+declaration     : KW_LET decl_list 
                 ;
 
 decl_list       : decl_item {generateln(";");}
@@ -596,7 +597,7 @@ expression      : '(' expression ')' {
                         }
                     }
                 }         
-                | expression KW_AS '(' type ')' {
+                | expression  KW_AS '(' type ')' {
                     if (!$1) {
                         $$ = NULL;
                         break;
@@ -604,19 +605,19 @@ expression      : '(' expression ')' {
                     Function * fste = forge_st.lookup($1, $4);
                     if(!fste){
                         yyerror("No forge found");
-                        // break;
-                    } else {
-                        // TODO: return type
-                        auto args = new vector<Type *>();
-                        args->push_back($4);
-                        auto t = fste->get_return_type(args);
-                        if(!t) {
-                            yyerror("Type mismatch in forge call.");
-                            break;
-                        }
-                        $$ = new Expr(t, false);
-                        $$->repr = fste->name + "(" + $1->repr + ")";
+                        break;
+                    } 
+                    // TODO: return type
+                    auto args = new vector<Type *>();
+                    args->push_back($4);
+                    auto t = fste->get_return_type(args);
+                    if(!t) {
+                        yyerror("Type mismatch in forge call.");
+                        break;
                     }
+                    $$ = new Expr(t, false);
+                    $$->repr = fste->name + "(" + $1->repr + ")";
+                    
                 }
                 | expression '@' expression // claim space 
                 {
@@ -912,8 +913,7 @@ array_access    : expression array_index {
                         $$ = NULL;
                         break;
                     }
-                    if($1->core() == BUF) {
-                        // TODO: Vec/Mat/InvMat
+                    if($1->core() == BUF || ($1->core() == GEN && $1->head->gste->name == "Vec") || ($1->core() == GEN && $1->head->gste->name == "Matrix") || ($1->core() == GEN && $1->head->gste->name == "InvMat")) {
                         // TODO: Test for slices.
                         
                         if(!$2.is_slice) {
@@ -1046,7 +1046,6 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                         yyerror("Looping over non-buf type.");
                         break;
                     }
-                    // TODO: new Var
                     Type * t = $5->pop_type();
                     if(typecmp($3->type, t)) {
                         yyerror("Type mismatch in loop declaration.");

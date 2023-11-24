@@ -1,0 +1,4 @@
+fn main(): i32 {
+    let x: Matrix<2, BigInt> = [[1, 2], [3, 4]] as (Matrix<2, BigInt>);
+    return 0;
+}

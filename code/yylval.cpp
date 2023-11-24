@@ -69,7 +69,7 @@ string get_pdt_str(PDT pdt) {
         case I64:
             return "int64_t";
         case PDT_FLOAT:
-            return "float";
+            return "double";
         case PDT_CHAR:
             return "char";
         case PDT_BOOL:

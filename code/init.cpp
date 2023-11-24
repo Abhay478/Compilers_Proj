@@ -100,7 +100,7 @@ static void init_gen_st() {
 
     vector<string> int_field_types = {"InvMat", "Matrix"};
     for (auto i : int_field_types) {
-        auto gste = new Generic(i, {GenericArg(), GenericArg(FIELD)});
+        auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
         gen_st.insert(gste);
     }
 
@@ -186,6 +186,101 @@ static void init_forge_st() {
     auto forge_cyclic_int_params = make_params({new Var("c", get_type("Cyclic"))});
     auto forge_cyclic_int = new Function("", forge_cyclic_int_params, make_type(I32));
     forge_st.insert(forge_cyclic_int);
+
+    // Forging std types:
+//
+// BigInt                       - from string, int
+// Cyclic                       - from int
+// Symmetric                    - from vector<int>, Alternating
+// Alternating                  - from vector<int>, Symmetric
+// Dihedral                     - from tuple<int, bool>
+// Matrix                       - from vector<vector<T>>
+// Polynomial                   - from vector<T>
+// Rational                     - from tuple<int, int>, int
+// Complex                      - from tuple<int, int>, tuple<Rational, Rational>, Rational, int
+//
+//
+// Forging primitive types:
+//
+// int32_t                      - from BigInt, Cyclic, string
+// double                       - from Rational, string
+// tuple<int, int>              - from Rational
+// tuple<Rational, Rational>    - from Complex
+// tuple<int32_t, int32_t>      - from Complex
+// string                       - from BigInt, Cyclic, Symmetric, Alternating, Dihedral, Rational, Complex
+// vector<int>                  - from Symmetric, Alternating
+// vector<vector<T>>            - from Matrix
+
+    // forge string as int
+    auto forge_str_int_params = make_params({new Var("s", make_type(PDT_STR))});
+    auto forge_str_int = new Function("", forge_str_int_params, make_type(I32));
+    forge_st.insert(forge_str_int);
+
+    // forge string as BigInt
+    auto forge_str_big_int_params = make_params({new Var("s", make_type(PDT_STR))});
+    auto forge_str_big_int = new Function("", forge_str_big_int_params, get_type("BigInt"));
+    forge_st.insert(forge_str_big_int);
+
+    // forge vector<int> as Symmetric
+    auto forge_vec_int_symmetric_params = make_params({new Var("v", make_cart({make_type(I32)}))});
+    auto forge_vec_int_symmetric = new Function("", forge_vec_int_symmetric_params, get_type("Symmetric"));
+    forge_st.insert(forge_vec_int_symmetric);
+
+    // forge vector<int> as Alternating
+    auto forge_vec_int_alternating_params = make_params({new Var("v", make_cart({make_type(I32)}))});
+    auto forge_vec_int_alternating = new Function("", forge_vec_int_alternating_params, get_type("Alternating"));
+    forge_st.insert(forge_vec_int_alternating);
+
+    // forge vector<vector<T>> as Matrix
+    auto forge_vec_vec_t_matrix_params = make_params({new Var("v", make_placeholder())});
+    auto forge_vec_vec_t_matrix = new Function("", forge_vec_vec_t_matrix_params, get_type("Matrix"));
+    forge_st.insert(forge_vec_vec_t_matrix);
+
+    // forge vector<T> as Polynomial
+    auto forge_vec_t_polynomial_params = make_params({new Var("v", make_placeholder())});
+    auto forge_vec_t_polynomial = new Function("", forge_vec_t_polynomial_params, get_type("Polynomial"));
+    forge_st.insert(forge_vec_t_polynomial);
+
+    // forge tuple<int, int> as Rational
+    auto forge_int_int_rational_params = make_params({new Var("t", make_cart({make_type(I32), make_type(I32)}))});
+    auto forge_int_int_rational = new Function("", forge_int_int_rational_params, get_type("Rational"));
+    forge_st.insert(forge_int_int_rational);
+
+    // forge Rational as tuple<int, int>
+    auto forge_rational_int_int_params = make_params({new Var("r", get_type("Rational"))});
+    auto forge_rational_int_int = new Function("", forge_rational_int_int_params, make_cart({make_type(I32), make_type(I32)}));
+    forge_st.insert(forge_rational_int_int);
+
+    // forge tuple<int, int> as Complex
+    auto forge_int_int_complex_params = make_params({new Var("t", make_cart({make_type(I32), make_type(I32)}))});
+    auto forge_int_int_complex = new Function("", forge_int_int_complex_params, get_type("Complex"));
+    forge_st.insert(forge_int_int_complex);
+
+    // forge tuple<Rational, Rational> as Complex
+    auto forge_rational_rational_complex_params = make_params({new Var("t", make_cart({get_type("Rational"), get_type("Rational")}))});
+    auto forge_rational_rational_complex = new Function("", forge_rational_rational_complex_params, get_type("Complex"));
+    forge_st.insert(forge_rational_rational_complex);
+
+    // forge Rational as tuple<int, int>
+    auto forge_complex_int_int_params = make_params({new Var("c", get_type("Complex"))});
+    auto forge_complex_int_int = new Function("", forge_complex_int_int_params, make_cart({make_type(I32), make_type(I32)}));
+    forge_st.insert(forge_complex_int_int);
+
+    // forge int as Complex
+    auto forge_int_complex_params = make_params({new Var("n", make_type(I32))});
+    auto forge_int_complex = new Function("", forge_int_complex_params, get_type("Complex"));
+    forge_st.insert(forge_int_complex);
+
+    // forge Complex as int
+    auto forge_complex_int_params = make_params({new Var("c", get_type("Complex"))});
+    auto forge_complex_int = new Function("", forge_complex_int_params, make_type(I32));
+    forge_st.insert(forge_complex_int);
+
+    // forge BigInt as string
+    auto forge_big_int_str_params = make_params({new Var("b", get_type("BigInt"))});
+    auto forge_big_int_str = new Function("", forge_big_int_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_big_int_str);
+    
 }
 
 void init_symbol_tables() {

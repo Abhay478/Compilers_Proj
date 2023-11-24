@@ -1022,19 +1022,29 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     loop_mut ')' {in_loop++; generate(") ");} 
                     body {in_loop--;}
                 | KW_FOR '(' {generate("for (");} 
+<<<<<<< Updated upstream
                     start_table KW_LET decl_item {generate("; ");} ';' 
                     loop_cond {generate($9->repr);} ';' {generate("; ");} 
                     loop_mut ')' {in_loop++; generate(") ");} 
                     body {in_loop--;} end_table
                 | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
+=======
+                start_table KW_LET decl_item {generate("; ");} ';' 
+                loop_cond {generate($9->repr);} ';' {generate("; ");} 
+                loop_mut ')' {in_loop++; generate(") ");} 
+                body {in_loop--;} end_table
+                | KW_FOR {generate("for (auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" : ");} expression {
+>>>>>>> Stashed changes
                     if($8->core() != BUF){
                         yyerror("Looping over non-buf type.");
                         break;
                     }
+                    // TODO: new Var
                     Type * t = $8->pop_type();
                     current_scope->insert(new Var(*$4, t));
 
                     generate($8->repr);
+                    generate(")");
 
                 } {in_loop++;} body {in_loop--;} end_table
                 ;
@@ -1588,8 +1598,8 @@ int main() {
 
     yyparse();
 
-    generate_structs();
     generate_enums();
+    generate_structs();
 
     fclose(token_stream);
     fclose(output_stream);

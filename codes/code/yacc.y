@@ -1136,6 +1136,7 @@ sc_blocks       : sc_blocks case {
 claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     Struct * entry = struct_st.lookup(*$2);
                     if(!entry) {
+                        yyerror("Struct not found in symbol table.");
                         $$ = NULL;
                         break;
                     } 
@@ -1153,7 +1154,10 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     t->push_type(STRUCT, 0, 1, new Aux(entry));
                     Claim * claim = claim_st.lookup(t, $4);
                     if(!claim) {$$ = new Claim(t, $4);}
-                    else {$$ = NULL;}
+                    else {
+                        yyerror("Claim already exists.");
+                        $$ = NULL;
+                    }
                 }
                 ; 
 

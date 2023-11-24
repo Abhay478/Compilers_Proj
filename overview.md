@@ -49,4 +49,4 @@ The above script compiles the compiler, then compiles the archetype file, and al
   - `Makefile` is the makefile to compile the compiler.
   - `run.sh` is the script to run the compiler on a file.
 - `testcases/` contains all the test cases
-  - `Phase[2|3|4]_testcases/` contains the test cases for each phase. For 2 and 3, there are 4 each of success and failure test cases. For phase 4, there are 5 success cases - code generation must not fail.
+  - `Phase[2|3|4]_testcases/` contains the test cases for each phase. For 2 and 3, there are 4 each of success (first 4) and failure (last 4) test cases. For phase 4, there are 5 success cases - code generation must not fail.

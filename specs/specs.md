@@ -282,7 +282,7 @@ the below sections for each Archetype.
   };
   ```
 
-- While in the above example Foo is a `struct`, `claim` can also accept `enum`s. Archetypes cannot be
+- Note the above example Foo is a `struct`, `claim` cannot accept `enum`s. Archetypes cannot be
 implemented for system types, but some default implementations are provided.
 
 - An alternate way to claim an archetype is through an isomorphism. If there is an existing type that
@@ -548,10 +548,14 @@ multiplication or element-wise addition. The syntax is as follows: (Note that th
 
 - Note that Archetype code uses the `.arc` extension.
 ```
-enum Bar {
+enum _Bar {
     Zero,
     One,
     Two
+}
+
+struct Bar {
+    a: _Bar
 }
 
 let Z0: Cyclic<3>;
@@ -561,21 +565,21 @@ let Z2: Cyclic<3>;
 forge (cyc: Cyclic<3>) as (b: Bar) {
     let a: u8 = cyc as (u8);
     if(a == 0) {
-        b = Bar::Zero;
+        b.a = _Bar::Zero;
     }
     if(a == 1) {
-        b = Bar::One;
+        b.a = _Bar::One;
     }
     else {
-        b = Bar::Two;
+        b.a = _Bar::Two;
     }
 }
 
 forge (a: Bar) as (b: Cyclic<3>) {
-    if(a == Bar::Zero) {
+    if(a.a == _Bar::Zero) {
         b = Z0;
     }
-    else if(a == Bar::One) {
+    else if(a.a == _Bar::One) {
         b = Z1;
     }
     else {
@@ -583,12 +587,14 @@ forge (a: Bar) as (b: Cyclic<3>) {
     }
 }
 
+// This claim block would be better repersented via a claim statement.
 claim Bar is Group {
+    (c = 0) => {
+        c.a = _Bar::Zero;
+    }
+
     (c = x + y) => {
         c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
-    }
-    (c = 0) => {
-        c = Bar::Zero;
     }
 
     (c = -x) => {
@@ -603,7 +609,7 @@ struct Foo {
 
 forge (a: u8) as (out: Foo) {
     out.a = a;
-    out.var = Bar::Zero;
+    out.var.a = _Bar::Zero;
 }
 
 forge (arg: (u8, Bar)) as (out: Foo) {
@@ -612,14 +618,23 @@ forge (arg: (u8, Bar)) as (out: Foo) {
 }
 
 claim Foo is Group {
+    (c = 0) => {
+        let temp: Bar;
+        temp.a = _Bar::Zero;
+        c = (0, temp) as (Foo);
+    }
+
     (out = x + y) => {
         out.a = x.a + y.a;
         out.var = x.var + y.var;
     }
 
-    (c = 0) => {
-        c = (0, Bar::Zero) as (Foo);
+    (out = -x) => {
+        out.a = -x.a;
+        out.var = -x.var;
     }
+
+    
 }
 
 fn main() {

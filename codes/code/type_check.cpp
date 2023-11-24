@@ -1,5 +1,5 @@
 #include "semantic.hpp"
-extern int yyerror(const char * s);
+extern void yyerror(const char * s);
 
 bool is_int_or_float(VarTypes t) {
     return t == INT || t == FLOAT;

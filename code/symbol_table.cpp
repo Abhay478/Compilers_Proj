@@ -61,6 +61,8 @@ string InnerType::repr_cpp() {
             s += ">";
             return s;
         }
+        case PLACEHOLDER:
+            return "__placeholder__";
         default:
             return "unreachable";
     }
@@ -106,8 +108,108 @@ Type *Type::pop_type() {
     return t;
 }
 
+// find the first placeholder in t
+// and replace it with repl
+// deep copy
+InnerType *replace_placeholder(InnerType *t, InnerType *repl) {
+    InnerType *ret = NULL;
+    switch (t->core_type) {
+        case PLACEHOLDER:
+            return repl;
+        case BUF:
+        case REF:
+            ret = new InnerType(t->core_type, t->offset, t->size);
+            ret->next = replace_placeholder(t->next, repl);
+            return ret;
+        case GEN: {
+            ret = new InnerType(t->core_type, t->offset, t->size);
+            auto inners = new vector<GenericInner *>();
+            for (int i = 0; i < t->types->size(); i++) {
+                auto it = (*t->types)[i];
+                GenericInner *inner;
+                if (it->is_int) {
+                    inner = new GenericInner(it->lit_int);
+                } else {
+                    auto rep = replace_placeholder(it->type->head, repl);
+                    auto type = new Type();
+                    type->head = rep;
+                    inner = new GenericInner(type);
+                }
+                inners->push_back(inner);
+            }
+            ret->set_aux(t->gste, inners);
+            return ret;
+        }
+        case CART: {
+            ret = new InnerType(t->core_type, t->offset, t->size);
+            auto types = new vector<Type *>();
+            for (int i = 0; i < t->cart->size(); i++) {
+                auto it = (*t->cart)[i];
+                auto type = new Type();
+                type->head = replace_placeholder(it->head, repl);
+                types->push_back(type);
+            }
+            ret->set_aux(types);
+            return ret;
+        }
+        default:
+            // remaining types cannot have placeholders
+            // so just return the original type
+            return t;
+    }
+}
+
+// if t1 has a placeholder, get the matching type from t2
+// assumes t1 and t2 match in all other ways
+Type *placeholder_equiv(InnerType *t1, InnerType *t2) {
+    while (t1 && t2) {
+        if (t1->core_type == PLACEHOLDER) {
+            auto ret = new Type();
+            ret->head = t2;
+            return ret;
+        }
+
+        if (t1->core_type == CART) {
+            for (int i = 0; i < t1->size; i++) {
+                Type * it1 = (*t1->cart)[i];
+                Type * it2 = (*t2->cart)[i];
+                auto ret = placeholder_equiv(it1->head, it2->head);
+                if (ret) {
+                    return ret;
+                }
+            }
+            return NULL;
+        } else if (t1->core_type == GEN) {
+            auto v1 = t1->types;
+            auto v2 = t2->types;
+
+            for (int i = 0; i < v1->size(); i++) {
+                auto v1i = (*v1)[i];
+                auto v2i = (*v2)[i];
+                if (v1i->is_int) {
+                    continue;
+                }
+                auto ret = placeholder_equiv(v1i->type->head, v2i->type->head);
+                if (ret) {
+                    return ret;
+                }
+            }
+        } else if (t1->core_type == BUF || t1->core_type == GEN) {
+            t1 = t1->next;
+            t2 = t2->next;
+        } else {
+            // All other types are primitive
+            return NULL;
+        }
+    }
+    return NULL;
+}
+
 int typecmp(InnerType *t1, InnerType *t2, bool ignore_gen) {
     while (t1 && t2) {
+        if (t1->core_type == PLACEHOLDER || t2->core_type == PLACEHOLDER) {
+            return 0;
+        }
         if (t1->core_type != t2->core_type) {
             return 1;
         }
@@ -252,6 +354,51 @@ Function *FunctionSymbolTable::lookup(string name) {
     return NULL;
 }
 
+// if return type has a placeholder, get the matching type from args
+Type * Function::get_return_type(std::vector<Type *> * args) {
+    auto ret = placeholder_equiv(this->return_type->head, this->return_type->head);
+    if (!ret) {
+        // no placeholder in return type
+        return this->return_type;
+    }
+    Type * repl = NULL;
+    for (int i = 0; i < args->size(); i++) {
+        auto arg = (*args)[i]->head;
+        auto equiv = placeholder_equiv(arg, this->params->entries[i]->type->head);
+        if (equiv) {
+            // arg has placeholder
+            if (repl) {
+                // multiple args have placeholders, so they must match
+                if (typecmp(repl, equiv)) {
+                    // corresponding types don't match
+                    return NULL;
+                }
+            }
+            repl = equiv;
+        }
+    }
+    if (!repl) {
+        // no args had placeholders
+        throw "function with generic return type but no generic args";
+    }
+    // replace placeholder in return type with type from args
+    auto t = replace_placeholder(this->return_type->head, repl->head);
+    auto ret_type = new Type();
+    ret_type->head = t;
+    return ret_type;
+}
+
+Type * Function::get_return_type(std::vector<Expr *> * args) {
+    // convert args to vector of types
+    auto types = new vector<Type *>();
+    for (auto i : *args) {
+        auto t = new Type();
+        t->head = i->head;
+        types->push_back(t);
+    }
+    return this->get_return_type(types);
+}
+
 std::string Function::repr_cpp() {
     return "f_" + this->name;
 }
@@ -379,6 +526,15 @@ Function * ForgeSymbolTable::lookup(Type *t1, Type *t2) {
     for (auto i : f->entries) {
         Type *t = get_param_type(i);
         if (!typecmp(t, t1, true) && !typecmp(i->return_type, t2, true)) {
+            auto pl1 = placeholder_equiv(t->head, t1->head);
+            auto pl2 = placeholder_equiv(i->return_type->head, t2->head);
+            if (pl1 && pl2) {
+                // both had placeholders, so corresponding types must match
+                if (typecmp(pl1->head, pl2->head)) {
+                    // corresponding types don't match
+                    continue;
+                }
+            }
             return i; // A forge !
         }
     }

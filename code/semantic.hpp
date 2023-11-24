@@ -83,6 +83,7 @@ enum VarTypes {
     STRUCT,
     ENUM,
     CART,
+    PLACEHOLDER // for generics
 };
 
 VarTypes get_vt(PDT pdt);
@@ -240,6 +241,8 @@ struct Function {
     Type * return_type;
     
     std::string repr_cpp();
+    Type * get_return_type(std::vector<Type *> * args);
+    Type * get_return_type(std::vector<Expr *> * args);
     Function(std::string name, VarSymbolTable * params, Type * return_type);
 };
 
@@ -275,17 +278,22 @@ struct Struct {
                 case RING:
                     if(std::find(this->claimd.begin(), this->claimd.end(), GROUP) == this->claimd.end()) {
                         return -1;
-                    } return 0;
+                    }
+                    break;
                 case FIELD:
                     if(std::find(this->claimd.begin(), this->claimd.end(), RING) == this->claimd.end()) {
                         return -1;
-                    } return 0;
+                    }
+                    break;
                 case SPACE:
                     if(std::find(this->claimd.begin(), this->claimd.end(), GROUP) == this->claimd.end()) {
                         return -1;
-                    } return 0;
-                case GROUP: return 0;
+                    }
+                    break;
+                case GROUP: break;
             }
+            claimd.push_back(archetype);
+            return 0;
         }
         return 1;
     }

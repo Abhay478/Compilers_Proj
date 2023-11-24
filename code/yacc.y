@@ -605,9 +605,15 @@ expression      : '(' expression ')' {
                     if(!fste){
                         yyerror("No forge found");
                         // break;
-                    }
-                    else{
-                        Type * t = fste->return_type;
+                    } else {
+                        // TODO: return type
+                        auto args = new vector<Type *>();
+                        args->push_back($4);
+                        auto t = fste->get_return_type(args);
+                        if(!t) {
+                            yyerror("Type mismatch in forge call.");
+                            break;
+                        }
                         $$ = new Expr(t, false);
                         $$->repr = fste->name + "(" + $1->repr + ")";
                     }
@@ -780,13 +786,12 @@ return_stmt     : KW_RETURN expression {
 
 call            : IDENT '(' opt_expr_list ')' {
                     Function * entry = func_st.lookup(*$1);
+                    $$ = NULL;
                     if(!entry) {
                         string err = "Function " GREEN_ESCAPE + *$1 + RESET_ESCAPE " not declared";
                         yyerror(err.c_str()); 
-                        $$ = NULL;
                         break;
                     }
-                    $$ = new Expr(entry->return_type, false);
                     if (entry->params->entries.size() != $3->size()) { // TODO: Test for providing args to a function that shouldn't take them.
                         string err = "Expected " + to_string(entry->params->entries.size()) + " parameters, got " + to_string($3->size()) + ".";
                         yyerror(err.c_str());
@@ -799,6 +804,12 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
+                    auto ret = entry->get_return_type($3);
+                    if(!ret) {
+                        yyerror("Type mismatch in function call.");
+                        break;
+                    }
+                    $$ = new Expr(ret, false);
                     $$->repr = "f_" + *$1 + "(";
                     for(int i = 0; i < $3->size(); i++) {
                         if(i) $$->repr += ", ";
@@ -807,8 +818,8 @@ call            : IDENT '(' opt_expr_list ')' {
                     $$->repr += ")";
                 }
                 | expression '.' IDENT '(' opt_expr_list ')' {
-                    if(!$1) {
-                        $$ = NULL;
+                    $$ = NULL;
+                    if (!$1) {
                         break;
                     }
                     InnerType * it = $1->head;
@@ -825,7 +836,6 @@ call            : IDENT '(' opt_expr_list ')' {
                     t->head = it;
                     if(t->core() != STRUCT) {
                         yyerror("Method call on non-struct type.");
-                        $$ = NULL;
                         break;
                     }
 
@@ -835,10 +845,8 @@ call            : IDENT '(' opt_expr_list ')' {
                         string err = "Method " GREEN_ESCAPE + *$3 + RESET_ESCAPE
                                      " not found on struct " GREEN_ESCAPE + sste->name + RESET_ESCAPE ".";
                         yyerror(err.c_str());
-                        $$ = NULL;
                         break;
                     }
-                    $$ = new Expr(meth->return_type, false);
                     for(int i = 0; i < $3->size(); i++) {
                         // Might be a better way than directly accessing the vector?
                         if(typecmp((*$5)[i], meth->params->entries[i]->type)) {
@@ -847,6 +855,13 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
+                    auto ret = meth->get_return_type($5);
+                    if(!ret) {
+                        yyerror("Type mismatch in method call.");
+                        break;
+                    }
+                    $$ = new Expr(ret, false);
+                    $$->repr = $1->repr + "::m_" + *$3 + "(";
                     $$->repr = "(" + refs + "(" + $1->repr + "))" + ".m_" + *$3 + "(";
                     for(int i = 0; i < $5->size(); i++) {
                         if(i) $$->repr += ", ";
@@ -1137,10 +1152,14 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                         } else {
                             $$ = NULL;
                         }
-                    } 
-                    else {
-                        if(entry->add_claim($4)) {
+                    } else {
+                        int cl = entry->add_claim($4);
+                        if(cl == 1) {
                             yyerror("Claim already exists.");
+                            $$ = NULL;
+                            break;
+                        } else if (cl == -1) {
+                            yyerror("Claim dependencies missing.");
                             $$ = NULL;
                             break;
                         }

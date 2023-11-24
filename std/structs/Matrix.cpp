@@ -1,13 +1,8 @@
-#include <vector>
-#include <stdexcept>
-
-using namespace std;
-
 template <typename T>
 struct Matrix {
-    vector<vector<T>> a;
-    Matrix(int m, int n) : a(m, vector<T>(n)) {}
-    Matrix(const vector<vector<T>> a_) {
+    std::vector<std::vector<T>> a;
+    Matrix(int m, int n) : a(m, std::vector<T>(n)) {}
+    Matrix(const std::vector<std::vector<T>> a_) {
         if (a_.empty()) {
             a = a_;
             return;
@@ -15,7 +10,7 @@ struct Matrix {
         int n = a_[0].size();
         for (int i = 0; i < a_.size(); i++) {
             if (a_[i].size() != n) {
-                throw runtime_error("Cannot construct Matrix: inconsistent column size");
+                f_panic("Cannot construct Matrix: inconsistent column size");
             }
         }
         a = a_;
@@ -36,7 +31,7 @@ struct Matrix {
     // TODO: read this
     Matrix inv() const {
         if (a.size() != a[0].size()) {
-            throw runtime_error("Cannot invert non-square Matrix");
+            f_panic("Cannot invert non-square Matrix");
         }
         int n = a.size();
         Matrix ret = one(n);
@@ -49,7 +44,7 @@ struct Matrix {
                 }
             }
             if (b.a[p][i] == 0) {
-                throw runtime_error("Cannot invert Matrix: singular");
+                f_panic("Cannot invert Matrix: singular");
             }
             swap(b.a[i], b.a[p]);
             swap(ret.a[i], ret.a[p]);
@@ -74,7 +69,7 @@ struct Matrix {
 
     Matrix operator+(const Matrix m) const {
         if (a.size() != m.a.size() || a[0].size() != m.a[0].size()) {
-            throw runtime_error("Cannot add/mul Matrix: inconsistent size");
+            f_panic("Cannot add/mul Matrix: inconsistent size");
         }
         Matrix ret(a.size(), a[0].size());
         for (int i = 0; i < a.size(); i++) {
@@ -97,7 +92,7 @@ struct Matrix {
 
     Matrix operator*(const Matrix m) const {
         if (a[0].size() != m.a.size()) {
-            throw runtime_error("Cannot mul/div Matrix: inconsistent size");
+            f_panic("Cannot mul/div Matrix: inconsistent size");
         }
         Matrix ret(a.size(), m.a[0].size());
         for (int i = 0; i < a.size(); i++) {

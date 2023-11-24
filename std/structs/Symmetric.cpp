@@ -1,15 +1,15 @@
 template <int N>
 struct Symmetric {
-    int perm[N];
+    std::vector<int> perm;
 
     Symmetric(std::vector<int> vec) {
         if (vec.size() != N) {
-            throw std::runtime_error("Cannot construct Symmetric: inconsistent size");
+            f_panic("Cannot construct Symmetric: inconsistent size");
         }
         std::vector<bool> visited(N, false);
         for (int i = 0; i < N; i++) {
             if (vec[i] < 0 || vec[i] >= N || visited[vec[i]]) {
-                throw std::runtime_error("Cannot construct Alternating: invalid permutation");
+                f_panic("Cannot construct Alternating: invalid permutation");
             }
             visited[vec[i]] = true;
         }

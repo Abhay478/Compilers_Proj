@@ -1,5 +1,3 @@
-#include <stdexcept>
-
 // template function is_prime
 template <int N>
 constexpr bool is_prime() {
@@ -25,7 +23,7 @@ struct Cyclic {
     // inv() only exists if N is prime
     Cyclic<N> inv() const {
         if constexpr (!is_prime<N>()) {
-            throw std::runtime_error("inv() only exists if N is prime");
+            f_panic("inv() only exists if N is prime");
         }
         // modinv(r, N) using extended euclidean algorithm
         int a = r, b = N, x = 1, y = 0;

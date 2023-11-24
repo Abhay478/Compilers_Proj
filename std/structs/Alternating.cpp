@@ -1,15 +1,15 @@
 template <int N>
 struct Alternating {
-    int perm[N];
+    std::vector<int> perm;
 
     Alternating(std::vector<int> vec) {
         if (vec.size() != N) {
-            throw std::runtime_error("Cannot construct Alternating: inconsistent size");
+            f_panic("Cannot construct Alternating: inconsistent size");
         }
         std::vector<bool> visited(N, false);
         for (int i = 0; i < N; i++) {
             if (vec[i] < 0 || vec[i] >= N || visited[vec[i]]) {
-                throw std::runtime_error("Cannot construct Alternating: invalid permutation");
+                f_panic("Cannot construct Alternating: invalid permutation");
             }
             visited[vec[i]] = true;
         }
@@ -17,17 +17,21 @@ struct Alternating {
             perm[i] = vec[i];
         }
 
+        check_alt();
+    }
+
+    void check_alt() {
         // check if permutation is alternating
         bool alternating = true;
-        std::vector<bool> visited2(N, false);
+        std::vector<bool> visited(N, false);
         for (int i = 0; i < N; i++) {
-            if (visited2[i]) {
+            if (visited[i]) {
                 continue;
             }
             int j = i;
             int cycle_length = 0;
-            while (!visited2[j]) {
-                visited2[j] = true;
+            while (!visited[j]) {
+                visited[j] = true;
                 j = perm[j];
                 cycle_length++;
             }
@@ -36,7 +40,7 @@ struct Alternating {
             }
         }
         if (!alternating) {
-            throw std::runtime_error("Cannot construct Alternating: not alternating");
+            f_panic("Cannot construct Alternating: not alternating");
         }
     }
 

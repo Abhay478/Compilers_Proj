@@ -185,6 +185,7 @@ P               : epsilon
                 ;
 
 start_table     : epsilon {
+                    // tree growth
                     Scope * new_scope = new Scope();
                     new_scope->parent = current_scope;
                     current_scope = new_scope;
@@ -192,26 +193,31 @@ start_table     : epsilon {
                 ;
 
 end_table       : epsilon {
+                    // tree ascent
                     $$ = current_scope->vars;
                     current_scope = current_scope->parent;
                 }
 
 start_block     : '{' {
+                    // indentation hack
                     generateln("{");
                     indent++;
                 }
 
 end_block       : '}' {
+                    // indentation hack
                     indent--;
                     generateln("}");
                 }
 
 body            : start_block  {
+                    // autogen declaration of out variable
                     if(current_scope == forge_scope || current_scope == rule_scope) {
                         string s = out->type->repr_cpp() + " " + out->repr_cpp() + ";";
                         generateln(s);
                     }
                 } start_table statements end_table {
+                    // autogen return statement
                     if(current_scope == forge_scope || current_scope == rule_scope) {
                         string s = "return " + out->repr_cpp() + ";";
                         generateln(s);
@@ -239,36 +245,39 @@ statement       : declaration ';'
                 | return_stmt ';'
                 | conditional
                 | switch_case
-                | loop_stmt
+                | loop_stmt // TODO: test loops
                 | KW_BREAK ';' {
                     if (!in_loop)
                         yyerror("break statement outside of loop");
-                    generateln("break;");
+                    else generateln("break;");
                 }
                 | KW_CONTINUE ';' {
                     if (!in_loop)
                         yyerror("continue statement outside of loop");
-                    generateln("continue;");
+                    else generateln("continue;");
                 }
                 | ';'
                 ;
 
 generic         : IDENT '<' type_args '>' {
                     Generic * gste = gen_st.lookup(*$1);
-                    if(!gste) {
+                    if(!gste) { // exists?
                         string err = "Generic type " GREEN_ESCAPE + *$1 + RESET_ESCAPE " not found.";
                         yyerror(err.c_str());
                         break;
                     }
-                    if(!$3) {
+                    if(!$3) { // ??
                         yyerror("Unknown compile error (allocation failed?)");
                         $$ = NULL;
                         break;
                     }
-                    if(gste->types.size() != $3->size()) {
+                    if(gste->types.size() != $3->size()) { // Cmp
                         yyerror("Generic type has wrong number of parameters.");
                         break;
                     }
+
+
+                    // alloc
                     auto arr = new vector<GenericInner *>();
                     bool err = false;
                     for(int i = 0; i < $3->size(); i++) {
@@ -303,11 +312,6 @@ generic         : IDENT '<' type_args '>' {
                     }
 
                     $$ = new Type();
-                    /**
-                     * New rule: Only the last entry of a generic will be considered for the stack.
-                     * That way, generic over one type only, and position also defined.
-                     * We do not need to check this, because we will be hardcoding all the generics.
-                    */
                     $$->push_type(GEN, 0, 0, new Aux(gste, arr)); 
                 }
                 ;
@@ -473,7 +477,7 @@ expression      : '(' expression ')' {
                     $$ = $2;
                     if($$) $$->repr = "(" + $2->repr + ")";
                 }
-                | array_access
+                | array_access // TODO: Test for multiple dimensions
                 | '!' expression {
                     if (!$2) {
                         $$ = NULL;
@@ -494,7 +498,6 @@ expression      : '(' expression ')' {
                     $$ = new Expr($2, false);
                     $$->repr = "-" + $2->repr;
                     if($2->core() == INT || $2->core() == FLOAT) {
-                        
                         break;
                     }
                     Claim * cste = claim_st.lookup($2, GROUP);
@@ -528,7 +531,11 @@ expression      : '(' expression ')' {
                     $$ = new Expr(t, false);
                     $$->repr = "&" + $2->repr;
                 }
-                | expression '.' IDENT {
+                | expression '.' IDENT { // TODO: Test.
+                    if(!$1) {
+                        $$ = NULL;
+                        break;
+                    }
                     InnerType * it = $1->head;
                     string refs = "";
                     while(it->core_type == REF) {
@@ -536,11 +543,11 @@ expression      : '(' expression ')' {
                         refs += "*";
                     }
                     Type * t = new Type();
-                    t->head = it;
                     if (!t) {
                         $$ = NULL;
                         break;
                     }
+                    t->head = it;
                     if (t->core() != STRUCT){
                         yyerror("Field access on non-struct type.");
                         $$ = NULL;
@@ -554,13 +561,25 @@ expression      : '(' expression ')' {
                         $$->repr = "(" + refs + "(" + $1->repr + "))" + "." + *$3;
                     }
                 } // struct access, lookup in table
-                | expression '.' LIT_INT 
+                | expression '.' LIT_INT  // TODO: Test.
                 {
-                    if (!$1) {
+                    if(!$1) {
                         $$ = NULL;
                         break;
                     }
-                    if($1->core() != CART) {
+                    InnerType * it = $1->head;
+                    string refs = "";
+                    while(it->core_type == REF) {
+                        it = it->next;
+                        refs += "*";
+                    }
+                    Type * t = new Type();
+                    if (!t) {
+                        $$ = NULL;
+                        break;
+                    }
+                    t->head = it;
+                    if(t->core() != CART) {
                         yyerror("Tuple access on non-tuple type.");
                     } 
                     else 
@@ -569,11 +588,11 @@ expression      : '(' expression ')' {
                             yyerror("Tuple access out of bounds.");
                             break;
                         } else {
-                            auto c = $1->head->cart;
-                            Type * t = new Type();
-                            t->head = (*c)[$3]->head;
-                            $$ = new Expr(t, $1->is_lvalue);
-                            $$->repr = "std::get<" + to_string($3) + ">(" + $1->repr + ")";
+                            auto c = t->head->cart;
+                            Type * inner = new Type();
+                            inner->head = (*c)[$3]->head;
+                            $$ = new Expr(inner, $1->is_lvalue);
+                            $$->repr = "std::get<" + to_string($3) + ">(" + refs + "(" + $1->repr + "))";
                         }
                     }
                 }         
@@ -618,7 +637,7 @@ expression      : '(' expression ')' {
                 | expression EQ_OP expression  { $$ = eq_op_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " " + *$2 + " " + $3->repr;}
                 | expression KW_IN expression  { 
                     $$ = in_type_check($1, $3); 
-                    if($$) $$->repr = "(std::find(" + $3->repr + ".begin(), " + $3->repr + ".end(), " + $1->repr + "))";
+                    if($$) $$->repr = "(std::find(" + $3->repr + ".begin(), " + $3->repr + ".end(), " + $1->repr + ") != " + $3->repr + ".end())";
                 }
                 | expression AND expression    { $$ = and_or_type_check($1, $3); if($$) $$->repr = $1->repr + " && " + $3->repr;}
                 | expression OR expression     { $$ = and_or_type_check($1, $3); if($$) $$->repr = $1->repr + " || " + $3->repr;}
@@ -734,7 +753,7 @@ return_stmt     : KW_RETURN expression {
                     }
                     if(!current_func) {
                         yyerror("Returning outside function.");
-                    } else if(!current_func->head) {
+                    } else if(current_func->core() == VOID) {
                         yyerror("Returning value from void function.");
                     }
                     else if(typecmp(current_func, $2)) {
@@ -752,10 +771,9 @@ return_stmt     : KW_RETURN expression {
                     }
                     if(!current_func) {
                         yyerror("Returning outside function.");
-                    } else if(current_func->head) {
+                    } else if(current_func->core() != VOID) {
                         yyerror("Returning void from non-void function.");
                     }
-
                     generateln("return;");
                 }
                 ;
@@ -769,7 +787,7 @@ call            : IDENT '(' opt_expr_list ')' {
                         break;
                     }
                     $$ = new Expr(entry->return_type, false);
-                    if (entry->params->entries.size() != $3->size()) {
+                    if (entry->params->entries.size() != $3->size()) { // TODO: Test for providing args to a function that shouldn't take them.
                         string err = "Expected " + to_string(entry->params->entries.size()) + " parameters, got " + to_string($3->size()) + ".";
                         yyerror(err.c_str());
                         break;
@@ -789,17 +807,29 @@ call            : IDENT '(' opt_expr_list ')' {
                     $$->repr += ")";
                 }
                 | expression '.' IDENT '(' opt_expr_list ')' {
-                    if (!$1) {
+                    if(!$1) {
                         $$ = NULL;
                         break;
                     }
-                    if($1->core() != STRUCT) {
+                    InnerType * it = $1->head;
+                    string refs = "";
+                    while(it->core_type == REF) {
+                        it = it->next;
+                        refs += "*";
+                    }
+                    Type * t = new Type();
+                    if (!t) {
+                        $$ = NULL;
+                        break;
+                    }
+                    t->head = it;
+                    if(t->core() != STRUCT) {
                         yyerror("Method call on non-struct type.");
                         $$ = NULL;
                         break;
                     }
 
-                    auto sste = $1->head->sste;
+                    auto sste = t->head->sste;
                     Function * meth = sste->methods->lookup(*$3);
                     if(!meth) {
                         string err = "Method " GREEN_ESCAPE + *$3 + RESET_ESCAPE
@@ -817,7 +847,7 @@ call            : IDENT '(' opt_expr_list ')' {
                             break;
                         }
                     }
-                    $$->repr = $1->repr + "::m_" + *$3 + "(";
+                    $$->repr = "(" + refs + "(" + $1->repr + "))" + ".m_" + *$3 + "(";
                     for(int i = 0; i < $5->size(); i++) {
                         if(i) $$->repr += ", ";
                         $$->repr += (*$5)[i]->repr;
@@ -869,6 +899,7 @@ array_access    : expression array_index {
                     }
                     if($1->core() == BUF) {
                         // TODO: Vec/Mat/InvMat
+                        // TODO: Test for slices.
                         
                         if(!$2.is_slice) {
                             $$ = new Expr($1->pop_type(), $1->is_lvalue);
@@ -968,7 +999,8 @@ conditional     : KW_IF '(' expression ')' {
 
                     string gen = "if (" + $3->repr + ") ";
                     generate(gen);
-                } {in_cond = 1;} if_body 
+                    in_cond = 1;
+                } if_body 
                 ;
 
 if_body         : body {in_cond = 0;}
@@ -985,15 +1017,15 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     generateln(gen);
                 } body {in_loop--;}
                 | KW_FOR '(' {generate("for (");} 
-                assignment {generate($4->repr);} ';' {generate("; ");} 
-                loop_cond {generate($8->repr);} ';' {generate("; ");} 
-                loop_mut ')' {in_loop++; generate(") ");} 
-                body {in_loop--;}
+                    assignment {generate($4->repr);} ';' {generate("; ");} 
+                    loop_cond {generate($8->repr);} ';' {generate("; ");} 
+                    loop_mut ')' {in_loop++; generate(") ");} 
+                    body {in_loop--;}
                 | KW_FOR '(' {generate("for (");} 
-                start_table KW_LET decl_item {generate("; ");} ';' 
-                loop_cond {generate($9->repr);} ';' {generate("; ");} 
-                loop_mut ')' {in_loop++; generate(") ");} 
-                body {in_loop--;} end_table
+                    start_table KW_LET decl_item {generate("; ");} ';' 
+                    loop_cond {generate($9->repr);} ';' {generate("; ");} 
+                    loop_mut ')' {in_loop++; generate(") ");} 
+                    body {in_loop--;} end_table
                 | KW_FOR {generate("for auto ");} start_table IDENT {generate(*$4);} KW_IN {generate(" in ");} expression {
                     if($8->core() != BUF){
                         yyerror("Looping over non-buf type.");
@@ -1002,7 +1034,6 @@ loop_stmt       : KW_WHILE '(' loop_cond ')' {
                     Type * t = $8->pop_type();
                     current_scope->insert(new Var(*$4, t));
 
-                    //Code-gen:
                     generate($8->repr);
 
                 } {in_loop++;} body {in_loop--;} end_table
@@ -1021,7 +1052,7 @@ loop_cond       : expression {
 
 loop_mut        : unary_operation {generate($1->repr);}
                 | assignment {generate($1->repr);}
-                | epsilon{generate(" ");}
+                | epsilon {generate(" ");}
                 ;
 
 switch_case     : KW_SWITCH '(' {generate("switch( ");} expression {
@@ -1059,7 +1090,7 @@ case            : KW_CASE constant ARROW {
                         gen += $2.var->tag + "::" + $2.var->val;
                     }
                     else{
-                        yyerror("Case constant can only be an integer, character or Enum variant.");
+                        yyerror("Case argument can only be an integer, character or Enum variant.");
                         break;
                     }
                     gen += ": ";

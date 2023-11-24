@@ -21,17 +21,15 @@ forge (a: u8) as (b: Parity) {
   }
 }
 
-forge (a: u8, b: u8) as (c: Parity) {
-  if (a % 2 == 0 && b % 2 == 0) {
-    c = Parity::Even;
-  } else {
-    c = Parity::Odd;
-  }
+forge (a: Parity) as (b: u8) {
+  b = 5;
 }
 
-fn main() {
+fn main(): i32 {
   let a: Parity = 1 as (Parity); // a is now Parity::Odd
-  let b: Parity = (1, 2) as (Parity); /* b is
-                                        now Parity::Odd */
-  let c: &[&(u8, Matrix<5, BigRational>)];
+  let b: &Parity = &a;
+  let c: Parity = *b;
+  let d: Parity = (c as (u8)) as (Parity);
+  let q: bool = true;
+  let v: bool = !q;
 }

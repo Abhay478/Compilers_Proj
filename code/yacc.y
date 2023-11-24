@@ -198,12 +198,12 @@ end_block       : '}' {
 
 body            : start_block  {
                     if(current_scope == forge_scope || current_scope == rule_scope) {
-                        string s = out->type->repr_cpp() + " " + out->name + ";";
+                        string s = out->type->repr_cpp() + " " + out->repr_cpp() + ";";
                         generateln(s);
                     }
                 } start_table statements end_table {
                     if(current_scope == forge_scope || current_scope == rule_scope) {
-                        string s = "return " + out->name + ";";
+                        string s = "return " + out->repr_cpp() + ";";
                         generateln(s);
                     }
                 } end_block
@@ -432,8 +432,7 @@ assignment      : expression assign_op expression  {
                         yyerror("Type mismatch in assignment.");
                         break;
                     }
-                    string repr_cpp = $1->repr + " " + *$2 + " " + $3->repr;
-                    $$->repr = repr_cpp;
+                    $$->repr = $1->repr + " " + *$2 + " " + $3->repr;
                 }
                 ;
 
@@ -482,16 +481,16 @@ expression      : '(' expression ')' {
                         $$ = NULL;
                         break;
                     }
+                    $$ = new Expr($2, false);
+                    $$->repr = "-" + $2->repr;
                     if($2->core() == INT || $2->core() == FLOAT) {
-                        $$ = new Expr($2, false);
+                        
                         break;
                     }
                     Claim * cste = claim_st.lookup($2, GROUP);
                     if(!cste){
                         yyerror("unary minus requires Group");
                     }
-                    $$ = new Expr($2, false);
-                    $$->repr = "-" + $2->repr;
                 }
                 | '*' expression                %prec '!'  // Dereference has precedence of '!', not multiplication.   
                 {
@@ -1153,6 +1152,7 @@ rule            : additive_rule
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {
                     rule_scope = current_scope;
+                    printf("additive rule\n");
                     auto t = current_claim->type;
                     if(current_claim->archetype != GROUP) {
                         yyerror("Additive rule must be in a group.");
@@ -1392,13 +1392,9 @@ ident_list      : ident_list ',' IDENT {
 variant_list    : ident_list 
                 ;
 
-forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' type_var ')' {
+forge           : start_table KW_FORGE '(' type_var ')' KW_AS start_table '(' type_var ')' {
                     if (!$9) {
                         yyerror("Forge must have a return type.");
-                        break;
-                    }
-                    if (!$4) {
-                        yyerror("Forge must have parameters.");
                         break;
                     }
                     VarSymbolTable * params = current_scope->parent->vars;
@@ -1406,7 +1402,7 @@ forge           : start_table KW_FORGE '(' param_list ')' KW_AS start_table '(' 
                     forge_st.insert(entry);
                     in_forg = 1;
 
-                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + *$4 + ")";
+                    string header = $9->type->repr_cpp() + " forge_" + to_string(forge_count) + "(" + $4->type->repr_cpp() + " " + $4->repr_cpp() + ")";
                     generateln(header);
 
                     forge_count++;

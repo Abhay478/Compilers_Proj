@@ -8,6 +8,20 @@ struct Dihedral {
         return Dihedral();
     }
 
+    std::string to_string() {
+        std::string ret = "";
+        if (r != 0) {
+            ret = "r^" + std::to_string(r);
+        }
+        if (s) {
+            ret += "s";
+        }
+        if (ret == "") {
+            ret = "1";
+        }
+        return ret;
+    }
+
     Dihedral<N> operator+(const Dihedral<N> d) const {
         return Dihedral<N>((r + d.r) % N, s ^ d.s);
     }

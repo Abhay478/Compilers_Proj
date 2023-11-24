@@ -11,6 +11,10 @@ struct BigInt {
         return n.get_str();
     }
 
+    int32_t as_i32() const {
+        return n.get_si();
+    }
+
     static BigInt zero() {
         return BigInt(0);
     }

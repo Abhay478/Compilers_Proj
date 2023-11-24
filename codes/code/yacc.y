@@ -244,6 +244,9 @@ statement       : declaration ';'
                     generateln($1->repr);
                 }
                 | call ';' {
+                    if (!$1) {
+                        break;
+                    }
                     $1->repr += ';';
                     generateln($1->repr);
                 }

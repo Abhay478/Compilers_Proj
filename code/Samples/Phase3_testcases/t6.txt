@@ -54,7 +54,7 @@ forge (a: u8) as (b: Month_of_the_year){
         case 8 => {b = Month_of_the_year::September; }
         case 9 => {b = Month_of_the_year::October; }
         case 10 => {b = Month_of_the_year::November; }
-        case 11: {b = Month_of_the_year::December; }
+        case 11 => {b = Month_of_the_year::December; }
         default => {print("Month not possible!"); }
     }
 }
@@ -63,9 +63,9 @@ fn foo(): u32 {
     return 2;
 }
 
-fn is_my_bday(arr: [Date], bday: Date): bool {
+fn is_my_bday(arr: Date, bday: Date): bool {
     let date: Date;
-    for date in arr {
+    for date: Date in arr { // Semantic Error here, arr must be BUF.
         if(date.day == bday.day && date.month == bday.month){
             return true;
         }
@@ -92,7 +92,7 @@ fn main() : i32 {
 
     let arr: [Date] = [a1, a2, a3];
 
-    let b: bool = is_my_bday(arr, my_bday);
+    let b: bool = is_my_bday(arr, my_bday); // Semantic error here, function param.
     
     if(b){
         print("My bday is in the list!");

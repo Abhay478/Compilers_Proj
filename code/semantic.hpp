@@ -45,6 +45,14 @@ enum PDT {
     PDT_VOID,
 };
 
+enum Rules {
+    ADD,
+    NEG,
+    INV,
+    ID,
+    MUL,
+};
+
 enum CType {
     CT_INT,
     CT_FLOAT,

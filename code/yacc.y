@@ -84,6 +84,8 @@
             } slice;
         };
     } acc;
+    Rules rl;
+    std::vector<Rules> * rl_list;
 }
 
 // keywords
@@ -168,6 +170,9 @@
 %type <targ_list> type_args
 
 %type <bl> unary_op
+%type <rl> rule
+%type <rl> tbl_rule
+%type <rl_list> rule_list
 
 %start program
 
@@ -1192,6 +1197,52 @@ archetype_claim : claim_stub '{' type_def {
                         claim_st.insert(current_claim);
                     }
                 } rule_list '}' {
+                    if(!$5) break;
+                    auto v = *$5;
+                    switch($1->archetype) {
+                        case GROUP:
+                            if(v.size() != 3) {
+                                yyerror("Group claim must have 3 rules.");
+                                break;
+                            }
+                            if(v[0] != ID || v[1] != ADD || v[2] != NEG) {
+                                yyerror("Group claim must have rules ID, ADD, NEG.");
+                                break;
+                            }
+                            break;
+                        case RING:
+                            if(v.size() != 2) {
+                                yyerror("Ring claim must have 2 rules.");
+                                break;
+                            }
+                            if(v[0] != ID || v[1] != MUL) {
+                                yyerror("Ring claim must have rules ID, MUL.");
+                                break;
+                            }
+                            break;
+                        case FIELD:
+                            if(v.size() != 1) {
+                                yyerror("Field claim must have 1 rule.");
+                                break;
+                            }
+                            if(v[0] != INV) {
+                                yyerror("Field claim must have rule INV.");
+                                break;
+                            }
+                            break;
+                        case SPACE:
+                            if(v.size() != 1) {
+                                yyerror("Space claim must have 1 rule.");
+                                break;
+                            }
+                            if(v[0] != MUL) {
+                                yyerror("Space claim must have rule MUL.");
+                                break;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     current_claim = NULL;
                 }
                 | claim_stub KW_WITH '(' ident_list ')' ';' {
@@ -1321,18 +1372,24 @@ type_def        : KW_FIELD '=' type ';' {
                 | epsilon {$$ = NULL;}
                 ;
 
-rule_list       : rule_list tbl_rule
-                | tbl_rule
+rule_list       : rule_list tbl_rule {
+                    $$ = $1;
+                    $$->push_back($2);
+                }
+                | tbl_rule {
+                    $$ = new vector<Rules>();
+                    $$->push_back($1);
+                }
                 ;
 
-tbl_rule        : start_table {in_rule=1;} rule {in_rule=0;} end_table
+tbl_rule        : start_table {in_rule=1;} rule {in_rule=0;} end_table {$$ = $3;}
                 ;
 
-rule            : additive_rule 
-                | mult_rule
-                | identity_rule
-                | negation_rule
-                | inverse_rule
+rule            : additive_rule {$$ = ADD;}
+                | mult_rule {$$ = MUL;}
+                | identity_rule {$$ = ID;}
+                | negation_rule {$$ = NEG;}
+                | inverse_rule {$$ = INV;}
                 ;
 
 additive_rule   : '(' IDENT '=' IDENT '+' IDENT ')' {

@@ -28,7 +28,7 @@ claim two_tup is Group {
         c.aux = 0;
     }
 
-    (b = a) => {
+    (b = -a) => {
         b.val = -a.val;
         b.aux = -a.aux;
     }
@@ -45,9 +45,9 @@ forge (a: (u64, u64)) as (b: two_tup) {
     // print("We are forging here also.");
 }
 
-forge (a: [u64]) as (b: two_tup) {
+forge (a: u64) as (b: two_tup) {
     b.val = a[0];
-    b.aux = a[1];
+    b.aux = a[1]; // Two semantic errors here.
     // print("We are forging here again.");
 }
 
@@ -56,7 +56,7 @@ fn main(): i32 {
     let b: [u64] = fib(30);
     // // print(b);
 
-    let a: two_tup = [1, 2] as (two_tup);
+    let a: two_tup = [1, 2] as (two_tup); // Semantic error, forge not found.
     // // print(a);
     let tup: (u64, u64) = a as ((u64, u64));
     // // print(tup);

@@ -1,43 +1,4 @@
-struct Foo{
-    a: i32,
-    b: str,
-    c: char,
-    d: [[u8]],
-    e: (u16, u16, char)
-}
-
-fn sum_mat(a: [[u32]], rows: u32, columns: u32): u32{
-    let sum: u32 = 0;
-    let i: u32 = 0;
-    while(i < rows){
-        for(let j: u32 = 0; j < columns; j++){
-            sum += a[i][j];
-        }
-        i++;
-    }
-    return sum;
-}
-
-fn foo(): u32 {
-    let arr: [u32] = [1, 2, 3, 4];
-    let sum: u16 = 0;
-    for i in arr
-    {
-        switch(i){
-            case 1 => {print("1");}
-            case 2 => {print("2");}
-            case 3 => {print("3");}
-            case 4 => {print("4");}
-            default => {print("default");}
-        }
-        sum += i;
-    }
-    return sum;
-}
-
 fn main() : i32 {
-    let x: bool = ((3 > 4) && !(2 == 3) && (!a || (!(45 > 43))));
-    int a = 4;
-    let arr: [[u32]] = [[1, 2, 3], [4, 5, 6]];
-    let sum: u32 = sum_mat(arr, 2, 3);
+    let x: bool = ((3 > 4) && !(2 == 3));
+    x = x + 1; // Semantic error
 }

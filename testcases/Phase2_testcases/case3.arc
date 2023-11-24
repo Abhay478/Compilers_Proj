@@ -25,14 +25,17 @@ fn fibonacci(n: u32): [u32] {
 }
 
 fn main(): i32 {
-    let e: Employee = {id: 123, name: "Sumedh", status: Status::Active};
+    let e: Employee;
+    e.id = 123;
+    e.name = "Sumedh";
+    e.status = Status::Active;
+
     let updatedEmployee: Employee = updateStatus(e, Status::Inactive);
 
     let fibSeries: [u32] = fibonacci(10);
-    for num in fibSeries {
+    for num: u32 in fibSeries {
 
         print(num as (str));
-        print(", ");
     }
 
     return 0;

@@ -386,6 +386,8 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
 
     */
 
+
+
     // forge string as BigInt
     auto forge_str_big_int_params = make_params({new Var("s", make_type(PDT_STR))});
     auto forge_str_big_int = new Function("forge_BigInt", forge_str_big_int_params, get_type("BigInt"));
@@ -500,6 +502,16 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     auto forge_complex_int_int_params = make_params({new Var("c", get_type("Complex"))});
     auto forge_complex_int_int = new Function("forge_tuple_int_int", forge_complex_int_int_params, make_cart({make_type(I32), make_type(I32)}));
     forge_st.insert(forge_complex_int_int);
+
+    // forge int as str
+    auto forge_int_str_params = make_params({new Var("n", make_type(I32))});
+    auto forge_int_str = new Function("forge_string", forge_int_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_int_str);
+
+    // forge double as str
+    auto forge_float_str_params = make_params({new Var("d", make_type(PDT_FLOAT))});
+    auto forge_float_str = new Function("forge_string", forge_float_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_float_str);
 
     // forge BigInt as string
     auto forge_big_int_str_params = make_params({new Var("b", get_type("BigInt"))});

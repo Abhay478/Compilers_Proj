@@ -19,16 +19,16 @@ fn printPoint(p: Point) {
 }
 
 claim Point is Group {
-    (result = a + b) => {
-        result.x = a.x + b.x;
-        result.y = a.y + b.y;
-        result.color = a.color; // Assuming color addition is not defined
-    }
-
     (result = 0) => {
         result.x = 0.0;
         result.y = 0.0;
         result.color = Color::Red; // Default color
+    }
+    
+    (result = a + b) => {
+        result.x = a.x + b.x;
+        result.y = a.y + b.y;
+        result.color = a.color; // Assuming color addition is not defined
     }
 
     (result = -a) => {

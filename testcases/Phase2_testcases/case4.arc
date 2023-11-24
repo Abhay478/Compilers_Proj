@@ -37,6 +37,7 @@ claim Bar is Group {
     (c = 0) => {
         c = Bar::Zero;
     }
+
     (c = x + y) => {
         c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
     }
@@ -71,9 +72,12 @@ claim Foo is Group {
         out.var = x.var + y.var;
     }
 
-    (c = -a) => {
-        c = (-(a.a), -(a.var)) as (Foo);
+    (out = -x) => {
+        out.a = -x.a;
+        out.var = -x.var;
     }
+
+    
 }
 
 fn main() {

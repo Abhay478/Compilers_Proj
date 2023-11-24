@@ -149,7 +149,7 @@ vector<Var *> neg_gen(string neg, string op) {
     current_scope->insert(v1);
     current_scope->insert(v2);
     out = v1;
-    string s = t->repr_cpp() + " " + t->repr_cpp() + "::operator-() ";
+    string s = t->repr_cpp() + " " + "operator-("+ t->repr_cpp() + " " + v2->repr_cpp() +") ";
     generate(s);
 
     return {v1, v2};
@@ -323,7 +323,7 @@ void generate_structs() {
 
 void generate_enums() {
     for (auto este : enum_st.entries) {
-        auto s = "enum " + este->name + " {";
+        auto s = "enum class " + este->name + " {";
         generateln_h(s);
         indent++;
         for (auto vste : este->fields) {

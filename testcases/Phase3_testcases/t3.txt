@@ -17,15 +17,15 @@ struct two_tup {
 }
 
 claim two_tup is Group {
+    (c = 0) => {
+        c.val = 0;
+        c.aux = 0;
+    } 
+    
     (c = a + b) => {
         c.val = a.val + b.val;
         c.aux = a.aux + b.aux;
         return;
-    }
-
-    (c = 0) => {
-        c.val = 0;
-        c.aux = 0;
     }
 
     (b = -a) => {

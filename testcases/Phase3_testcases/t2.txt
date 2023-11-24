@@ -64,8 +64,7 @@ fn foo(): u32 {
 }
 
 fn is_my_bday(arr: [Date], bday: Date): bool {
-    let date: Date;
-    for date in arr {
+    for date: Date in arr {
         if(date.day == bday.day && date.month == bday.month){
             return true;
         }
@@ -87,8 +86,12 @@ fn main() : i32 {
     a3.month = 11 as (Month_of_the_year);
 
     let my_bday: Date;
-    my_bday.day = 5 as (Day_of_the_week);
-    my_bday.month = 3 as (Month_of_the_year);
+    let inp1: str = input("Enter day: ");
+    let inp2: str = input("Enter month: ");
+    let in1: u8 = inp1 as (u8);
+    let in2: u8 = inp2 as (u8);
+    my_bday.day = in1 as (Day_of_the_week);
+    my_bday.month = in2 as (Month_of_the_year);
 
     let arr: [Date] = [a1, a2, a3];
 

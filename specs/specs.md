@@ -10,7 +10,7 @@ geometry: margin=2cm
 
 # Introduction
 
-We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetype. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
+- We seek to make a language which can be used to represent and manipulate algebraic structures, which we call Archetype. The language is designed to be used by mathematicians, and so the syntax is designed to be similar to mathematical notation while being concise and easy to learn.
 
 # Syntax
 
@@ -54,7 +54,7 @@ We seek to make a language which can be used to represent and manipulate algebra
 ## Operators
 
 - Binary operators:
-  - Relational `(<, <=, >, >=, ==, !=)`: For the integer types, `BigRational`, and `float` only.
+  - Relational `(<, <=, >, >=, ==, !=)`: For the integer types, `Rational`, and `float` only.
   - Logical `(&&, ||)`: For booleans only. 
   - Arithmetic `(+, *, -, /)`: Can be overridden through Archetypes, and so must follow the rules.
     - For integers and `float`, the operators are defined as usual.
@@ -69,7 +69,7 @@ We seek to make a language which can be used to represent and manipulate algebra
   - `&`: Reference operator
   - `*`: Dereference operator
 
-All the operators have the same meaning as in C, with enhanced functionality for non-C types (matrices, for example).
+- All the operators have the same meaning as in C, with enhanced functionality for non-C types (matrices, for example).
 
 ## Conditionals
 
@@ -145,7 +145,7 @@ All the operators have the same meaning as in C, with enhanced functionality for
 
 - Forges are Archetypes' equivalent to constructors. They are defined using the `forge` keyword, similar to functions, and casting can be done using the `as` keyword.
 
-- THe syntax is:
+- The syntax is:
 
   ```
   enum Parity {
@@ -326,158 +326,156 @@ type argument `F` must be a `Field`.
 
 #### To `claim`
 
-```
-(c = a + b) => {
-  ...
-}
+  ```
+  (c = a + b) => {
+    ...
+  }
 
-(c = 0) => {
-  ...
-}
+  (c = 0) => {
+    ...
+  }
 
-(c = -a) => {
-  ...
-}
-```
+  (c = -a) => {
+    ...
+  }
+  ```
 
 ## Ring
 
-A ring is a group with operation $+$ with another operation, $*$. Using the same notation as before,
+- A ring is a group with operation $+$ with another operation, $*$. Using the same notation as before,
 the additional properties of a ring are:
 
-- Abelian (commutative) group over $+$: $a + b = b + a$
-- Closure over $*$: $∀ a, b ∈ S, a*b ∈ S$
-- Associativity over $*$: $a*(b*c) = (a*b)*c$
-- Distributivity of $*$ over $+$:
-  - $a*(b + c) = a*b + a*c$
-  - $(b + c)*a = b*a + c*a$
-- Identity over $*$: $∃ e ∈ S | a*e = a ∀ a ∈ S$
+  - Abelian (commutative) group over $+$: $a + b = b + a$
+  - Closure over $*$: $∀ a, b ∈ S, a*b ∈ S$
+  - Associativity over $*$: $a*(b*c) = (a*b)*c$
+  - Distributivity of $*$ over $+$:
+    - $a*(b + c) = a*b + a*c$
+    - $(b + c)*a = b*a + c*a$
+  - Identity over $*$: $∃ e ∈ S | a*e = a ∀ a ∈ S$
 
-Some examples of `Ring`s are:
+  - Some examples of `Ring`s are:
 
-| Ring       | Provided Type    | Description                          |
-| ---        | ---              | ---                                  |
-| $Z_p$      | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime       |
-| $Z$        | `BigInt`         | Integers                             |
-| $M_{n}[F]$ | `Matrix<n, F>`   | $n \times n$ matrices over a field F |
-| $F[x]$     | `Polynomial<F>`  | Polynomials over a field F           |
+    | Ring       | Provided Type    | Description                          |
+    | ---        | ---              | ---                                  |
+    | $Z_p$      | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime       |
+    | $Z$        | `BigInt`         | Integers                             |
+    | $M_{n}[F]$ | `Matrix<n, F>`   | $n \times n$ matrices over a field F |
+    | $F[x]$     | `Polynomial<F>`  | Polynomials over a field F           |
 
-Note that the System Types `u8`, `u16`, `u32`, `u64` also `claim` the `Ring` Archetype.
+- Note that the System Types `u8`, `u16`, `u32`, `u64` also `claim` the `Ring` Archetype.
 
 #### To `claim`
 
-To `claim` the `Ring` Archetype, a type must first `claim` the `Group` Archetype. Then, the
+- To `claim` the `Ring` Archetype, a type must first `claim` the `Group` Archetype. Then, the
 following operations must be implemented:
 
-```
-(c = a * b) => {
-  ...
-}
+  ```
+  (c = a * b) => {
+    ...
+  }
 
-(c = 1) => {
-  ...
-}
-```
+  (c = 1) => {
+    ...
+  }
+  ```
 
 ## Field
 
-A field is a ring with the following additional properties:
+- A field is a ring with the following additional properties:
 
-- The operation $*$ is commutative: $a*b = b*a$
-- Multiplicative inverse: $∀ a ∈ S, a ≠ 0 ⇒ ∃ a^{-1} ∈ S | a*a^{-1} = 1$
+  - The operation $*$ is commutative: $a*b = b*a$
+  - Multiplicative inverse: $∀ a ∈ S, a ≠ 0 ⇒ ∃ a^{-1} ∈ S | a*a^{-1} = 1$
 
-Some examples of `Field`s are:
+- Some examples of `Field`s are:
 
-| Field | Provided Type    | Description                    |
-| ---   | ---              | ---                            |
-| $Z_p$ | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime |
-| $Q$   | `BigRational`    | Rational numbers               |
-| $C$   | `Complex`        | Complex numbers                |
+  | Field | Provided Type    | Description                    |
+  | ---   | ---              | ---                            |
+  | $Z_p$ | `Cyclic<p: u32>` | Integers mod $p$, $p$ is prime |
+  | $Q$   | `Rational`    | Rational numbers               |
+  | $C$   | `Complex`        | Complex numbers                |
 
-Note that the `Complex` type is over `BigRational`s, and not Reals. Archetype does not provide a
+- Note that the `Complex` type is over `Rational`s, and not Reals. Archetype does not provide a
 `Real` type, as it is not possible to represent a real number in a computer.
 
 #### To `claim`
 
-To `claim` the `Field` Archetype, a type must first `claim` the `Ring` Archetype. Then, the
-following operations must be implemented:
+- To `claim` the `Field` Archetype, a type must first `claim` the `Ring` Archetype. Then, the
+  following operations must be implemented:
 
-```
-(c = 1 / a) => {
-  ...
-}
-```
+  ```
+  (c = 1 / a) => {
+    ...
+  }
+  ```
 
 ## Space
 
-Refer to the [Wikipedia article](https://en.wikipedia.org/wiki/Vector_space) for a formal
+- Refer to the [Wikipedia article](https://en.wikipedia.org/wiki/Vector_space) for a formal
 definition.
 
-The only provided member is the `Vec<F: claims Field>`. It is generic over types that claim `Field`.
+- The only provided member is the `Vec<F: claims Field>`. It is generic over types that claim `Field`.
 
-- Similar to vectors in other languages
-- It provides basic array functionalities such as indexing, appending, etc., but also algebraic
-  vector operations - adding two arrays together, and scalar multiplication.
+  - Similar to vectors in other languages
+  - It provides basic array functionalities such as indexing, appending, etc., but also algebraic
+    vector operations - adding two arrays together, and scalar multiplication.
 
-```
-let a: Vec<u64> = Vec([1, 2, 3]);
-let b: Vec<u64> = a * 2;
-let c = a + b;
-let d: u64 = a[0];
-```
+  ```
+  let a: Vec<u64> = [1, 2, 3] as (Vec<u64>);
+  let b: Vec<u64> = a * 2;
+  let c = a + b;
+  let d: u64 = a[0];
+  ```
 
-```
-let a: Vec<BigRational> = Vec([BigRational(1, 2), BigRational(1, 2), BigRational(1, 2)]);
-let b = BigRational(0.5) * a; // Works
-```
+  ```
+  let a: Vec<Rational> = ([(1, 2) as (Rational), (1, 2) as (Rational), (1, 2) as (Rational)]) as (Vec<Rational>);
+  let b = 0.5 as (Rational) * a; // Works
+  ```
 
-In general the type of the scalar is checked for compatibility with the type of the vector before multiplication.
+- In general the type of the scalar is checked for compatibility with the type of the vector before multiplication.
 
 #### To `claim`
 
-```
+  ```
 
-claim Foo is Space {
-  Field = (insert field F here);
-  
-  // Here u and v are Foo, a is Field
-  // 0 is the additive identity of Foo, not Field
+  claim Foo is Space {
+    Field = (insert field F here);
+    
+    // Here u and v are Foo, a is Field
+    // 0 is the additive identity of Foo, not Field
 
-  (w = u + v) => {}
+    (w = u + v) => {}
 
-  (w = -u) => {}
+    (w = -u) => {}
 
-  (w = 0) => {}
+    (w = 0) => {}
 
-  (w = a * u) => {}
-  
-  // Inner product (optional) (not finalized)
-  (c = u @ v) => {}
-}
-```
+    (w = a * u) => {}
+     
+  }
+  ```
 
 ### Inner products
 
-This is automatically implemented for `Vec<F: claims Field>` as the `@` operator, using the dot
+- This is automatically implemented for `Vec<F: claims Field>` as the `@` operator, using the dot
 product.
 
-```
-let a: Vec<u64> = [1, 2, 3];
-let b: Vec<u64> = [4, 5, 6];
-let c: u64 = a @ b; // Inner product
-```
+  ```
+  let a: Vec<u64> = [1, 2, 3];
+  let b: Vec<u64> = [4, 5, 6];
+  let c: u64 = a @ b; // Inner product
+  ```
 
-If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
+- If the programmer wishes to claim the `Space` Archetype, they must implement the inner product operation themselves.  
 
 ### Cartesian Products
 
-The cartesian product of two Archetypes is also an Archetype. This fact is used to implement Archetypes for tuples, with the syntax for the cartesian product being `(Archetype, Archetype)`. 
+- The cartesian product of two Archetypes is also an Archetype. This fact is used to implement Archetypes for tuples, with the syntax for the cartesian product being `(Archetype, Archetype)`. 
 
-```
-let a: (u32, u32) = (1, 2);
-let b: (u32, u32) = (3, 4);
-let c: (u32, u32) = a + b; // + is automatically implemented because (u32, u32) is a Cartesian Product of Groups
-```
+  ```
+  let a: (u32, u32) = (1, 2);
+  let b: (u32, u32) = (3, 4);
+  let c: (u32, u32) = a + b; // + is automatically implemented because (u32, u32) is a Cartesian Product of Groups
+  ```
 
 ## System type
 
@@ -489,170 +487,159 @@ let c: (u32, u32) = a + b; // + is automatically implemented because (u32, u32) 
 
 ### Integers
 
-The integer types are:
+- The integer types are:
 
-- `u8`, `u16`, `u32`, `u64` - unsigned 8-bit integer, etc.
-- `i8`, `i16`, `i32`, `i64` - signed 8-bit integer, etc.
+  - `u8`, `u16`, `u32`, `u64` - unsigned 8-bit integer, etc.
+  - `i8`, `i16`, `i32`, `i64` - signed 8-bit integer, etc.
 
 ### References
 
-These work very similarly to C++:
+- These work very similarly to C++:
 
-```
-let a: u32 = 1;
-let b: &u32 = &a; // b is a refernce to a
-let c: u32 = *b; // c is the value pointed to by b (i.e. a)
-```
+  ```
+  let a: u32 = 1;
+  let b: &u32 = &a; // b is a refernce to a
+  let c: u32 = *b; // c is the value pointed to by b (i.e. a)
+  ```
 
 ### Boolean
 
-Booleans are implemented as `System` types even though they technically satisfy the definition of a
+- Booleans are implemented as `System` types even though they technically satisfy the definition of a
 group. This is because they are used in the control flow of the program, and thus are not used in
 algebraic operations. The associated keywords are `true` and `false`.
 
-```
-let a: bool;
-a = true;
-a = !false;
-```
+  ```
+  let a: bool;
+  a = true;
+  a = !false;
+  ```
 
-Logical (&&, ||, !) operators work on booleans as expected.
+- Logical (&&, ||, !) operators work on booleans as expected.
 
 ### Buffers
 
-Buffers are used to store data in memory. They are similar to arrays in C, and do not allow scalar
-multiplication or element-wise addition. The syntax is as follows:
+- Buffers are used to store data in memory. They are similar to arrays in C, and do not allow scalar
+multiplication or element-wise addition. The syntax is as follows: (Note that the array initialization syntax returns a Buf type, and not a `Vec`.)
 
-Note that the array initialization syntax returns a `Buf` type, and not a `Vec`.
+  ```
+  let a: [u32] = [1, 2, 3]; // [u32] denotes that it is a 1-D buffer of type u32
+  let b: u32 = a[0];
+  ```
 
-```
-let a: Buf<u32> = [1, 2, 3];
-let b: u32 = a[0];
-```
+- Buffers can be sliced using the `..` operator (similar to `:` in Python). The syntax is as follows:
 
-Buffers can be sliced using the `..` operator (similar to `:` in Python). The syntax is as follows:
-
-```
-let a: Buf<u32> = [1, 2, 3, 4, 5];
-let b: Buf<u32> = a[0..2]; // b is [1, 2]
-```
+  ```
+  let a: [u32] = [1, 2, 3, 4, 5];
+  let b: [u32] = a[0..2]; // b is [1, 2]
+  ```
 
 ### Strings
 
-A `str` is equivalent to a buffer over `u8` (bytes), and enclosed with double quotes. The syntax is as follows:
+- A `str` is equivalent to a buffer over `u8` (bytes), and enclosed with double quotes. The syntax is as follows:
 
-``` 
-let a: str = "Hello, World!";
-let b: u8 = a[0];
-```
+  ``` 
+  let a: str = "Hello, World!";
+  let b: u8 = a[0];
+  ```
 
-Strings can have views (aka slices) using the `..` operator. The syntax is as follows:
+- Strings can have views (aka slices) using the `..` operator. The syntax is as follows:
 
-```
-let a: str = "Hello, World!";
-let b: str = a[0..5];
-print(b); // Hello
-```
+  ```
+  let a: str = "Hello, World!";
+  let b: str = a[0..5];
+  print(b); // Hello
+  ```
 
-There are no tuples for `System` types. For grouping, use `struct`s and claim an Archetype.
+- There are no tuples for `System` types. For grouping, use `struct`s and claim an Archetype.
 
-
-## Isomorphisms and Homomorphisms
-
-Homomorphisms/Isomorphisms are functions which map between algebraic structures. They are defined using the `morph` keyword, followed by the function name, the arguments within parentheses, and then the return type. 
-```
-ring morph foo(a: A) -> B {
-  let b: B = /* some operation on a */;
-  return b;
-}
-group morph foo(a: A) == B {
-  let b: B = /* some operation on a */;
-  return b;
-}
-```
 
 # Sample Code
 
-Note that Archetype code uses the `.arc` extension.
+- Note that Archetype code uses the `.arc` extension.
 
-Noting the verbosity of the below code, we are highly inclined to implement switch-case as well.
+  ```
+  enum Bar {
+      Zero,
+      One,
+      Two
+  }
 
-```
-enum Bar {
-    Zero,
-    One,
-    Two,
-}
+  let Z0: Cyclic<3>;
+  let Z1: Cyclic<3>;
+  let Z2: Cyclic<3>;
 
-forge Cyclic<3>(a: Bar) {
-    if(a == Zero) {
-        return 0;
-    }
-    if(a == One) {
-        return 1;
-    }
-    else {
-        return 2;
-    }
-}
+  forge (a: Cyclic<3>) as (b: Bar) {
+      let a: u8 = a as (u8);
+      if(a == 0) {
+          b = Bar::Zero;
+      }
+      if(a == 1) {
+          b = Bar::One;
+      }
+      else {
+          b = Bar::Two;
+      }
+  }
 
-forge Bar(a: Cyclic<3>) {
-    if(a == 0) {
-        return Zero;
-    }
-    if(a == 1) {
-        return One;
-    }
-    else {
-        return Two;
-    }
-}
+  forge (a: Bar) as (b: Cyclic<3>) {
+      if(a == Bar::Zero) {
+          b = Z0;
+      }
+      else if(a == Bar::One) {
+          b = Z1;
+      }
+      else {
+          b = Z2;
+      }
+  }
 
-claim Bar is Group {
-    (x + y) => {
-        return Bar(Cyclic<3>(x) + Cyclic<3>(y))
-    }
-    0 => {
-        return Zero;
-    }
+  claim Bar is Group {
+      (c = x + y) => {
+          c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
+      }
+      (c = 0) => {
+          c = Bar::Zero;
+      }
 
-    -x => {
-        return Bar(-Cyclic<3>(x));
-    }
-}
+      (c = -x) => {
+          c = (- (x as (Cyclic<3>))) as (Bar);
+      }
+  }
 
-struct Foo {
-    a: u8,
-    var: Bar
-}
+  struct Foo {
+      a: u8,
+      var: Bar
+  }
 
-forge Foo(a: u8, var: Bar) {
-    let out: Foo;
-    out.a = a;
-    out.var = var;
-    return out;
-}
+  forge (a: u8) as (out: Foo) {
+      out.a = a;
+      out.var = Bar::Zero;
+  }
 
-claim Foo is Group {
-    (x + y) => {
-        let out: Foo;
-        out.a = x.a + y.a;
-        out.var = x.var + y.var;
-        return out;
-    }
+  forge (a: u8, var: Bar) as (out: Foo) {
+      out.a = a;
+      out.var = var;
+  }
 
-    (0) => {
-        return Foo(0, Zero)
-    }
-}
+  claim Foo is Group {
+      (out = x + y) => {
+          out.a = x.a + y.a;
+          out.var = x.var + y.var;
+      }
 
-fn main() {
-    print("Hello world.\n");
-    let q: Foo = Foo(0);
-    let qq: Foo = Foo(1);
+      (c = 0) => {
+          c = (0, Bar::Zero) as (Foo);
+      }
+  }
 
-    let qqq: Foo = q + qq;
+  fn main() {
+      print("Hello world.\n");
+      let q: Foo = 0 as (Foo);
+      let qq: Foo = 1 as (Foo);
 
-    print(qqq);
-}
-```
+      let qqq: Foo = q + qq;
+
+      print(qqq as (str));
+  }
+
+  ```

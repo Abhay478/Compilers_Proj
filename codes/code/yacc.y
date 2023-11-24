@@ -1256,75 +1256,82 @@ archetype_claim : claim_stub '{' type_def {
                             case GROUP: {
                                 auto v1 = add_gen("_sum", "_op1", "_op2");
                                 generateln("{"); indent++;
-                                string s = v1[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v1[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v1[2]->repr_cpp() + "));";
+                                string s = "auto " + v1[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v1[1]->repr_cpp() + ") + " + entry2->repr_cpp() + "(" + v1[2]->repr_cpp() + "));";
                                 generateln(s);
                                 s = "return " + v1[0]->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 auto v2 = neg_gen("_neg", "_op");
                                 generateln("{"); indent++;
-                                s = v2[0]->repr_cpp() + " = " + entry2->repr_cpp() + "(-" + entry1->repr_cpp() + "(" + v2[1]->repr_cpp() + "));";   
+                                s = "auto " + v2[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(-" + entry2->repr_cpp() + "(" + v2[1]->repr_cpp() + "));";   
                                 generateln(s);
                                 s = "return " + v2[0]->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 auto v3 = id_gen("_id", 0);
                                 generateln("{"); indent++;
-                                s = v3->repr_cpp() + " = " + entry1->repr_cpp() + "(0)" + ";";
+                                s = "auto " + v3->repr_cpp() + " = " + entry1->repr_cpp() + "(" + other->repr_cpp() + "::zero())" + ";";
                                 generateln(s);
                                 s = "return " + v3->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 break;
                             }
                             case RING: {
                                 auto v4 = mult_gen("_prod", "_op1", "_op2");
                                 generateln("{"); indent++;
-                                string s = v4[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v4[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v4[2]->repr_cpp() + "));";
+                                string s = "auto " + v4[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v4[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v4[2]->repr_cpp() + "));";
                                 generateln(s);
                                 s = "return " + v4[0]->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 auto v5 = id_gen("_id", 1);
                                 generateln("{"); indent++;
-                                s = v5->repr_cpp() + " = " + entry1->repr_cpp() + "(1)" + ";";
+                                s = "auto " + v5->repr_cpp() + " = " + entry1->repr_cpp() + "(1)" + ";";
                                 generateln(s);
                                 s = "return " + v5->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 break;
                             }
                             case FIELD: {
                                 auto v6 = inv_gen("_inv", "_op");
                                 generateln("{"); indent++;
-                                string s = v6[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->return_type->repr_cpp() + "::inv(" + entry2->repr_cpp() + "(" + v6[1]->repr_cpp() + ")));";
+                                string s = "auto " + v6[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->return_type->repr_cpp() + "::inv(" + entry2->repr_cpp() + "(" + v6[1]->repr_cpp() + ")));";
                                 generateln(s);
                                 s = "return " + v6[0]->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
 
                                 break;
                             }
                             case SPACE: {
                                 auto v7 = mult_gen("_prod", "_op1", "_op2");
                                 generateln("{"); indent++;
-                                string s = v7[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v7[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v7[2]->repr_cpp() + "));";
+                                string s = "auto " + v7[0]->repr_cpp() + " = " + entry1->repr_cpp() + "(" + entry2->repr_cpp() + "(" + v7[1]->repr_cpp() + ") * " + entry2->repr_cpp() + "(" + v7[2]->repr_cpp() + "));";
                                 generateln(s);
                                 s = "return " + v7[0]->repr_cpp() + ";";
                                 generateln(s);
                                 indent--;
                                 generateln("}");
+                                generateln("");
                                 break;
                             }
                             default:

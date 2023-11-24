@@ -294,12 +294,12 @@ void generate_structs() {
         for(auto claim : sste->claimd) {
             switch(claim) {
                 case GROUP: {
-                    auto zero = sste->name + " zero();";
+                    auto zero = "static " + sste->name + " zero();";
                     generateln_h(zero);
                     break;
                 }
                 case RING: {
-                    auto one = sste->name + " one();";
+                    auto one = "static " + sste->name + " one();";
                     generateln_h(one);
                     break;
                 }

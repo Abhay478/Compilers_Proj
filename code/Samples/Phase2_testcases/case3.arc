@@ -16,7 +16,7 @@ fn updateStatus(emp: Employee, newStatus: Status): Employee {
 }
 
 fn fibonacci(n: u32): [u32] {
-    let mut fib: [u32] = [0, 1];
+    let fib: [u32] = [0, 1];
     for (let i: u32 = 2; i < n; i++) {
         let next: u32 = fib[i - 1] + fib[i - 2];
         fib.push(next);
@@ -30,7 +30,8 @@ fn main(): i32 {
 
     let fibSeries: [u32] = fibonacci(10);
     for num in fibSeries {
-        print(num);
+
+        print(num as (str));
         print(", ");
     }
 

@@ -28,7 +28,7 @@ claim two_tup is Group {
         c.aux = 0;
     }
 
-    (b = -a) => {
+    (b = a) => {
         b.val = -a.val;
         b.aux = -a.aux;
     }

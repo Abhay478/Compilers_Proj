@@ -19,7 +19,7 @@ enum Month_of_the_year{
     August,
     September,
     October,
-    November
+    November,
     December
 }
 
@@ -54,7 +54,7 @@ forge (a: u8) as (b: Month_of_the_year){
         case 8 => {b = Month_of_the_year::September; }
         case 9 => {b = Month_of_the_year::October; }
         case 10 => {b = Month_of_the_year::November; }
-        case 11 => {b = Month_of_the_year::December; }
+        case 11: {b = Month_of_the_year::December; }
         default => {print("Month not possible!"); }
     }
 }

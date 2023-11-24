@@ -11,17 +11,11 @@ struct Point {
 }
 
 fn printPoint(p: Point) {
-    print("Point(");
-    print(p.x);
-    print(", ");
-    print(p.y);
-    print(", ");
     switch (p.color) {
-        case Red => { print("Red"); }
-        case Green => { print("Green"); }
-        case Blue => { print("Blue"); }
+        case Color::Red => { print("Red"); }
+        case Color::Green => { print("Green"); }
+        case Color::Blue => { print("Blue"); }
     }
-    print(")");
 }
 
 claim Point is Group {
@@ -45,11 +39,17 @@ claim Point is Group {
 }
 
 fn main(): i32 {
-    let p1: Point = {x: 1.0, y: 2.0, color: Color::Red};
-    let p2: Point = {x: 3.0, y: 4.0, color: Color::Blue};
+    let p1: Point;
+    p1.x = 1.0;
+    p1.y = 2.0;
+    p1.color = Color::Red;
+
+    let p2: Point; 
+    p2.x = 3.2;
+    p2.y = 5.55;
+    p2.color = Color::Red;
 
     let p3: Point = p1 + p2; // Using group operation
-    printPoint(p3);
 
     return 0;
 }

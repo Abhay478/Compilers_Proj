@@ -161,6 +161,7 @@ InnerType *replace_placeholder(InnerType *t, InnerType *repl) {
 
 // if t1 has a placeholder, get the matching type from t2
 // assumes t1 and t2 match in all other ways
+// if no placeholder in t1, return NULL
 Type *placeholder_equiv(InnerType *t1, InnerType *t2) {
     while (t1 && t2) {
         if (t1->core_type == PLACEHOLDER) {
@@ -356,15 +357,10 @@ Function *FunctionSymbolTable::lookup(string name) {
 
 // if return type has a placeholder, get the matching type from args
 Type * Function::get_return_type(std::vector<Type *> * args) {
-    auto ret = placeholder_equiv(this->return_type->head, this->return_type->head);
-    if (!ret) {
-        // no placeholder in return type
-        return this->return_type;
-    }
     Type * repl = NULL;
     for (int i = 0; i < args->size(); i++) {
         auto arg = (*args)[i]->head;
-        auto equiv = placeholder_equiv(arg, this->params->entries[i]->type->head);
+        auto equiv = placeholder_equiv(this->params->entries[i]->type->head, arg);
         if (equiv) {
             // arg has placeholder
             if (repl) {
@@ -376,6 +372,11 @@ Type * Function::get_return_type(std::vector<Type *> * args) {
             }
             repl = equiv;
         }
+    }
+    auto ret = placeholder_equiv(this->return_type->head, this->return_type->head);
+    if (!ret) {
+        // no placeholder in return type
+        return this->return_type;
     }
     if (!repl) {
         // no args had placeholders

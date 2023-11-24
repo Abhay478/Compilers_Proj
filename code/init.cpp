@@ -27,6 +27,12 @@ static Type *make_type(PDT pdt) {
     return t;
 }
 
+static Type *make_placeholder() {
+    Type *t = new Type();
+    t->push_type(PLACEHOLDER, 0, 0, NULL);
+    return t;
+}
+
 static VarSymbolTable *make_params(vector<Var *> params) {
     auto vst = new VarSymbolTable();
     vst->entries = params;
@@ -58,14 +64,24 @@ static Type *make_cart(vector<Type *> types) {
 
 ///     print(str) -> void
 ///     panic(str) -> void
+///     push([T], T) -> void
 static void init_func_st() {
-    auto print_params = make_params({new Var("str", make_type(PDT_STR))});
-    auto print = new Function("print", print_params, make_type(PDT_VOID));
+    auto str_arg = new Var("str", make_type(PDT_STR));
+    auto void_type = make_type(PDT_VOID);
+
+    auto print_params = make_params({str_arg});
+    auto print = new Function("print", print_params, void_type);
     func_st.insert(print);
 
-    auto panic_params = make_params({new Var("msg", make_type(PDT_STR))});
-    auto panic = new Function("print", panic_params, make_type(PDT_VOID));
+    auto panic_params = make_params({str_arg});
+    auto panic = new Function("print", panic_params, void_type);
     func_st.insert(panic);
+
+    auto buf = make_placeholder();
+    buf->push_type(BUF, 0, 0, NULL);
+    auto push_params = make_params({new Var("buf", buf), new Var("elem", make_placeholder())});
+    auto push = new Function("push", push_params, void_type);
+    func_st.insert(push);
 }
 
 ///     Dihedral<n: int>

@@ -40,6 +40,8 @@ bash run.sh test.arc
 
 The above script compiles the compiler, then compiles the archetype file, and also runs the executable generated. No further configuration is required.
 
+This must be run from within the `codes/` directory.
+
 # File Structure
 
 - `codes/` contains the source code for the compiler

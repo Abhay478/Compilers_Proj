@@ -611,7 +611,8 @@ expression      : '(' expression ')' {
                     }
                     Function * fste = forge_st.lookup($1, $4);
                     if(!fste){
-                        yyerror("No forge found");
+                        string s = "No forge found: " + $1->repr_cpp() + " as " + $4->repr_cpp();
+                        yyerror(s.c_str());
                         break;
                     } 
                     // TODO: return type
@@ -1659,12 +1660,12 @@ int main() {
     fclose(token_stream);
     fclose(output_stream);
 
-    if (error) {
+    /* if (error) {
         // if error, generated files are useless, so remove them
         remove("a.cpp");
         remove("a.hpp");
         return 1;
-    }
+    } */
 
     // generate header file (enums and structs)
     struct_stream = fopen("a.hpp", "w");

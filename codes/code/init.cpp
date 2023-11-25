@@ -117,7 +117,7 @@ static void init_func_st() {
 ///     Alternating<n: int>
 ///     Cyclic<n: int>
 ///     InvMat<n: int, F: Field>
-///     Matrix<n: int, F: Field>
+///     Matrix<n: int, F: Ring>
 ///     Polynomial<F: Field>
 static void init_gen_st() {
     vector<string> single_int_types = {"Dihedral", "Symmetric", "Alternating", "Cyclic"};
@@ -126,9 +126,17 @@ static void init_gen_st() {
         gen_st.insert(gste);
     }
 
-    vector<string> int_field_types = {"InvMat", "Matrix"};
+    vector<string> int_field_types = {"InvMat"};
     for (auto i : int_field_types) {
-        auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
+        // auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
+        auto gste = new Generic(i, {GenericArg(RING)});
+        gen_st.insert(gste);
+    }
+
+    vector<string> int_ring_types = {"Matrix"};
+    for (auto i : int_ring_types) {
+        // auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
+        auto gste = new Generic(i, {GenericArg(RING)});
         gen_st.insert(gste);
     }
 
@@ -396,6 +404,7 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     auto forge_matrix_vec_vec_t_params = make_params({new Var("m", get_type("Matrix"))});
     auto forge_matrix_vec_vec_t = new Function("forge_vector_vector_T", forge_matrix_vec_vec_t_params, buf_buf);
     forge_st.insert(forge_matrix_vec_vec_t);
+    // printf("%s -> %s\n", get_param_type(forge_matrix_vec_vec_t)->repr_cpp().c_str(), forge_matrix_vec_vec_t->return_type->repr_cpp().c_str());
 
     // forge vector<int> as string
     auto forge_vector_int_str_params = make_params({buf_arg});

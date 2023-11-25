@@ -257,12 +257,17 @@ int typecmp(InnerType *t1, InnerType *t2, bool ignore_gen) {
                 auto v1i = (*v1)[i];
                 auto v2i = (*v2)[i];
                 if (v1i->is_int) {
-                    return v1i->lit_int != v2i->lit_int;
+                    if(v1i->lit_int == -1 || v2i->lit_int == -1) {
+                        // placeholder
+                        continue;
+                    }
+                    if(v1i->lit_int != v2i->lit_int) return 1;
                 } else {
-                    return typecmp(v1i->type, v2i->type);
+                    if(typecmp(v1i->type, v2i->type)) return 1;
                 }
             }
-        } else if (t1->core_type == BUF || t1->core_type == GEN) {
+            return 0;
+        } else if (t1->core_type == BUF) {
             t1 = t1->next;
             t2 = t2->next;
         } else {

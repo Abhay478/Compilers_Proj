@@ -193,6 +193,24 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     return mat.a;
 }
 
+// template<typename T>
+std::string forge_string(const vector<int> vec) {
+    std::string out = "";
+    for(int i = 0; i < vec.size(); i++) {
+        if(i) out += ", ";
+        out += std::to_string(vec[i]);
+    }
+}
+
+
+std::string forge_string(const vector<unsigned int> vec) {
+    std::string out;
+    for(int i = 0; i < vec.size(); i++) {
+        if(i) out += ", ";
+        out += std::to_string(vec[i]);
+    }
+}
+
 // test: call all forges
 /*int main() {
     auto big = forge_BigInt("1234567890123456789012345678901234567890");

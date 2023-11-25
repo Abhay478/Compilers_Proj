@@ -38,4 +38,9 @@ fn foo(): u32 {
 fn main() : i32 {
     let arr: [[u32]] = [[1, 2, 3], [4, 5, 6]];
     let sum: u32 = sum_mat(arr, 2, 3);
+    let mat: Matrix<u32> = arr as (Matrix<u32>);
+    let twice: Matrix<u32> = mat + mat;
+    for r: [u32] in twice as ([[u32]]) {
+        print(r as (str));
+    }
 }

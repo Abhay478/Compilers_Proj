@@ -397,6 +397,11 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     auto forge_matrix_vec_vec_t = new Function("forge_vector_vector_T", forge_matrix_vec_vec_t_params, buf_buf);
     forge_st.insert(forge_matrix_vec_vec_t);
 
+    // forge vector<int> as string
+    auto forge_vector_int_str_params = make_params({buf_arg});
+    auto forge_vector_int_str = new Function("forge_string", forge_vector_int_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_vector_int_str);
+
 }
 void init_symbol_tables() {
     init_func_st();

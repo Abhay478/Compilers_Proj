@@ -207,6 +207,19 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
 
     */
 
+    auto buf = make_placeholder();
+    buf->push_type(BUF, 0, 0, NULL);
+    auto buf_arg = new Var("buf", buf);
+
+    auto buf_buf = make_placeholder();
+    buf_buf->push_type(BUF, 0, 0, NULL);
+    buf_buf->push_type(BUF, 0, 0, NULL);
+    auto buf_buf_arg = new Var("buf", buf_buf);
+
+    auto buf_int = make_type(I32);
+    buf_int->push_type(BUF, 0, 0, NULL);
+    auto buf_int_arg = new Var("buf", buf_int);
+
 
 
     // forge string as BigInt
@@ -225,7 +238,7 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     forge_st.insert(forge_int_cyclic);
 
     // forge vector<int> as Symmetric
-    auto forge_vec_int_symmetric_params = make_params({new Var("v", make_cart({make_type(I32)}))});
+    auto forge_vec_int_symmetric_params = make_params({ buf_int_arg });
     auto forge_vec_int_symmetric = new Function("forge_Symmetric", forge_vec_int_symmetric_params, get_type("Symmetric"));
     forge_st.insert(forge_vec_int_symmetric);
 
@@ -235,7 +248,7 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     forge_st.insert(forge_alternating_symmetric);
 
     // forge vector<int> as Alternating
-    auto forge_vec_int_alternating_params = make_params({new Var("v", make_cart({make_type(I32)}))});
+    auto forge_vec_int_alternating_params = make_params({ buf_int_arg });
     auto forge_vec_int_alternating = new Function("forge_Alternating", forge_vec_int_alternating_params, get_type("Alternating"));
     forge_st.insert(forge_vec_int_alternating);
 
@@ -245,12 +258,12 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     forge_st.insert(forge_int_bool_dihedral);
 
     // forge vector<vector<T>> as Matrix
-    auto forge_vec_vec_t_matrix_params = make_params({new Var("v", make_placeholder())});
+    auto forge_vec_vec_t_matrix_params = make_params({ buf_buf_arg });
     auto forge_vec_vec_t_matrix = new Function("forge_Matrix", forge_vec_vec_t_matrix_params, get_type("Matrix"));
     forge_st.insert(forge_vec_vec_t_matrix);
 
     // forge vector<T> as Polynomial
-    auto forge_vec_t_polynomial_params = make_params({new Var("v", make_placeholder())});
+    auto forge_vec_t_polynomial_params = make_params({ buf_arg });
     auto forge_vec_t_polynomial = new Function("forge_Polynomial", forge_vec_t_polynomial_params, get_type("Polynomial"));
     forge_st.insert(forge_vec_t_polynomial);
 
@@ -371,17 +384,17 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
 
     // forge Symmetric as vector<int>
     auto forge_symmetric_vec_int_params = make_params({new Var("s", get_type("Symmetric"))});
-    auto forge_symmetric_vec_int = new Function("forge_vector_int", forge_symmetric_vec_int_params, make_cart({make_type(I32)}));
+    auto forge_symmetric_vec_int = new Function("forge_vector_int", forge_symmetric_vec_int_params, buf_int);
     forge_st.insert(forge_symmetric_vec_int);
 
     // forge Alternating as vector<int>
     auto forge_alternating_vec_int_params = make_params({new Var("a", get_type("Alternating"))});
-    auto forge_alternating_vec_int = new Function("forge_vector_int", forge_alternating_vec_int_params, make_cart({make_type(I32)}));
+    auto forge_alternating_vec_int = new Function("forge_vector_int", forge_alternating_vec_int_params, buf_int);
     forge_st.insert(forge_alternating_vec_int);
 
     // forge Matrix as vector<vector<T>>
     auto forge_matrix_vec_vec_t_params = make_params({new Var("m", get_type("Matrix"))});
-    auto forge_matrix_vec_vec_t = new Function("forge_vector_vector_T", forge_matrix_vec_vec_t_params, make_placeholder());
+    auto forge_matrix_vec_vec_t = new Function("forge_vector_vector_T", forge_matrix_vec_vec_t_params, buf_buf);
     forge_st.insert(forge_matrix_vec_vec_t);
 
 }

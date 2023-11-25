@@ -1,81 +1,35 @@
-enum Bar {
-    Zero,
-    One,
-    Two
+enum Parity {
+  Even,
+  Odd
 }
 
-let Z0: Cyclic<3>;
-let Z1: Cyclic<3>;
-let Z2: Cyclic<3>;
-
-forge (cyc: Cyclic<3>) as (b: Bar) {
-    let a: u8 = cyc as (u8);
-    if(a == 0) {
-        b = Bar::Zero;
-    }
-    if(a == 1) {
-        b = Bar::One;
-    }
-    else {
-        b = Bar::Two;
-    }
+forge (a: u8) as (b: [[u8]]) {
+  b[0][0] = a;
 }
 
-forge (a: Bar) as (b: Cyclic<3>) {
-    if(a == Bar::Zero) {
-        b = Z0;
-    }
-    else if(a == Bar::One) {
-        b = Z1;
-    }
-    else {
-        b = Z2;
-    }
+forge (a: u8) as (b: Parity) {
+  if (a < 0) {
+    a = -a;
+  }
+  while (a > 1) {
+    a = a - 2;
+  }
+  if (a == 1) {
+    b = Parity::Odd;
+  } else {
+    b = Parity::Even;
+  }
 }
 
-claim Bar is Group {
-    (c = x + y) => {
-        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
-    }
-    (c = 0) => {
-        c = Bar::Zero;
-    }
-
-    (c = -x) => {
-        c = (- (x as (Cyclic<3>))) as (Bar);
-    }
+forge (a: Parity) as (b: u8) {
+  b = 5;
 }
 
-struct Foo {
-    a: u8,
-    var: Bar
-}
-
-forge (a: u8) as (out: Foo) {
-    out.a = a;
-    out.var = Bar::Zero;
-}
-
-forge (arg: (u8, Bar)) as (out: Foo) {
-    out.a = arg.0;
-    out.var = arg.1;
-}
-
-claim Foo is Group {
-    (out = x + y) => {
-        out.a = x.a + y.a;
-        out.var = x.var + y.var;
-    }
-
-    (c = 0) => {
-        c = (0, Bar::Zero) as (Foo);
-    }
-}
-
-fn main() {
-    print("Hello world.\n");
-    let q: Foo = 0 as (Foo);
-    let qq: Foo = 1 as (Foo);
-
-    let qqq: Foo = q + qq;
+fn main(): i32 {
+  let a: Parity = 1 as (Parity); // a is now Parity::Odd
+  let b: &Parity = &a;
+  let c: Parity = *b;
+  let d: Parity = (c as (u8)) as (Parity);
+  let q: bool = true;
+  let v: bool = !q;
 }

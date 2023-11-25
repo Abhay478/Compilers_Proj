@@ -428,15 +428,27 @@ Type * Function::get_return_type(std::vector<Expr *> * args, Type *ret_type) {
     return this->get_return_type(types, ret_type);
 }
 
-std::string Function::get_gen_arg(Type *ret_type) {
-    auto placeholder = placeholder_equiv(this->return_type->head, ret_type->head);
-    if (!placeholder) {
-        return "";
-    } else if (placeholder->is_int) {
-        return "<" + to_string(placeholder->lit_int) + ">";
+static std::string repr(GenericInner *inner) {
+    if (inner->is_int) {
+        return "<" + to_string(inner->lit_int) + ">";
     } else {
-        return "<" + placeholder->type->repr_cpp() + ">";
+        return "<" + inner->type->repr_cpp() + ">";
     }
+}
+
+std::string Function::get_gen_arg(std::vector<Expr *> * args, Type *ret_type) {
+    auto placeholder = placeholder_equiv(this->return_type->head, ret_type->head);
+    if (placeholder) {
+        return repr(placeholder);
+    }
+    for (int i = 0; i < args->size(); i++) {
+        auto arg = (*args)[i]->head;
+        auto equiv = placeholder_equiv(this->params->entries[i]->type->head, arg);
+        if (equiv) {
+            return repr(equiv);
+        }
+    }
+    return "";
 }
 
 std::string Function::repr_cpp() {

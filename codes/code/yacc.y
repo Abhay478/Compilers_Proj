@@ -624,7 +624,7 @@ expression      : '(' expression ')' {
                         break;
                     }
                     $$ = new Expr(t, false);
-                    $$->repr = fste->name + fste->get_gen_arg($4) + "(" + $1->repr + ")";
+                    $$->repr = fste->name + fste->get_gen_arg(args, $4) + "(" + $1->repr + ")";
                     
                 }
                 | expression '@' expression // claim space 
@@ -1676,7 +1676,7 @@ int main() {
     generate_structs();
     fclose(struct_stream);
 
-    return 0;
+    return error;
 }
 
 extern int yylineno;

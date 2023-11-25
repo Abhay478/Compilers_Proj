@@ -100,7 +100,7 @@ struct Matrix {
         for (int i = 0; i < a.size(); i++) {
             for (int j = 0; j < m.a[0].size(); j++) {
                 for (int k = 0; k < a[0].size(); k++) {
-                    ret.a[i][j] += a[i][k] * m.a[k][j];
+                    ret.a[i][j] = ret.a[i][j] + a[i][k] * m.a[k][j];
                 }
             }
         }

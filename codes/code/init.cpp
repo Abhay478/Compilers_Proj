@@ -7,11 +7,10 @@
 ///     Dihedral<n: int>
 ///     Symmetric<n: int>
 ///     Alternating<n: int>
-///     InvMat<n: int, F: Field>
 ///   rings:
 ///     Cyclic<n: int>              -> field if n is prime
 ///     BigInt
-///     Matrix<n: int, F: Field>
+///     Matrix<F: Field>
 ///     Polynomial<F: Field>
 ///   fields:
 ///     Rational
@@ -116,8 +115,7 @@ static void init_func_st() {
 ///     Symmetric<n: int>
 ///     Alternating<n: int>
 ///     Cyclic<n: int>
-///     InvMat<n: int, F: Field>
-///     Matrix<n: int, F: Ring>
+///     Matrix<F: Ring>
 ///     Polynomial<F: Field>
 static void init_gen_st() {
     vector<string> single_int_types = {"Dihedral", "Symmetric", "Alternating", "Cyclic"};
@@ -126,15 +124,8 @@ static void init_gen_st() {
         gen_st.insert(gste);
     }
 
-    vector<string> int_field_types = {"InvMat"};
-    for (auto i : int_field_types) {
-        // auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
-        auto gste = new Generic(i, {GenericArg(RING)});
-        gen_st.insert(gste);
-    }
-
-    vector<string> int_ring_types = {"Matrix"};
-    for (auto i : int_ring_types) {
+    vector<string> single_ring_types = {"Matrix"};
+    for (auto i : single_ring_types) {
         // auto gste = new Generic(i, {GenericArg(), GenericArg(RING)});
         auto gste = new Generic(i, {GenericArg(RING)});
         gen_st.insert(gste);
@@ -163,17 +154,16 @@ static void init_struct_st() {
 ///     Dihedral<n: int>
 ///     Symmetric<n: int>
 ///     Alternating<n: int>
-///     InvMat<n: int, F: Field>
 ///   rings:
 ///     Cyclic<n: int>
 ///     BigInt
-///     Matrix<n: int, F: Field>
+///     Matrix<F: Field>
 ///     Polynomial<F: Field>
 ///   fields:
 ///     Rational
 ///     Complex
 static void init_claim_st() {
-    vector<const char *> groups = {"Dihedral", "Symmetric", "Alternating", "InvMat"};
+    vector<const char *> groups = {"Dihedral", "Symmetric", "Alternating"};
     vector<const char *> rings = {"Cyclic", "BigInt", "Matrix", "Polynomial"};
     vector<const char *> fields = {"Rational", "Complex"};
 
@@ -407,9 +397,18 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     // printf("%s -> %s\n", get_param_type(forge_matrix_vec_vec_t)->repr_cpp().c_str(), forge_matrix_vec_vec_t->return_type->repr_cpp().c_str());
 
     // forge vector<int> as string
-    auto forge_vector_int_str_params = make_params({buf_arg});
+    auto forge_vector_int_str_params = make_params({buf_int_arg});
     auto forge_vector_int_str = new Function("forge_string", forge_vector_int_str_params, make_type(PDT_STR));
     forge_st.insert(forge_vector_int_str);
+
+    auto vec_bigint = get_type("BigInt");
+    vec_bigint->push_type(BUF, 0, 0, NULL);
+    auto vec_bigint_arg = new Var("vec", vec_bigint);
+
+    // forge vector<BigInt> as string
+    auto forge_vector_bigint_str_params = make_params({vec_bigint_arg});
+    auto forge_vector_bigint_str = new Function("forge_string", forge_vector_bigint_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_vector_bigint_str);
 
 }
 void init_symbol_tables() {

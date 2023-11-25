@@ -257,6 +257,19 @@ std::string forge_string(const std::vector<unsigned int> vec)
     return out;
 }
 
+std::string forge_string(const std::vector<BigInt> vec)
+{
+    std::string out = "[";
+    for (int i = 0; i < vec.size(); i++)
+    {
+        if (i)
+            out += ", ";
+        out += vec[i].to_string();
+    }
+    out += "]";
+    return out;
+}
+
 // test: call all forges
 /*int main() {
     auto big = forge_BigInt("1234567890123456789012345678901234567890");

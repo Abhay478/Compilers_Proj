@@ -11,7 +11,7 @@ fn sum_mat(a: [[BigInt]], rows: u32, columns: u32): BigInt{
     let i: u32 = 0;
     while(i < rows){
         for(let j: u32 = 0; j < columns; j++){
-            sum += a[i][j];
+            sum = sum + a[i][j];
         }
         i++;
     }
@@ -30,14 +30,14 @@ fn foo(): u32 {
             case 4 => {print("4");}
             default => {print("default");}
         }
-        sum += i;
+        sum = sum + i;
     }
     return sum;
 }
 
 fn main() : i32 {
     let arr: [[BigInt]] = [[1 as (BigInt), 2 as (BigInt)], [5 as (BigInt), 6 as (BigInt)]];
-    let q: Symmetric<4> = [1, 2, 3, 4] as (Symmetric<4>);
+    let q: Symmetric<4> = [1, 2, 3, 0] as (Symmetric<4>);
     let u: Matrix<BigInt> = arr as (Matrix<BigInt>);
     let sum: BigInt = sum_mat(arr, 2, 2);
     print(sum as (str));
@@ -47,6 +47,18 @@ fn main() : i32 {
     }
     v = u * u;
     for i: [BigInt] in v as ([[BigInt]]){
+        print(i as (str));
+    }
+
+    let s: Matrix<BigInt> = u + u;
+    let t: Matrix<BigInt> = u * u;
+
+    print("");
+    for i: [BigInt] in s as ([[BigInt]]){
+        print(i as (str));
+    }
+    print("");
+    for i: [BigInt] in t as ([[BigInt]]){
         print(i as (str));
     }
 }

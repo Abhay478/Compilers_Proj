@@ -3,11 +3,11 @@ struct Foo {
 }
 
 claim Foo is Group {
-    (c = a + b) => {
-        c.a = a.a + b.a;
-    }
     (c = 0) => {
         c.a = 0;
+    }
+    (c = a + b) => {
+        c.a = a.a + b.a;
     }
     (c = -a) => {
         c.a = -a.a;

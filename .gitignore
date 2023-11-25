@@ -5,4 +5,4 @@
 a.*
 obj
 *.gz
-sub
+sub*

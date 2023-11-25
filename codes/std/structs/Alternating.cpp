@@ -20,9 +20,7 @@ struct Alternating {
             }
             visited[vec[i]] = true;
         }
-        for (int i = 0; i < N; i++) {
-            perm[i] = vec[i];
-        }
+        perm = vec;
 
         check_alt();
     }

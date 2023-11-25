@@ -87,10 +87,12 @@ claim Foo is Group {
     
 }
 
-fn main() : i32{
+fn main() : i32 {
     print("Hello world.\n");
     let q: Foo = 0 as (Foo);
     let qq: Foo = 1 as (Foo);
 
     let qqq: Foo = q + qq;
+
+    return 0;
 }

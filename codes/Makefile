@@ -17,7 +17,7 @@ obj/lex.yy.cpp: code/lex.l obj/y.tab.cpp
 	$(CC) $(CFLAGS) -c obj/lex.yy.cpp -o obj/lex.yy.o
 
 obj/y.tab.cpp: code/yacc.y
-	mkdir obj
+	mkdir -p obj
 	bison -d -v -Wcounterexamples code/yacc.y -o obj/y.tab.cpp --report-file=obj/y.output
 	$(CC) $(CFLAGS) -c obj/y.tab.cpp -o obj/y.tab.o
 

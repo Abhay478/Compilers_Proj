@@ -623,7 +623,7 @@ expression      : '(' expression ')' {
                         break;
                     }
                     $$ = new Expr(t, false);
-                    $$->repr = fste->name + "(" + $1->repr + ")";
+                    $$->repr = fste->name + fste->get_gen_arg($4) + "(" + $1->repr + ")";
                     
                 }
                 | expression '@' expression // claim space 

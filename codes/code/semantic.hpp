@@ -251,6 +251,7 @@ struct Function {
     std::string repr_cpp();
     Type * get_return_type(std::vector<Type *> * args, Type *ret_type);
     Type * get_return_type(std::vector<Expr *> * args, Type *ret_type);
+    std::string get_gen_arg(Type *ret_type);
     Function(std::string name, VarSymbolTable * params, Type * return_type);
 };
 

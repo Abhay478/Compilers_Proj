@@ -16,13 +16,11 @@ struct Symmetric {
         std::vector<bool> visited(N, false);
         for (int i = 0; i < N; i++) {
             if (vec[i] < 0 || vec[i] >= N || visited[vec[i]]) {
-                f_panic("Cannot construct Alternating: invalid permutation");
+                f_panic("Cannot construct Symmetric: invalid permutation");
             }
             visited[vec[i]] = true;
         }
-        for (int i = 0; i < N; i++) {
-            perm[i] = vec[i];
-        }
+        perm = vec;
     }
 
     static Symmetric zero() {

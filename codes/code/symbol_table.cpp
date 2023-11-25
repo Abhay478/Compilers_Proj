@@ -423,6 +423,17 @@ Type * Function::get_return_type(std::vector<Expr *> * args, Type *ret_type) {
     return this->get_return_type(types, ret_type);
 }
 
+std::string Function::get_gen_arg(Type *ret_type) {
+    auto placeholder = placeholder_equiv(this->return_type->head, ret_type->head);
+    if (!placeholder) {
+        return "";
+    } else if (placeholder->is_int) {
+        return "<" + to_string(placeholder->lit_int) + ">";
+    } else {
+        return "<" + placeholder->type->repr_cpp() + ">";
+    }
+}
+
 std::string Function::repr_cpp() {
     return "f_" + this->name;
 }

@@ -2,6 +2,13 @@ template <int N>
 struct Alternating {
     std::vector<int> perm;
 
+    Alternating() {
+        perm.resize(N);
+        for (int i = 0; i < N; i++) {
+            perm[i] = i;
+        }
+    }
+
     Alternating(std::vector<int> vec) {
         if (vec.size() != N) {
             f_panic("Cannot construct Alternating: inconsistent size");

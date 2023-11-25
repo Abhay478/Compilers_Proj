@@ -1,6 +1,8 @@
+#include <vector>
 template <typename T>
 struct Matrix {
     std::vector<std::vector<T>> a;
+    Matrix() {}
     Matrix(int m, int n) : a(m, std::vector<T>(n)) {}
     Matrix(const std::vector<std::vector<T>> a_) {
         if (a_.empty()) {

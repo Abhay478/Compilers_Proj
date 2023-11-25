@@ -1,5 +1,6 @@
 struct Complex {
     Rational r, i;
+    Complex() : r(Rational::zero()), i(Rational::zero()) {}
     Complex(Rational r_) : r(r_), i(Rational::zero()) {}
     Complex(Rational r_, Rational i_) : r(r_), i(i_) {}
 

@@ -2,6 +2,13 @@ template <int N>
 struct Symmetric {
     std::vector<int> perm;
 
+    Symmetric() {
+        perm = std::vector<int>(N);
+        for (int i = 0; i < N; i++) {
+            perm[i] = i;
+        }
+    }
+
     Symmetric(std::vector<int> vec) {
         if (vec.size() != N) {
             f_panic("Cannot construct Symmetric: inconsistent size");

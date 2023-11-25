@@ -3,6 +3,7 @@
 
 struct BigInt {
     mpz_class n;
+    BigInt() : n(0) {}
     BigInt(int n_) : n(n_) {}
     BigInt(mpz_class n_) : n(n_) {}
     BigInt(const std::string s) : n(s) {}

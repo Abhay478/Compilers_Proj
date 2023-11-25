@@ -3,6 +3,9 @@
 template <typename T>
 struct Polynomial {
     std::vector<T> coeffs;
+    Polynomial()  {
+        coeffs = {T::zero()};
+    }
     Polynomial(const std::vector<T> coeffs_) : coeffs(coeffs_) {}
 
     static Polynomial zero() {

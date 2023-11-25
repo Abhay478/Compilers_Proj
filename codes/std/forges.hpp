@@ -233,25 +233,27 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat)
 // template<typename T>
 std::string forge_string(const std::vector<int> vec)
 {
-    std::string out = "";
+    std::string out = "[";
     for (int i = 0; i < vec.size(); i++)
     {
         if (i)
             out += ", ";
         out += std::to_string(vec[i]);
     }
+    out += "]";
     return out;
 }
 
 std::string forge_string(const std::vector<unsigned int> vec)
 {
-    std::string out;
+    std::string out = "[";
     for (int i = 0; i < vec.size(); i++)
     {
         if (i)
             out += ", ";
         out += std::to_string(vec[i]);
     }
+    out += "]";
     return out;
 }
 

@@ -230,6 +230,12 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat)
     return mat.a;
 }
 
+namespace std {
+    string to_string(BigInt i) {
+        return to_string(i.as_i32());
+    }
+}
+
 template<typename T>
 std::string forge_string(const std::vector<T> vec)
 {

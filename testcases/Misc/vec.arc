@@ -6,4 +6,5 @@ fn main(): i32 {
     let b: Vec<i32> = 3 * a;
     print(b as (str));
     let d: i32 = a[0];
+    print(e as (str));
 }

@@ -939,12 +939,16 @@ array_access    : expression array_index {
                     }
                     else if ($1->core() == STR) {
                         if(!$2.is_slice) {
-                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            Type *t = new Type();
+                            t->push_type(CHAR, 0, 0, NULL);
+                            $$ = new Expr(t, $1->is_lvalue);
                             $$->repr = $1->repr + *$2.repr;
                         }
                         else {
-                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
-                            $$->repr = "slice_str(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
+                            Type *t = new Type();
+                            t->push_type(STR, 0, 0, NULL);
+                            $$ = new Expr(t, false);
+                            $$->repr = "f_slice_str(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
                         }
                     } 
                     else if(($1->core() == GEN && $1->head->gste->name == "Vec") || ($1->core() == GEN && $1->head->gste->name == "Matrix") || ($1->core() == GEN && $1->head->gste->name == "InvMat")) {

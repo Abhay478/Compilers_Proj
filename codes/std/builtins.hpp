@@ -8,6 +8,10 @@ void f_print(const std::string str) {
     std::cout << str << std::endl;
 }
 
+void f_print_c(const char c) {
+    std::cout << c << std::endl;
+}
+
 void f_panic(const std::string str) {
     std::cout << "PANIC: " << str << std::endl;
     exit(1);

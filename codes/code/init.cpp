@@ -86,6 +86,9 @@ static void init_func_st() {
     auto print = new Function("print", str_param, void_type);
     func_st.insert(print);
 
+    auto print_c = new Function("print_c", make_params({new Var("c", make_type(PDT_CHAR))}), void_type);
+    func_st.insert(print_c);
+
     auto panic = new Function("panic", str_param, void_type);
     func_st.insert(panic);
 

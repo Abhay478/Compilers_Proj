@@ -66,4 +66,6 @@ fn main(): i32 {
     let d: two_tup = a + c;
     print(d.val as (str));
     print(d.aux as (str));
+
+    
 }

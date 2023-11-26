@@ -1,16 +1,3 @@
-fn fib(n: u32) : [u64] {
-    let a: u64 = 0;
-    let b: u64 = 1;
-    let out: [u64] = [a, b];
-    for (let i: u32 = 2; i < n; i++) {
-        let c: u32 = a + b;
-        a = b;
-        b = c;
-    }
-
-    return out;
-}
-
 struct two_tup {
     val: u64,
     aux: u64
@@ -53,17 +40,20 @@ forge (a: [u64]) as (b: two_tup) {
 
 fn main(): i32 {
     // print("This is main.");
-    let b: [u64] = fib(30);
-    // // print(b);
 
-    let a: two_tup = [1, 2] as (two_tup);
-    // // print(a);
-    let tup: (u64, u64) = a as ((u64, u64));
-    // // print(tup);
+    let a: two_tup = [1, 2] as (two_tup); // third forge
 
-    let c: two_tup = [3, 4] as (two_tup);
-    
-    let d: two_tup = a + c;
-    print(d.val as (str));
-    print(d.aux as (str));
+    let tup: (u64, u64) = a as ((u64, u64)); // first forge
+
+    let twoTup: two_tup = tup as (two_tup); // second forge
+    print(twoTup.val as (str));
+    print(twoTup.aux as (str));
+
+    let b: two_tup = [3, 4] as (two_tup); // third forge
+   
+    let c: two_tup = a + b; // Group implementation
+    print(c.val as (str));
+    print(c.aux as (str));
+
+
 }

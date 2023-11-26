@@ -5,24 +5,25 @@ struct two_tup {
 
 forge (a: two_tup) as (b: (u64, u64)) {
     b = (a.val, a.aux);
-    // print("We are forging here.");
+    print("We are forging here 1.");
 }
 
 forge (a: (u64, u64)) as (b: two_tup) {
     b.val = a.0;
     b.aux = a.1;
-    // print("We are forging here also.");
+    print("We are forging here also 2.");
 }
 
 forge (a: [u64]) as (b: two_tup) {
     b.val = a[0];
     b.aux = a[1];
-    // print("We are forging here again.");
+    print("We are forging here again 3.");
 }
 
 forge (a: two_tup) as (b: [u64]) {
     push(b, a.val);
     push(b, a.aux);
+    print("We are forging here one last time! 4");
 }
 
 fn main(): i32 {
@@ -43,4 +44,6 @@ fn main(): i32 {
     let arr: [u64] = b as ([u64]);
     print(arr[0] as (str));
     print(arr[1] as (str));
+
+
 }

@@ -306,8 +306,8 @@ generic         : IDENT '<' type_args '>' {
 
                             Archetypes a = gste->types[i].archetype;
                             Type * t1 = (*$3)[i]->type;
-                            if (!claim_st.lookup(t1, a)) {
-                                yyerror("Type does not claim archetype.");
+                            if (!claim_st.lookup(t1, a) && t1->core() != INT && t1->core() != FLOAT) {
+                                yyerror("Type does not claim archetype, and isn't a primitive.");
                                 err = true;
                                 break;
                             }

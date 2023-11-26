@@ -369,7 +369,8 @@ decl_item       : type_var {
                         yyerror("Cannot assign to global variable. (use main)");
                         break;
                     } else if (typecmp($1->type, $3)) {
-                        yyerror("Type mismatch in declaration.");
+                        string s = "Type mismatch in declaration: " + $1->type->repr_cpp() + ", " + $3->repr_cpp();
+                        yyerror(s.c_str());
                         break;
                     }
 

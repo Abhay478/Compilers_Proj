@@ -37,9 +37,14 @@ Expr *mult_type_check_arithmetic(Expr *t1, Expr *t2) {
     }
 
     auto claim = claim_st.lookup(t1, SPACE);
+    // auto claim = claim ? claim : 
     if (claim && typecmp(claim->over, t2) == 0) {
-        return new Expr(t2, false);
+        return new Expr(t1, false);
     } else {
+        auto claim = claim_st.lookup(t2, SPACE);
+        if (claim && typecmp(claim->over, t1) == 0) {
+            return new Expr(t2, false);
+        }
         yyerror("Multiplying two unequal types requires an appropriate space claim");
         return NULL;
     }

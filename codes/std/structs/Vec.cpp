@@ -1,6 +1,6 @@
 #include <vector>
 template<typename T> 
-class Vec {
+struct Vec {
     std::vector<T> a;
     Vec() {}
     Vec(int n) : a(std::vector<T>(n)) {}
@@ -20,6 +20,7 @@ class Vec {
         for(int i = 0; i < a.size(); i++) {
             ret.a[i] = a[i] + m.a[i];
         }
+        return ret;
     }
 
     Vec operator-() const {
@@ -42,3 +43,11 @@ class Vec {
         return a[i];
     }
 };
+template<typename T>
+Vec<T> operator*(const T m, const Vec<T> v) {
+    Vec<T> ret(v.a.size());
+    for (int i = 0; i < v.a.size(); i++) {
+        ret.a[i] = v.a[i] * m;
+    }
+    return ret;
+}

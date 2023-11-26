@@ -23,6 +23,7 @@ using namespace std;
 static Type *make_type(PDT pdt) {
     Type *t = new Type();
     t->push_type(get_vt(pdt), 0, 0, NULL);
+    t->head->pdt = pdt;
     return t;
 }
 
@@ -65,7 +66,7 @@ static Type *get_type(const char *name) {
 
 static Type *make_cart(vector<Type *> types) {
     Type *t = new Type();
-    t->push_type(CART, 0, 0, new Aux(new vector<Type *>(types)));
+    t->push_type(CART, 0, types.size(), new Aux(new vector<Type *>(types)));
     return t;
 }
 
@@ -281,6 +282,12 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     auto forge_int_int_rational_params = make_params({new Var("t", make_cart({make_type(I32), make_type(I32)}))});
     auto forge_int_int_rational = new Function("forge_Rational", forge_int_int_rational_params, get_type("Rational"));
     forge_st.insert(forge_int_int_rational);
+
+    // forge tuple<BigInt, BigInt> as Rational
+    auto forge_big_int_big_int_rational_params = make_params({new Var("t", make_cart({get_type("BigInt"), get_type("BigInt")}))});
+    auto forge_big_int_big_int_rational = new Function("forge_Rational", forge_big_int_big_int_rational_params, get_type("Rational"));
+    forge_st.insert(forge_big_int_big_int_rational);
+    auto entry = forge_st.inner.entries[forge_st.inner.entries.size() - 1];
 
     // forge int as Rational
     auto forge_int_rational_params = make_params({new Var("n", make_type(I32))});

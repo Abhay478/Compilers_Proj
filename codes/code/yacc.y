@@ -730,12 +730,12 @@ cart_value      : '(' cart_value_list ')' {
                     }
                     t->push_type(CART, 0, arr->size(), new Aux(arr));
                     $$ = new Expr(t, false);
-                    $$->repr = "{";
+                    $$->repr = "make_tuple(";
                     for(int i = 0; i < $2->size(); i++) {
                         if(i) $$->repr += ", ";
                         $$->repr += (*$2)[i]->repr;
                     }
-                    $$->repr += "}";
+                    $$->repr += ")";
                 }
                 ;
 

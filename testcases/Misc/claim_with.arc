@@ -33,5 +33,10 @@ fn bar_to_foo(bar: Bar) : Foo {
 claim Bar is Group with (foo_to_bar, bar_to_foo);
 
 fn main(): i32 {
+    let a: Bar;
+    a.a = 1;
+    let b: Bar;
+    b = a + a;
+    print(b.a as (str));
     return 0;
 }

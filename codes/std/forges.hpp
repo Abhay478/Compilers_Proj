@@ -92,6 +92,11 @@ Rational forge_Rational(const std::tuple<int, int> frac)
     return Rational(std::get<0>(frac), std::get<1>(frac));
 }
 
+Rational forge_Rational(const std::tuple<BigInt, BigInt> frac)
+{
+    return Rational(std::get<0>(frac).n, std::get<1>(frac).n);
+}
+
 Rational forge_Rational(int n)
 {
     return Rational(n);

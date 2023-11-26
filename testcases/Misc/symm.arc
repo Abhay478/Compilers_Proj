@@ -20,3 +20,30 @@ fn main(): i32 {
     let w2: Alternating<5> = x2 as (Alternating<5>);
     print(w2 as (str));
 }
+
+fn main_() : i32 {
+    let arr: [[i32]] = [[1, 2], [5, 6]];
+    let q: Symmetric<4> = [1, 2, 3, 0] as (Symmetric<4>);
+    let u: Matrix<i32> = arr as (Matrix<i32>);
+    let v: Matrix<i32> = u + u;
+    for i: [i32] in v as ([[i32]]){
+        print(i as (str));
+    }
+    v = u * u;
+    for i: [i32] in v as ([[i32]]){
+        print(i as (str));
+    }
+
+    let s: Matrix<i32> = u + u;
+    let t: Matrix<i32> = u * u;
+
+    print("");
+    for i: [i32] in s as ([[i32]]){
+        print(i as (str));
+    }
+    print("");
+    for i: [i32] in t as ([[i32]]){
+        print(i as (str));
+    }
+}
+

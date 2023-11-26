@@ -366,6 +366,10 @@ Function *FunctionSymbolTable::lookup(string name) {
     return NULL;
 }
 
+FunctionSymbolTable::FunctionSymbolTable() {
+    this->entries = vector<Function *>();
+}
+
 // if return type has a placeholder, get the matching type from args
 Type * Function::get_return_type(std::vector<Type *> * args, Type * ret_type) {
     GenericInner * repl = NULL;

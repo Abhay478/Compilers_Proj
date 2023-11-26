@@ -69,6 +69,7 @@
     int count;
     struct {
         Function * entry; 
+        Struct * sste;
         std::string * repr;
     } func;
     GenericInner * targ;
@@ -857,7 +858,7 @@ call            : IDENT '(' opt_expr_list ')' {
                         yyerror(err.c_str());
                         break;
                     }
-                    for(int i = 0; i < $3->size(); i++) {
+                    for(int i = 0; i < $5->size(); i++) {
                         // Might be a better way than directly accessing the vector?
                         if(typecmp((*$5)[i], meth->params->entries[i]->type)) {
                             string err = "Type mismatch on parameter " + to_string(i) + " of call to " + *$3 + ".";
@@ -1468,6 +1469,7 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         VarSymbolTable * params = current_scope->vars;
 
                         Function * entry = new Function(*$2, params, NULL);
+                        $$.sste = NULL;
                         $$.entry = entry;
                         $$.repr = new string((*$2 != "main" ? "f_" : "") + *$2 + "(" + ($4 ? *$4 : "") + ") ");
                     }
@@ -1480,10 +1482,11 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
                         VarSymbolTable * params = current_scope->vars;
                         method_of = sste;
                         Function * fste = new Function(*$4, params, NULL);
-                        sste->methods->insert(fste);
 
+                        $$.sste = sste;
+ 
                         $$.entry = fste;
-                        $$.repr = new string(*$2 + "::m_" + *$4 + "(" + *$6 + ") ");
+                        $$.repr = new string(*$2 + "::m_" + *$4 + "(" + ($6?*$6:"") + ") ");
                     }
                 }
                 ;
@@ -1491,21 +1494,25 @@ fh_stub         : KW_FN IDENT '(' param_list ')' {
 function_header :  fh_stub ':' type {
                     if($1.entry) {
                         $1.entry->return_type = $3;
-                        func_st.insert($1.entry);
+                        if($1.sste) $1.sste->methods->insert($1.entry);
+                        else func_st.insert($1.entry);
                         string header = $3->repr_cpp() + " " + *($1.repr);
                         generate(header);
-                        // We ain't putting this stuff 
                     }
                     current_func = $3;
                 }
                 | fh_stub {
+                    auto vo = new Type();
+                    vo->push_type(VOID, 0, 0, NULL);
                     if($1.entry) {
-                        func_st.insert($1.entry);
+                        $1.entry->return_type = vo;
+                        // printf("%s\n", $1.entry->return_type->repr_cpp().c_str());
+                        if($1.sste) $1.sste->methods->insert($1.entry);
+                        else func_st.insert($1.entry);
                         string header = "void " + *($1.repr);
                         generate(header);
                     }
-                    current_func = new Type();
-                    current_func->push_type(VOID, 0, 0, NULL);
+                    current_func = vo;
                 }
                 ;
 
@@ -1524,8 +1531,7 @@ type_var_list_ : type_var_list_ ',' type_var {
 
 param_list      : type_var_list {
                     $$ = $1;
-                    if(!$$) break;
-                    replace($$->begin(), $$->end(), ';', ',');
+                    if($$) replace($$->begin(), $$->end(), ';', ',');
                     // generateln(*$$);
                 }
                 ;

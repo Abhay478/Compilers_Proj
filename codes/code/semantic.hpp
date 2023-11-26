@@ -262,6 +262,7 @@ struct FunctionSymbolTable {
     std::vector<Function *> entries;
     int insert(Function * fste);
     Function * lookup(std::string name);
+    FunctionSymbolTable();
 };
 
 // FunctionSymbolTable * make_func_st();

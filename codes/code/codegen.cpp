@@ -274,8 +274,7 @@ void generate_structs() {
         // printf("out.\n");
 
         for(auto func : sste->methods->entries) {
-            printf("func: %s\n", func->name.c_str());
-            auto t = func->return_type->repr_cpp() + " " + func->name + "(";
+            auto t = func->return_type->repr_cpp() + " m_" + func->name + "(";
             for(auto param : func->params->entries) {
                 t += param->type->repr_cpp() + " " + param->name + ", ";
             }

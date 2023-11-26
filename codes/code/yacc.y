@@ -921,7 +921,7 @@ array_access    : expression array_index {
                         $$ = NULL;
                         break;
                     }
-                    if($1->core() == BUF || ($1->core() == GEN && $1->head->gste->name == "Vec") || ($1->core() == GEN && $1->head->gste->name == "Matrix") || ($1->core() == GEN && $1->head->gste->name == "InvMat")) {
+                    if($1->core() == BUF) {
                         // TODO: Test for slices.
                         
                         if(!$2.is_slice) {
@@ -929,7 +929,7 @@ array_access    : expression array_index {
                             $$->repr = $1->repr + *$2.repr;
                         }
                         else {
-                            $$ = new Expr($1->pop_type(), $1->is_lvalue);
+                            $$ = new Expr($1, $1->is_lvalue);
                             $$->repr = "slice(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
                         }
                     }
@@ -943,8 +943,12 @@ array_access    : expression array_index {
                             $$->repr = "slice_str(" + $1->repr + ", " + *$2.slice.start + ", " + *$2.slice.end + ")";
                         }
                     } 
+                    else if(($1->core() == GEN && $1->head->gste->name == "Vec") || ($1->core() == GEN && $1->head->gste->name == "Matrix") || ($1->core() == GEN && $1->head->gste->name == "InvMat")) {
+                        $$ = new Expr((*$1->head->types)[0]->type, $1->is_lvalue);
+                        $$->repr = $1->repr + *$2.repr;
+                    }
                     else {
-                        yyerror("Array access on non-array type.");
+                        yyerror("Invalid access mechancs.");
                         $$ = NULL;
                         break;
                     }

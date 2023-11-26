@@ -136,6 +136,12 @@ static void init_gen_st() {
         auto gste = new Generic(i, {GenericArg(FIELD)});
         gen_st.insert(gste);
     }
+
+    vector<string> space_types = {"Vec"};
+    for (auto i : space_types) {
+        auto gste = new Generic(i, {GenericArg(FIELD)});
+        gen_st.insert(gste);
+    }
 }
 
 ///     BigInt
@@ -166,10 +172,12 @@ static void init_claim_st() {
     vector<const char *> groups = {"Dihedral", "Symmetric", "Alternating"};
     vector<const char *> rings = {"Cyclic", "BigInt", "Matrix", "Polynomial"};
     vector<const char *> fields = {"Rational", "Complex"};
+    vector<const char *> spaces = {"Vec"};
 
     // accumulate all types
     rings.insert(rings.end(), fields.begin(), fields.end());
     groups.insert(groups.end(), rings.begin(), rings.end());
+    groups.insert(groups.end(), spaces.begin(), spaces.end());
 
     for (auto i : groups) {
         auto type = get_type(i);
@@ -182,6 +190,10 @@ static void init_claim_st() {
     for (auto i : fields) {
         auto type = get_type(i);
         claim_st.insert(new Claim(type, FIELD));
+    }
+    for (auto i : spaces) {
+        auto type = get_type(i);
+        claim_st.insert(new Claim(type, SPACE));
     }
 }
 

@@ -159,11 +159,11 @@ std::tuple<int32_t, int32_t> forge_tuple_int32_t_int32_t(const Complex com)
     return std::make_tuple(com.r.n.get_si(), com.i.n.get_si());
 }
 
-std::string forge_string(const int n)
+std::string forge_string(const long int n)
 {
     return std::to_string(n);
 }
-std::string forge_string(const unsigned int n)
+std::string forge_string(const unsigned long int n)
 {
     return std::to_string(n);
 }

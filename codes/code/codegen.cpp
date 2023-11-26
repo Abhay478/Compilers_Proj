@@ -99,17 +99,21 @@ vector<Var *> mult_gen(string prod, string op1, string op2) {
         string h = t->repr_cpp() + " operator*(" + t->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
         generate(h);
     } else if(current_claim->archetype == SPACE) {
-        Type * t_in = t->pop_type();
+        auto over = current_claim->over;
         v1 = new Var(prod, t);
-        v2 = new Var(op1, t_in);
-        v3 = new Var(op2, t);
+        v2 = new Var(op1, t);
+        v3 = new Var(op2, over);
         current_scope->insert(v1);
         current_scope->insert(v2);
         current_scope->insert(v3);
 
         out = v1;
 
-        string h = t->repr_cpp() + " operator+(" + t_in->repr_cpp() + " " + v2->repr_cpp() + ", " + t->repr_cpp() + " " + v3->repr_cpp() + ") ";
+        string h = t->repr_cpp() +
+            " operator*(" + t->repr_cpp()
+            + " " + v2->repr_cpp() + ", "
+            + over->repr_cpp() + " "
+            + v3->repr_cpp() + ") ";
         generate(h);
     } else {
         return {};

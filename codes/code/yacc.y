@@ -566,6 +566,7 @@ expression      : '(' expression ')' {
                         Var *v = sste->fieldLookup(*($3));
                         if(!v){
                             yyerror("Field of struct doesn't exist");
+                            break;
                         }
                         $$ = new Expr(v->type, $1->is_lvalue);
                         $$->repr = "(" + refs + "(" + $1->repr + "))" + "." + *$3;

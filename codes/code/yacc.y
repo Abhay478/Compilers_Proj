@@ -956,7 +956,7 @@ array_access    : expression array_index {
                         $$->repr = $1->repr + *$2.repr;
                     }
                     else {
-                        yyerror("Invalid access mechancs.");
+                        yyerror("Invalid access mechanics.");
                         $$ = NULL;
                         break;
                     }

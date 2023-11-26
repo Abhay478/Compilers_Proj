@@ -230,8 +230,8 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat)
     return mat.a;
 }
 
-// template<typename T>
-std::string forge_string(const std::vector<int> vec)
+template<typename T>
+std::string forge_string(const std::vector<T> vec)
 {
     std::string out = "[";
     for (int i = 0; i < vec.size(); i++)
@@ -244,31 +244,31 @@ std::string forge_string(const std::vector<int> vec)
     return out;
 }
 
-std::string forge_string(const std::vector<unsigned int> vec)
-{
-    std::string out = "[";
-    for (int i = 0; i < vec.size(); i++)
-    {
-        if (i)
-            out += ", ";
-        out += std::to_string(vec[i]);
-    }
-    out += "]";
-    return out;
-}
+// std::string forge_string(const std::vector<unsigned int> vec)
+// {
+//     std::string out = "[";
+//     for (int i = 0; i < vec.size(); i++)
+//     {
+//         if (i)
+//             out += ", ";
+//         out += std::to_string(vec[i]);
+//     }
+//     out += "]";
+//     return out;
+// }
 
-std::string forge_string(const std::vector<BigInt> vec)
-{
-    std::string out = "[";
-    for (int i = 0; i < vec.size(); i++)
-    {
-        if (i)
-            out += ", ";
-        out += vec[i].to_string();
-    }
-    out += "]";
-    return out;
-}
+// std::string forge_string(const std::vector<BigInt> vec)
+// {
+//     std::string out = "[";
+//     for (int i = 0; i < vec.size(); i++)
+//     {
+//         if (i)
+//             out += ", ";
+//         out += vec[i].to_string();
+//     }
+//     out += "]";
+//     return out;
+// }
 
 template <typename T>
 std::vector<T> forge_buf(const Vec<T> vec)

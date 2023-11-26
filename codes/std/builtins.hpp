@@ -34,6 +34,14 @@ void f_push(std::vector<T>& vec, const T val) {
     vec.push_back(val);
 }
 
+void f_push(std::vector<unsigned long int>& vec, const unsigned long int val) {
+    vec.push_back(val);
+}
+
+void f_push(std::vector<long int>& vec, const long int val) {
+    vec.push_back(val);
+}
+
 template<typename T>
 T f_pop(std::vector<T>& vec) {
     if (vec.empty()) {

@@ -422,6 +422,21 @@ std::vector<std::vector<T>> forge_vector_vector_T(const Matrix<T> mat) {
     auto forge_vector_bigint_str = new Function("forge_string", forge_vector_bigint_str_params, make_type(PDT_STR));
     forge_st.insert(forge_vector_bigint_str);
 
+    // forge Vec<T> as buf
+    auto forge_vec_t_buf_params = make_params({new Var("v", get_type("Vec"))});
+    auto forge_vec_t_buf = new Function("forge_buf", forge_vec_t_buf_params, buf);
+    forge_st.insert(forge_vec_t_buf);
+
+    // forge Vec<T> as string
+    auto forge_vec_t_str_params = make_params({new Var("v", get_type("Vec"))});
+    auto forge_vec_t_str = new Function("forge_string", forge_vec_t_str_params, make_type(PDT_STR));
+    forge_st.insert(forge_vec_t_str);
+
+    // forge buf as Vec<T>
+    auto forge_buf_vec_t_params = make_params({buf_arg});
+    auto forge_buf_vec_t = new Function("forge_Vec", forge_buf_vec_t_params, get_type("Vec"));
+    forge_st.insert(forge_buf_vec_t);
+
 }
 void init_symbol_tables() {
     init_func_st();

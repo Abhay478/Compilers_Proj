@@ -8,3 +8,4 @@
 #include "structs/Rational.cpp"
 #include "structs/Complex.cpp"
 #include "structs/Symmetric.cpp"
+#include "structs/Vec.cpp"

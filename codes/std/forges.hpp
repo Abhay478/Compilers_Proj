@@ -270,6 +270,32 @@ std::string forge_string(const std::vector<BigInt> vec)
     return out;
 }
 
+template <typename T>
+std::vector<T> forge_buf(const Vec<T> vec)
+{
+    return vec.a;
+}
+
+template <typename T>
+std::string forge_string(const Vec<T> vec)
+{
+    std::string out = "[";
+    for (int i = 0; i < vec.a.size(); i++)
+    {
+        if (i)
+            out += ", ";
+        out += std::to_string(vec.a[i]);
+    }
+    out += "]";
+    return out;
+}
+
+template <typename T>
+Vec<T> forge_Vec(const std::vector<T> vec)
+{
+    return Vec<T>(vec);
+}
+
 // test: call all forges
 /*int main() {
     auto big = forge_BigInt("1234567890123456789012345678901234567890");

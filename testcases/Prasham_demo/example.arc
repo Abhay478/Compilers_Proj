@@ -3,24 +3,6 @@ struct two_tup {
     aux: u64
 }
 
-claim two_tup is Group {
-    (c = 0) => {
-        c.val = 0;
-        c.aux = 0;
-    }
-
-    (c = a + b) => {
-        c.val = a.val + b.val;
-        c.aux = a.aux + b.aux;
-        return;
-    }
-
-    (b = -a) => {
-        b.val = -a.val;
-        b.aux = -a.aux;
-    }
-}
-
 forge (a: two_tup) as (b: (u64, u64)) {
     b = (a.val, a.aux);
     // print("We are forging here.");
@@ -38,22 +20,27 @@ forge (a: [u64]) as (b: two_tup) {
     // print("We are forging here again.");
 }
 
+forge (a: two_tup) as (b: [u64]) {
+    push(b, a.val);
+    push(b, a.aux);
+}
+
 fn main(): i32 {
     // print("This is main.");
 
     let a: two_tup = [1, 2] as (two_tup); // third forge
+    let b: two_tup = [3, 4] as (two_tup); // third forge
+
 
     let tup: (u64, u64) = a as ((u64, u64)); // first forge
+    print(tup.0 as (str));
+    print(tup.1 as (str));
 
     let twoTup: two_tup = tup as (two_tup); // second forge
     print(twoTup.val as (str));
     print(twoTup.aux as (str));
 
-    let b: two_tup = [3, 4] as (two_tup); // third forge
-   
-    let c: two_tup = a + b; // Group implementation
-    print(c.val as (str));
-    print(c.aux as (str));
-
-
+    let arr: [u64] = b as ([u64]);
+    print(arr[0] as (str));
+    print(arr[1] as (str));
 }

@@ -1677,6 +1677,19 @@ int main() {
     fclose(token_stream);
     fclose(output_stream);
 
+    Function * fnmain = func_st.lookup("main");
+
+    if (!fnmain) {
+        yyerror("No main function.");
+        error = true;
+    } else if (fnmain->return_type->core() != INT) {
+        yyerror("Main function must return int.");
+        error = true;
+    } else if (fnmain->params->entries.size() != 0) {
+        yyerror("Main function must have no parameters.");
+        error = true;
+    }
+
     /* if (error) {
         // if error, generated files are useless, so remove them
         remove("a.cpp");

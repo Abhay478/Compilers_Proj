@@ -63,13 +63,13 @@ std::vector<T> f_slice(std::vector<T> vec, int start, int end) {
 }
 
 template<typename T>
-T f_dot(const std::vector<T> vec1, const std::vector<T> vec2) {
-    if (vec1.size() != vec2.size()) {
+T f_dot(Vec<T> vec1, Vec<T> vec2) {
+    if (vec1.a.size() != vec2.a.size()) {
         f_panic("Size mismatch for @");
     }
     T sum = 0;
-    for (int i = 0; i < vec1.size(); i++) {
-        sum += vec1[i] * vec2[i];
+    for (int i = 0; i < vec1.a.size(); i++) {
+        sum += vec1.a[i] * vec2.a[i];
     }
     return sum;
 }

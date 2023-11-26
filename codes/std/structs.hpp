@@ -1,3 +1,4 @@
+#include "structs/Vec.cpp"
 #include "builtins.hpp"
 #include "structs/Alternating.cpp"
 #include "structs/BigInt.cpp"
@@ -8,4 +9,3 @@
 #include "structs/Rational.cpp"
 #include "structs/Complex.cpp"
 #include "structs/Symmetric.cpp"
-#include "structs/Vec.cpp"

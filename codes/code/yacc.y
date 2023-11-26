@@ -641,6 +641,7 @@ expression      : '(' expression ')' {
                             break;
                         }
                         $$ = new Expr((*$1->head->types)[0]->type, false);
+                        $$->repr = "f_dot(" + $1->repr + ", " + $3->repr + ")";
                     }
                 }
                 | expression '*' expression    { $$ = mult_type_check_arithmetic($1, $3); if($$) $$->repr = $1->repr + " * " + $3->repr; }

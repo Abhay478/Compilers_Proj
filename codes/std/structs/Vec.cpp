@@ -14,7 +14,8 @@ struct Vec {
 
     Vec operator+(const Vec m) const {
         if(a.size() != m.a.size()) {
-            f_panic("Cannot add/sub Vec: inconsistent size");
+            std::cout << "PANIC: " << "Cannot add/sub Vec: inconsistent size" << std::endl;
+            exit(1);
         }
         Vec ret(a.size());
         for(int i = 0; i < a.size(); i++) {

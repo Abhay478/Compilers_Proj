@@ -1144,7 +1144,7 @@ claim_stub      : KW_CLAIM IDENT KW_IS archetype {
                     if(!entry) {
                         yyerror("Struct not found in symbol table.");
                         $$ = NULL;
-                        break;
+                        YYABORT;
                     } 
                     int cl = entry->add_claim($4);
                     if(cl == 1) {

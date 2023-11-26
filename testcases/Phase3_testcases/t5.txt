@@ -1,4 +1,81 @@
-fn main() : i32 {
-    let x: bool = ((3 > 4) && !(2 == 3));
-    x = x + 1; // Semantic error
+enum Bar {
+    Zero,
+    One,
+    Two
+}
+
+let Z0: Cyclic<3>;
+let Z1: Cyclic<3>;
+let Z2: Cyclic<3>;
+
+forge (cyc: Cyclic<3>) as (b: Bar) {
+    let a: u8 = cyc as (u8);
+    if(a == 0) {
+        b = Bar::Zero;
+    }
+    if(a == 1) {
+        b = Bar::One;
+    }
+    else {
+        b = Bar::Two;
+    }
+}
+
+forge (a: Bar) as (b: Cyclic<3>) {
+    if(a == Bar::Zero) {
+        b = Z0;
+    }
+    else if(a == Bar::One) {
+        b = Z1;
+    }
+    else {
+        b = Z2;
+    }
+}
+
+// cannot claim for enum. Sad.
+claim Bar is Group {
+    (c = 0) => {
+        c = Bar::Zero;
+    }
+    (c = x + y) => {
+        c = (x as (Cyclic<3>) + y as (Cyclic<3>)) as (Bar);
+    }
+    (c = -x) => {
+        c = (- (x as (Cyclic<3>))) as (Bar);
+    }
+}
+
+struct Foo {
+    a: u8,
+    var: Bar
+}
+
+forge (a: u8) as (out: Foo) {
+    out.a = a;
+    out.var = Bar::Zero;
+}
+
+forge (arg: (u8, Bar)) as (out: Foo) {
+    out.a = arg.0;
+    out.var = arg.1;
+}
+
+claim Foo is Group {
+    (out = x + y) => {
+        out.a = x.a + y.a;
+        out.var = x.var + y.var;
+    }
+
+    (c = 0) => {
+        c = (0, Bar::Zero) as (Foo);
+    }
+}
+
+fn main() {
+    print("Hello world.\n");
+    let q: Foo = 0 as (Foo);
+    let qq: Foo = 1 as (Foo);
+
+    let qqq: Foo = q + qq;
 }

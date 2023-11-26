@@ -1,7 +1,7 @@
 enum Bar {
-    Zero,
-    One,
-    Two
+    Zero;
+    One;
+    Two;
 }
 
 let Z0: Cyclic<3>;

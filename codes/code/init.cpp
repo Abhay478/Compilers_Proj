@@ -139,7 +139,7 @@ static void init_gen_st() {
 
     vector<string> space_types = {"Vec"};
     for (auto i : space_types) {
-        auto gste = new Generic(i, {GenericArg(FIELD)});
+        auto gste = new Generic(i, {GenericArg(RING)});
         gen_st.insert(gste);
     }
 }
